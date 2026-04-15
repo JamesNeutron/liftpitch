@@ -1,8 +1,7 @@
-import { getDocument, GlobalWorkerOptions } from "pdfjs-dist";
+import { getDocument, GlobalWorkerOptions } from "pdfjs-dist/legacy/build/pdf.mjs";
 
-// Disable the worker — in a Node.js server context there is no browser Worker
-// API, so we run everything in the main thread (the "fake worker" fallback).
-GlobalWorkerOptions.workerSrc = "";
+// Use the legacy Node.js-compatible worker build
+GlobalWorkerOptions.workerSrc = "pdfjs-dist/legacy/build/pdf.worker.mjs";
 
 export async function POST(request) {
   try {
