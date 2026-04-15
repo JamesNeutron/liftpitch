@@ -227,10 +227,13 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed }) {
 
     try {
       if (file.type === "application/pdf") {
-        // Read PDF using pdf.js
+        // Read PDF using locally installed pdfjs-dist
         const arrayBuffer = await file.arrayBuffer();
         const pdfjsLib = await import("pdfjs-dist");
-        
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+          "pdfjs-dist/build/pdf.worker.min.mjs",
+          import.meta.url
+        ).toString();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         let text = "";
         for (let i = 1; i <= pdf.numPages; i++) {
@@ -270,51 +273,13 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed }) {
     setLoading(true); setScript(""); setAnalysis(null);
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
+      const response = await fetch("/api/generate-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          messages: [{
-            role: "user",
-            content: `You are an expert career coach and hiring strategist. A job seeker wants to record a ${duration}-second video pitch targeted at a specific role. Analyze their resume against the job description and write a compelling video script that draws direct connections between their experience and what the employer needs.
-
-First, output a JSON block wrapped in <analysis> tags:
-<analysis>
-{
-  "matchScore": 0-100,
-  "strongMatches": ["match 1", "match 2", "match 3"],
-  "gapsToBridge": ["gap 1"],
-  "angleToPlay": "one sentence best pitch angle"
-}
-</analysis>
-
-Then write the script. It should:
-- Be ${duration === "30" ? "75-90" : duration === "45" ? "110-135" : "150-180"} words for ${duration}-second delivery
-- Open by naming the role and company if mentioned in the job description
-- Draw 2-3 direct parallels between their experience and job requirements
-- Incorporate personality and unique traits from their about me section
-- Address gaps by reframing as transferable strengths
-- Sound natural, confident, enthusiastic — not robotic
-- End with a strong close that makes the hiring manager want to meet them
-- Use first person
-
-RESUME:
-${resume}
-
-JOB DESCRIPTION:
-${jobDesc}
-
-ABOUT ME:
-${bio}
-
-Output <analysis> JSON first, then ONLY the script text (no labels or prefix).`
-          }],
-        }),
+        body: JSON.stringify({ resume, jobDesc, bio, duration }),
       });
       const data = await response.json();
-      const text = data.content?.map(b => b.text || "").join("") || "";
+      const text = data.text || "";
       const m = text.match(/<analysis>\s*([\s\S]*?)\s*<\/analysis>/);
       if (m) { try { setAnalysis(JSON.parse(m[1])); } catch(e) {} }
       const s = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
