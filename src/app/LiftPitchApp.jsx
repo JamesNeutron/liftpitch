@@ -227,21 +227,13 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed }) {
 
     try {
       if (file.type === "application/pdf") {
-        // Read PDF using locally installed pdfjs-dist
-        const arrayBuffer = await file.arrayBuffer();
-        const pdfjsLib = await import("pdfjs-dist");
-        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/build/pdf.worker.min.mjs",
-          import.meta.url
-        ).toString();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let text = "";
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(item => item.str).join(" ") + "\n";
-        }
-        setResume(text.trim());
+        // Parse PDF server-side to avoid pdfjs-dist import.meta bundling issues
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch("/api/parse-pdf", { method: "POST", body: form });
+        if (!res.ok) throw new Error("Server PDF parse failed");
+        const { text } = await res.json();
+        setResume(text);
         setUploadStatus("done");
       } else if (
         file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
