@@ -205,7 +205,7 @@ function Landing({ onStart }) {
 
 // ─── Unified Script Generator ───
 
-function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed }) {
+function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript }) {
   const [resume, setResume] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [bio, setBio] = useState("");
@@ -226,16 +226,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed }) {
     setUploadStatus("reading");
 
     try {
-      if (file.type === "application/pdf") {
-        // Parse PDF server-side to avoid pdfjs-dist import.meta bundling issues
-        const form = new FormData();
-        form.append("file", file);
-        const res = await fetch("/api/parse-pdf", { method: "POST", body: form });
-        if (!res.ok) throw new Error("Server PDF parse failed");
-        const { text } = await res.json();
-        setResume(text);
-        setUploadStatus("done");
-      } else if (
+      if (
         file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
         file.name.endsWith(".docx")
       ) {
@@ -290,6 +281,14 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed }) {
         <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 700, color: B.text, margin: 0 }}>Script Generator</h2>
         {!isPaid && <PillBadge label="1 Free Use" color={B.warning} />}
         {isPaid && <PillBadge label="Unlimited" color={B.success} />}
+        {scriptUsed && !isPaid && (
+          <button onClick={onResetScript} style={{
+            marginLeft: "auto", padding: "4px 10px", borderRadius: 6, fontSize: 10,
+            fontFamily: "'Sora', sans-serif", fontWeight: 600, cursor: "pointer",
+            background: "rgba(150,150,150,0.1)", border: "1px solid rgba(150,150,150,0.25)",
+            color: B.textMuted,
+          }}>Reset (dev only)</button>
+        )}
       </div>
 
       <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, lineHeight: 1.6, marginBottom: 24 }}>
@@ -337,7 +336,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed }) {
               <div style={{
                 display: "flex", gap: 8, marginBottom: 8, alignItems: "center", flexWrap: "wrap",
               }}>
-                <input ref={fileRef} type="file" accept=".pdf,.docx,.doc,.txt"
+                <input ref={fileRef} type="file" accept=".docx,.doc,.txt"
                   onChange={handleFileUpload} style={{ display: "none" }} />
                 <button onClick={() => fileRef.current?.click()} style={{
                   padding: "8px 16px", borderRadius: 8, background: B.surface,
@@ -346,7 +345,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed }) {
                   cursor: "pointer", transition: "all 0.2s",
                   display: "flex", alignItems: "center", gap: 6,
                 }}>
-                  📎 Upload PDF or Word
+                  📎 Upload Word Doc
                 </button>
                 {uploadStatus === "reading" && (
                   <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.warning }}>
@@ -891,7 +890,7 @@ export default function App() {
       </div>
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
-        {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} />}
+        {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} />}
         {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} />}
         {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
         {tab === "tips" && <TipsAndTricks />}

@@ -1,8 +1,19 @@
 export async function POST(request) {
-  const { resume, jobDesc, bio, duration } = await request.json();
+  let resume, jobDesc, bio, duration;
+  try {
+    ({ resume, jobDesc, bio, duration } = await request.json());
+  } catch (err) {
+    console.error("generate-script: failed to parse request body:", err);
+    return Response.json({ error: "Invalid request body" }, { status: 400 });
+  }
 
   if (!resume || !jobDesc || !bio) {
     return Response.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    console.error("generate-script: ANTHROPIC_API_KEY is not set");
+    return Response.json({ error: "Server misconfiguration: missing API key" }, { status: 500 });
   }
 
   const wordRange =
@@ -41,24 +52,36 @@ ${bio}
 
 Output <analysis> JSON first, then ONLY the script text (no labels or prefix).`;
 
-  const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": process.env.ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }],
-    }),
-  });
+  let anthropicResponse;
+  try {
+    anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+  } catch (err) {
+    console.error("generate-script: network error calling Anthropic:", err);
+    return Response.json({ error: "Failed to reach Anthropic API" }, { status: 502 });
+  }
 
   if (!anthropicResponse.ok) {
-    const err = await anthropicResponse.text();
-    console.error("Anthropic API error:", err);
-    return Response.json({ error: "Anthropic API error" }, { status: 502 });
+    const errBody = await anthropicResponse.text();
+    console.error(
+      `generate-script: Anthropic returned ${anthropicResponse.status}:`,
+      errBody
+    );
+    return Response.json(
+      { error: `Anthropic API error ${anthropicResponse.status}`, detail: errBody },
+      { status: 502 }
+    );
   }
 
   const data = await anthropicResponse.json();
