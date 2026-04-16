@@ -62,8 +62,8 @@ Output <analysis> JSON first, then ONLY the script text (no labels or prefix).`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1000,
+        model: "claude-sonnet-4-5-20250929",
+        max_tokens: 2000,
         messages: [{ role: "user", content: prompt }],
       }),
     });
