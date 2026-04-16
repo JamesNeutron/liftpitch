@@ -1,14 +1,25 @@
 export async function POST(request) {
+  let rawBody;
+  try {
+    rawBody = await request.text();
+    console.log("generate-script: raw body (first 100 chars):", rawBody.slice(0, 100));
+  } catch (err) {
+    console.error("generate-script: failed to read request body:", err);
+    return Response.json({ error: "Failed to read request body", detail: String(err) }, { status: 400 });
+  }
+
   let resume, jobDesc, bio, duration;
   try {
-    ({ resume, jobDesc, bio, duration } = await request.json());
+    ({ resume, jobDesc, bio, duration } = JSON.parse(rawBody));
   } catch (err) {
-    console.error("generate-script: failed to parse request body:", err);
-    return Response.json({ error: "Invalid request body" }, { status: 400 });
+    console.error("generate-script: failed to parse request body JSON:", err);
+    return Response.json({ error: "Invalid request body JSON", detail: String(err) }, { status: 400 });
   }
 
   if (!resume || !jobDesc || !bio) {
-    return Response.json({ error: "Missing required fields" }, { status: 400 });
+    const missing = ["resume", "jobDesc", "bio"].filter((k) => !{ resume, jobDesc, bio }[k]);
+    console.error("generate-script: missing required fields:", missing);
+    return Response.json({ error: "Missing required fields", missing }, { status: 400 });
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -69,7 +80,7 @@ Output <analysis> JSON first, then ONLY the script text (no labels or prefix).`;
     });
   } catch (err) {
     console.error("generate-script: network error calling Anthropic:", err);
-    return Response.json({ error: "Failed to reach Anthropic API" }, { status: 502 });
+    return Response.json({ error: "Failed to reach Anthropic API", detail: String(err) }, { status: 502 });
   }
 
   if (!anthropicResponse.ok) {
@@ -84,8 +95,16 @@ Output <analysis> JSON first, then ONLY the script text (no labels or prefix).`;
     );
   }
 
-  const data = await anthropicResponse.json();
+  let data;
+  try {
+    data = await anthropicResponse.json();
+  } catch (err) {
+    console.error("generate-script: failed to parse Anthropic response JSON:", err);
+    return Response.json({ error: "Failed to parse Anthropic response", detail: String(err) }, { status: 502 });
+  }
+
   const text = data.content?.map((b) => b.text || "").join("") || "";
+  console.log("generate-script: success, response length:", text.length);
 
   return Response.json({ text });
 }
