@@ -205,11 +205,10 @@ function Landing({ onStart }) {
 
 // ─── Unified Script Generator ───
 
-function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript }) {
+function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, script, onScriptGenerated }) {
   const [resume, setResume] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [bio, setBio] = useState("");
-  const [script, setScript] = useState("");
   const [loading, setLoading] = useState(false);
   const [duration, setDuration] = useState("60");
   const [analysis, setAnalysis] = useState(null);
@@ -266,10 +265,10 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript }) {
       const m = text.match(/<analysis>\s*([\s\S]*?)\s*<\/analysis>/);
       if (m) { try { setAnalysis(JSON.parse(m[1])); } catch(e) {} }
       const s = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
-      setScript(s || "Could not generate script. Please try again.");
+      onScriptGenerated(s || "Could not generate script. Please try again.");
       if (!isPaid) onScriptUsed();
     } catch (err) {
-      setScript("Something went wrong. Please check your connection and try again.");
+      onScriptGenerated("Something went wrong. Please check your connection and try again.");
     }
     setLoading(false);
   };
@@ -369,7 +368,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript }) {
             <div>
               <FieldLabel icon="💼">Job Description</FieldLabel>
               <TextArea value={jobDesc} onChange={e => setJobDesc(e.target.value)}
-                placeholder="Paste the job posting you're applying to..." minHeight={120} />
+                placeholder="Copy and paste the text of the job posting you're applying to." minHeight={120} />
             </div>
             <div>
               <FieldLabel icon="👤">About Me</FieldLabel>
@@ -445,18 +444,11 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript }) {
       )}
 
       {script && (
-        <div style={{ marginTop: 20, padding: 24, background: "rgba(224,104,71,0.05)",
-          border: "1px solid rgba(224,104,71,0.15)", borderRadius: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, color: "#E06847",
-              textTransform: "uppercase", letterSpacing: "0.1em" }}>Your Script</span>
-            <button onClick={() => navigator.clipboard?.writeText(script)} style={{
-              background: B.surface, border: `1px solid ${B.border}`, borderRadius: 8,
-              padding: "6px 14px", color: B.textMuted, fontSize: 12, cursor: "pointer", fontFamily: "'Sora', sans-serif",
-            }}>📋 Copy</button>
-          </div>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: B.text, lineHeight: 1.8, margin: 0,
-            whiteSpace: "pre-wrap" }}>{script}</p>
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "rgba(10,102,194,0.05)",
+          border: "1px solid rgba(10,102,194,0.15)" }}>
+          <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 600, color: B.accentLight }}>
+            ✓ Script generated — head to the Record tab to use it as your teleprompter.
+          </span>
         </div>
       )}
     </Card>
@@ -465,7 +457,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript }) {
 
 // ─── Video Recorder (Live-Only Verified) ───
 
-function VideoRecorder({ onVideoRecorded }) {
+function VideoRecorder({ onVideoRecorded, script }) {
   const videoRef = useRef(null);
   const mrRef = useRef(null);
   const chunksRef = useRef([]);
@@ -564,6 +556,36 @@ function VideoRecorder({ onVideoRecorded }) {
               }}>{d}s</button>
             ))}
           </div>
+        </div>
+      )}
+
+      {script ? (
+        <div style={{ marginBottom: 20, borderRadius: 14, background: "#111827",
+          border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
+          <div style={{ padding: "10px 16px", background: "rgba(255,255,255,0.04)",
+            borderBottom: "1px solid rgba(255,255,255,0.06)",
+            display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600,
+              color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              📜 Teleprompter
+            </span>
+            <button onClick={() => navigator.clipboard?.writeText(script)} style={{
+              background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 6, padding: "4px 12px", color: "rgba(255,255,255,0.5)",
+              fontSize: 11, cursor: "pointer", fontFamily: "'Sora', sans-serif",
+            }}>📋 Copy</button>
+          </div>
+          <div style={{ maxHeight: 180, overflowY: "auto", padding: "16px 20px" }}>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: "rgba(255,255,255,0.85)",
+              lineHeight: 1.9, margin: 0, whiteSpace: "pre-wrap" }}>{script}</p>
+          </div>
+        </div>
+      ) : (
+        <div style={{ marginBottom: 20, padding: 14, borderRadius: 12,
+          background: "rgba(231,163,62,0.06)", border: "1px solid rgba(231,163,62,0.15)" }}>
+          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.warning }}>
+            💡 Tip: Generate a script first to use as a guide while recording.
+          </span>
         </div>
       )}
 
@@ -849,6 +871,7 @@ export default function App() {
   const [fadeIn, setFadeIn] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [scriptUsed, setScriptUsed] = useState(false);
+  const [script, setScript] = useState("");
   const [videos, setVideos] = useState([]);
 
   const goApp = () => { setPage("app"); setTimeout(() => setFadeIn(true), 50); };
@@ -897,8 +920,8 @@ export default function App() {
       </div>
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
-        {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} />}
-        {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} />}
+        {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} />}
+        {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} />}
         {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
         {tab === "tips" && <TipsAndTricks />}
       </div>
