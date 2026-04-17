@@ -477,6 +477,7 @@ function VideoRecorder({ onVideoRecorded }) {
   const [maxDur, setMaxDur] = useState(60);
   const [countdown, setCountdown] = useState(0);
   const [verification, setVerification] = useState(null);
+  const [cameraError, setCameraError] = useState(null);
   const timer = useTimer(maxDur);
 
   const genVerify = () => {
@@ -488,13 +489,17 @@ function VideoRecorder({ onVideoRecorded }) {
   };
 
   const startCamera = async () => {
+    setCameraError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
       streamRef.current = stream;
       if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.muted = true; videoRef.current.play(); }
       setState("previewing");
-    } catch { alert("Camera access required. Please allow permissions and try again."); }
+    } catch (err) {
+      console.error("Camera error:", err);
+      setCameraError(`${err.name}: ${err.message}`);
+    }
   };
 
   const startCountdown = () => {
@@ -573,7 +578,9 @@ function VideoRecorder({ onVideoRecorded }) {
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center", background: B.surface }}>
             <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.4 }}>📹</div>
-            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textDim }}>Click below to start your camera</span>
+            {cameraError
+              ? <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#DC3545", textAlign: "center", padding: "0 16px" }}>{cameraError}</span>
+              : <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textDim }}>Click below to start your camera</span>}
           </div>
         )}
         {state === "countdown" && (
