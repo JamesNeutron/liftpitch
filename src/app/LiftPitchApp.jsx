@@ -205,7 +205,7 @@ function Landing({ onStart }) {
 
 // ─── Unified Script Generator ───
 
-function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, script, onScriptGenerated }) {
+function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, script, onScriptGenerated, onNavigate }) {
   const [resume, setResume] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [bio, setBio] = useState("");
@@ -444,13 +444,48 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
       )}
 
       {script && (
-        <div style={{ marginTop: 16, padding: 14, borderRadius: 12, background: "rgba(10,102,194,0.05)",
-          border: "1px solid rgba(10,102,194,0.15)" }}>
-          <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 600, color: B.accentLight }}>
-            ✓ Script generated — head to the Record tab to use it as your teleprompter.
-          </span>
+        <div style={{
+          marginTop: 24, borderRadius: 16, overflow: "hidden",
+          boxShadow: "0 8px 40px rgba(10,102,194,0.25), 0 0 0 1px rgba(10,102,194,0.2)",
+          animation: "ctaSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+        }}>
+          <div style={{ background: B.gradient, padding: "20px 24px", display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 28 }}>🎉</span>
+            <div>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 800, color: "#fff", lineHeight: 1.2 }}>
+                Your script is ready!
+              </div>
+              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "rgba(255,255,255,0.8)", marginTop: 3 }}>
+                Switch to the Record tab to read it as a teleprompter while you record.
+              </div>
+            </div>
+          </div>
+          <div style={{ background: "rgba(10,102,194,0.06)", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted }}>
+              Your script will appear as a scrollable guide above the camera preview.
+            </span>
+            <button onClick={() => onNavigate("record")} style={{
+              display: "flex", alignItems: "center", gap: 8,
+              padding: "12px 24px", borderRadius: 10, border: "none",
+              background: B.gradient, color: "#fff", cursor: "pointer",
+              fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+              boxShadow: `0 4px 20px ${B.accentGlow}`, whiteSpace: "nowrap",
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(10,102,194,0.35)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 4px 20px ${B.accentGlow}`; }}
+            >
+              Head to the Record Tab →
+            </button>
+          </div>
         </div>
       )}
+      <style>{`
+        @keyframes ctaSlideIn {
+          from { opacity: 0; transform: translateY(12px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0)   scale(1);    }
+        }
+      `}</style>
     </Card>
   );
 }
@@ -922,7 +957,7 @@ export default function App() {
       </div>
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
-        {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} />}
+        {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} />}
         {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} />}
         {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
         {tab === "tips" && <TipsAndTricks />}
