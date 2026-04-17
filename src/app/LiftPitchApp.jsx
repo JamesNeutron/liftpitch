@@ -502,7 +502,9 @@ function VideoRecorder({ onVideoRecorded, script }) {
 
   const beginRec = () => {
     chunksRef.current = [];
-    const mr = new MediaRecorder(streamRef.current, { mimeType: "video/webm;codecs=vp9,opus" });
+    const mimeType = ["video/webm;codecs=vp9,opus", "video/webm", "video/mp4;codecs=avc1", "video/mp4"]
+      .find(t => MediaRecorder.isTypeSupported(t));
+    const mr = new MediaRecorder(streamRef.current, mimeType ? { mimeType } : {});
     mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     mr.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: "video/webm" });
