@@ -252,7 +252,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
 
   const generate = async () => {
     if (!resume.trim() || !jobDesc.trim() || !bio.trim()) return;
-    setLoading(true); setScript(""); setAnalysis(null);
+    setLoading(true); onScriptGenerated(""); setAnalysis(null);
 
     try {
       const response = await fetch("/api/generate-script", {
