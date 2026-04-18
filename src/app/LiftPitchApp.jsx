@@ -121,34 +121,40 @@ function useTimer(max) {
 
 const testimonials = [
   {
-    quote: "I'd been applying for four months and heard nothing. I sent my LiftPitch link with my next application and got a call the same week. I genuinely think it's what made the difference.",
+    quote: "I'd been applying for four months and heard nothing back. I sent my LiftPitch link with my next application and got a call the same week. I genuinely think it's what made the difference.",
     name: "Marcus T.", role: "Software Engineer", outcome: "Landed 3 interviews in 2 weeks",
+    initials: "MT", avatarColor: "#0A66C2",
   },
   {
-    quote: "Job searching is brutal and I was losing confidence fast. Having a script that actually matched the job I wanted made me feel prepared for the first time. The video felt real — because it was me.",
+    quote: "Job searching destroyed my confidence. Having a script that actually matched the job I wanted made me feel prepared for the first time in months. The video felt real — because it was really me.",
     name: "Priya S.", role: "Product Manager", outcome: "Hired after 6-month search",
+    initials: "PS", avatarColor: "#E06847",
   },
   {
-    quote: "I'm not a natural at self-promotion. The AI script helped me figure out what to actually say, and recording it live meant I wasn't just reading — I was talking to them. Got the job.",
+    quote: "I'm terrible at self-promotion. The AI script helped me figure out what to actually say, and recording it live meant I wasn't just reading — I was talking to a real person. Got the job.",
     name: "Jordan L.", role: "UX Designer", outcome: "Got the role she almost didn't apply for",
+    initials: "JL", avatarColor: "#057642",
   },
 ];
 
 const steps = [
   {
     n: "1", emoji: "📄",
-    t: "Paste your resume & the job",
-    d: "No formatting needed — just paste the text of your resume and the job posting. Add a quick note about yourself. Takes about 2 minutes.",
+    color: "#E06847", colorLight: "rgba(224,104,71,0.1)", colorMid: "rgba(224,104,71,0.18)",
+    t: "Paste your resume & the job description",
+    d: "No formatting needed — just paste the text of your resume and the job posting, then add a quick paragraph about yourself. The whole thing takes about 2 minutes.",
   },
   {
     n: "2", emoji: "✨",
-    t: "Get a script written for you",
-    d: "AI reads both and writes a pitch that connects your real experience to what they're actually looking for. No generic fluff.",
+    color: "#0A66C2", colorLight: "rgba(10,102,194,0.08)", colorMid: "rgba(10,102,194,0.16)",
+    t: "Get a personalised script written for you",
+    d: "Our AI reads your resume and the job posting together, then writes a pitch that connects your real experience to what they're actually looking for. No generic fluff — just your story, told well.",
   },
   {
     n: "3", emoji: "🎥",
-    t: "Record once, share everywhere",
-    d: "Hit record, read your script on screen, and done. You get a verified link to drop in any application. Recruiters trust it because it's provably live.",
+    color: "#057642", colorLight: "rgba(5,118,66,0.08)", colorMid: "rgba(5,118,66,0.16)",
+    t: "Record once, attach to every application",
+    d: "Hit record, read your script on screen while the camera rolls, and you're done. You get a verified shareable link to drop into any application. Recruiters trust it because it's provably live.",
   },
 ];
 
@@ -159,60 +165,60 @@ function Landing({ onStart }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #FDF8F4 0%, #F5F7FA 60%, #EEF3FB 100%)",
+      background: "linear-gradient(180deg, #FEF9F6 0%, #F7F4F0 50%, #EEF3FB 100%)",
       display: "flex", flexDirection: "column", alignItems: "center",
       padding: "0 20px", position: "relative", overflow: "hidden",
       opacity: vis ? 1 : 0, transition: "opacity 0.9s",
     }}>
       {/* Warm ambient blobs */}
-      <div style={{ position: "absolute", top: "-10%", left: "-5%", width: 700, height: 700,
-        background: "radial-gradient(circle, rgba(224,104,71,0.07) 0%, transparent 65%)",
+      <div style={{ position: "absolute", top: "-8%", left: "-8%", width: 800, height: 800,
+        background: "radial-gradient(circle, rgba(224,104,71,0.08) 0%, transparent 60%)",
+        filter: "blur(100px)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: "25%", right: "-12%", width: 650, height: 650,
+        background: "radial-gradient(circle, rgba(10,102,194,0.07) 0%, transparent 60%)",
         filter: "blur(90px)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", top: "20%", right: "-10%", width: 600, height: 600,
-        background: "radial-gradient(circle, rgba(10,102,194,0.07) 0%, transparent 65%)",
-        filter: "blur(80px)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: "5%", left: "20%", width: 500, height: 500,
-        background: "radial-gradient(circle, rgba(231,163,62,0.06) 0%, transparent 65%)",
-        filter: "blur(80px)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: "8%", left: "15%", width: 550, height: 550,
+        background: "radial-gradient(circle, rgba(231,163,62,0.07) 0%, transparent 60%)",
+        filter: "blur(90px)", pointerEvents: "none" }} />
 
       {/* ── Hero ── */}
-      <div style={{ maxWidth: 720, width: "100%", textAlign: "center", paddingTop: "clamp(60px, 10vw, 120px)", paddingBottom: 20 }}>
+      <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: "clamp(72px, 11vw, 130px)", paddingBottom: 24 }}>
         <div style={{
-          display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 18px",
+          display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 20px",
           borderRadius: 100, background: "rgba(224,104,71,0.1)", border: "1px solid rgba(224,104,71,0.22)",
-          marginBottom: 28, fontSize: 13, color: "#C4552E",
+          marginBottom: 32, fontSize: 13, color: "#C4552E",
           fontFamily: "'Sora', sans-serif", fontWeight: 600, letterSpacing: "0.04em",
         }}>💛 For job seekers who deserve a fair shot</div>
 
         <h1 style={{
-          fontFamily: "'Sora', sans-serif", fontSize: "clamp(34px, 6.5vw, 68px)", fontWeight: 800,
-          lineHeight: 1.12, margin: "0 0 12px", color: B.text,
+          fontFamily: "'Sora', sans-serif", fontSize: "clamp(36px, 6.5vw, 70px)", fontWeight: 800,
+          lineHeight: 1.1, margin: "0 0 8px", color: B.text,
         }}>
-          Stop Getting Ignored.<br />
+          Time to stand out<br />
           <span style={{ background: B.gradientHot, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            Start Getting Noticed.
+            from the crowd.
           </span>
         </h1>
 
         <p style={{
           fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(17px, 2.4vw, 21px)", color: B.textMuted,
-          lineHeight: 1.75, margin: "20px auto 36px", maxWidth: 560,
+          lineHeight: 1.8, margin: "24px auto 40px", maxWidth: 580,
         }}>
-          Job searching is exhausting and demoralising — and a plain resume often isn't enough.
-          LiftPitch helps you record a short, genuine video pitch so recruiters finally see the real you.
+          Job searching is hard — and exhausting. You've sent dozens of applications and heard nothing back.
+          LiftPitch helps you show up as a real person, not just another resume in a pile.
         </p>
 
-        <Btn onClick={onStart} style={{ padding: "18px 52px", fontSize: 17, borderRadius: 14,
-          boxShadow: "0 6px 32px rgba(10,102,194,0.22)" }}>
+        <Btn onClick={onStart} style={{ padding: "18px 56px", fontSize: 17, borderRadius: 16,
+          boxShadow: "0 6px 28px rgba(10,102,194,0.2)" }}>
           Create My Free Pitch →
         </Btn>
 
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textDim, marginTop: 14 }}>
+        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textDim, marginTop: 16 }}>
           No account needed · Takes under 5 minutes · 100% free to start
         </p>
 
         {/* Feature pills */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 36 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 40 }}>
           {[
             { icon: "🛡️", label: "Live verified — no fakes" },
             { icon: "🎯", label: "Job-matched AI script" },
@@ -220,10 +226,10 @@ function Landing({ onStart }) {
             { icon: "📊", label: "See who watched" },
           ].map(f => (
             <div key={f.label} style={{
-              display: "flex", alignItems: "center", gap: 7, padding: "9px 18px",
-              borderRadius: 100, background: "rgba(255,255,255,0.85)",
+              display: "flex", alignItems: "center", gap: 8, padding: "10px 20px",
+              borderRadius: 100, background: "rgba(255,255,255,0.9)",
               border: "1px solid rgba(0,0,0,0.07)",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
               fontSize: 13.5, color: B.textMuted, fontFamily: "'DM Sans', sans-serif",
             }}><span>{f.icon}</span> {f.label}</div>
           ))}
@@ -231,114 +237,132 @@ function Landing({ onStart }) {
       </div>
 
       {/* ── Testimonials ── */}
-      <div style={{ maxWidth: 860, width: "100%", marginTop: "clamp(60px, 8vw, 100px)" }}>
-        <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, color: B.textDim, textAlign: "center",
-          letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 32 }}>
-          Real people, real outcomes
-        </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "center" }}>
+      <div style={{ maxWidth: 900, width: "100%", marginTop: "clamp(72px, 9vw, 112px)" }}>
+        <p style={{
+          fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
+          letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10,
+        }}>Real people, real outcomes</p>
+        <h2 style={{
+          fontFamily: "'Sora', sans-serif", fontSize: "clamp(20px, 3vw, 28px)", fontWeight: 700,
+          color: B.text, textAlign: "center", margin: "0 auto 40px", maxWidth: 460, lineHeight: 1.3,
+        }}>They were exactly where you are now.</h2>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 22, justifyContent: "center" }}>
           {testimonials.map((t, i) => (
             <div key={i} style={{
-              flex: "1 1 240px", maxWidth: 280,
+              flex: "1 1 250px", maxWidth: 286,
               background: "#FFFFFF",
-              border: "1px solid rgba(0,0,0,0.07)",
-              borderRadius: 20, padding: 28,
-              boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-              display: "flex", flexDirection: "column", gap: 16,
+              border: "1px solid rgba(0,0,0,0.06)",
+              borderRadius: 24, padding: "32px 28px",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+              display: "flex", flexDirection: "column", gap: 18,
             }}>
-              <div style={{ fontSize: 22, lineHeight: 1 }}>"</div>
-              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, color: B.text,
-                lineHeight: 1.75, margin: 0, flex: 1 }}>{t.quote}</p>
-              <div style={{ borderTop: "1px solid rgba(0,0,0,0.06)", paddingTop: 16 }}>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.text }}>{t.name}</div>
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim, marginTop: 2 }}>{t.role}</div>
-                <div style={{
-                  display: "inline-block", marginTop: 10, padding: "5px 12px", borderRadius: 8,
-                  background: "rgba(5,118,66,0.08)", border: "1px solid rgba(5,118,66,0.15)",
-                  fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, color: B.success,
-                  letterSpacing: "0.03em",
-                }}>✓ {t.outcome}</div>
+              {/* Stars */}
+              <div style={{ display: "flex", gap: 3 }}>
+                {[1,2,3,4,5].map(s => <span key={s} style={{ fontSize: 14, color: "#E7A33E" }}>★</span>)}
               </div>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, color: B.text,
+                lineHeight: 1.8, margin: 0, flex: 1 }}>"{t.quote}"</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: "1px solid rgba(0,0,0,0.05)", paddingTop: 18 }}>
+                <div style={{
+                  width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
+                  background: t.avatarColor, display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: "#fff",
+                }}>{t.initials}</div>
+                <div>
+                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.text }}>{t.name}</div>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim, marginTop: 1 }}>{t.role}</div>
+                </div>
+              </div>
+              <div style={{
+                padding: "8px 14px", borderRadius: 10,
+                background: "rgba(5,118,66,0.07)", border: "1px solid rgba(5,118,66,0.14)",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, fontWeight: 600, color: B.success,
+              }}>✓ {t.outcome}</div>
             </div>
           ))}
         </div>
       </div>
 
       {/* ── How It Works ── */}
-      <div style={{ maxWidth: 860, width: "100%", marginTop: "clamp(70px, 9vw, 110px)" }}>
-        <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, color: B.textDim, textAlign: "center",
-          letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 12 }}>How it works</p>
-        <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: "clamp(22px, 3.5vw, 34px)", fontWeight: 800,
-          color: B.text, textAlign: "center", margin: "0 auto 44px", maxWidth: 500, lineHeight: 1.25 }}>
-          Three steps from invisible to unforgettable
+      <div style={{ maxWidth: 900, width: "100%", marginTop: "clamp(80px, 10vw, 124px)" }}>
+        <p style={{
+          fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
+          letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10,
+        }}>How it works</p>
+        <h2 style={{
+          fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800,
+          color: B.text, textAlign: "center", margin: "0 auto 52px", maxWidth: 520, lineHeight: 1.22,
+        }}>
+          Three steps from invisible<br />to unforgettable
         </h2>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "center" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, justifyContent: "center" }}>
           {steps.map((s, i) => (
             <div key={s.n} style={{
-              flex: "1 1 240px", maxWidth: 268,
+              flex: "1 1 250px", maxWidth: 278,
               background: "#FFFFFF",
-              border: "1px solid rgba(0,0,0,0.07)",
-              borderRadius: 22, padding: "32px 28px",
-              boxShadow: "0 4px 28px rgba(0,0,0,0.05)",
+              border: `1.5px solid ${s.colorMid}`,
+              borderRadius: 24, padding: "36px 30px",
+              boxShadow: `0 6px 28px rgba(0,0,0,0.05)`,
               position: "relative", overflow: "hidden",
             }}>
-              {/* large ghost number */}
+              {/* Colored step number badge */}
               <div style={{
-                position: "absolute", top: -12, right: 16,
-                fontFamily: "'Sora', sans-serif", fontSize: 90, fontWeight: 900,
-                background: i === 0 ? "rgba(224,104,71,0.07)"
-                  : i === 1 ? "rgba(10,102,194,0.07)"
-                  : "rgba(231,163,62,0.09)",
-                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-                lineHeight: 1, userSelect: "none", pointerEvents: "none",
-              }}>{s.n}</div>
-              <div style={{ fontSize: 36, marginBottom: 16 }}>{s.emoji}</div>
+                display: "inline-flex", alignItems: "center", justifyContent: "center",
+                width: 48, height: 48, borderRadius: 14,
+                background: s.colorLight, marginBottom: 20,
+              }}>
+                <span style={{
+                  fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 900, color: s.color,
+                  lineHeight: 1,
+                }}>{s.n}</span>
+              </div>
+              <div style={{ fontSize: 34, marginBottom: 14 }}>{s.emoji}</div>
               <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 700,
-                color: B.text, marginBottom: 10, lineHeight: 1.3 }}>{s.t}</div>
+                color: B.text, marginBottom: 12, lineHeight: 1.35 }}>{s.t}</div>
               <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, color: B.textMuted,
-                lineHeight: 1.75 }}>{s.d}</div>
+                lineHeight: 1.8 }}>{s.d}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── You've Got This ── */}
+      {/* ── Let's Get Started ── */}
       <div style={{
-        maxWidth: 680, width: "100%",
-        margin: "clamp(70px, 9vw, 110px) auto clamp(60px, 8vw, 100px)",
-        borderRadius: 28, overflow: "hidden",
-        boxShadow: "0 12px 60px rgba(10,102,194,0.14)",
+        maxWidth: 700, width: "100%",
+        margin: "clamp(80px, 10vw, 124px) auto clamp(72px, 9vw, 112px)",
+        borderRadius: 32, overflow: "hidden",
+        boxShadow: "0 16px 56px rgba(224,104,71,0.18)",
       }}>
-        <div style={{ background: B.gradientHot, padding: "48px 40px", textAlign: "center" }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🤝</div>
+        <div style={{ background: B.gradientHot, padding: "56px 44px", textAlign: "center" }}>
+          <div style={{ fontSize: 52, marginBottom: 20 }}>🚀</div>
           <h2 style={{
-            fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 4vw, 38px)", fontWeight: 800,
-            color: "#fff", margin: "0 0 16px", lineHeight: 1.2,
-          }}>You've got this.</h2>
+            fontFamily: "'Sora', sans-serif", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 800,
+            color: "#fff", margin: "0 0 18px", lineHeight: 1.18,
+          }}>Let's get started.</h2>
           <p style={{
-            fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(15px, 2vw, 18px)",
-            color: "rgba(255,255,255,0.88)", lineHeight: 1.7, margin: "0 auto 32px", maxWidth: 480,
+            fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(15px, 2vw, 19px)",
+            color: "rgba(255,255,255,0.9)", lineHeight: 1.75, margin: "0 auto 36px", maxWidth: 500,
           }}>
-            Every hiring manager was once on your side of the table.
-            A 60-second honest video does more than a hundred cold applications.
-            Let's make yours.
+            You've already done the hardest part — putting yourself out there.
+            Let us help you make sure the right people actually see you.
+            Your next interview is closer than you think.
           </p>
           <button onClick={onStart} style={{
-            display: "inline-block", padding: "17px 48px", borderRadius: 14,
+            display: "inline-block", padding: "18px 52px", borderRadius: 16,
             background: "#fff", color: "#C4552E",
-            fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 800,
+            fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 800,
             border: "none", cursor: "pointer",
             boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
             transition: "transform 0.2s, box-shadow 0.2s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(0,0,0,0.18)"; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 10px 36px rgba(0,0,0,0.2)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.15)"; }}
           >
             Create My Free Pitch →
           </button>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13,
-            color: "rgba(255,255,255,0.65)", marginTop: 14 }}>
-            Free · No account · 5 minutes
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5,
+            color: "rgba(255,255,255,0.65)", marginTop: 16 }}>
+            Free · No account needed · Done in 5 minutes
           </p>
         </div>
       </div>
