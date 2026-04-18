@@ -129,7 +129,7 @@ const steps = [
   {
     n: "2", emoji: "✨",
     color: "#0A66C2", colorLight: "rgba(10,102,194,0.08)", colorMid: "rgba(10,102,194,0.16)",
-    t: "Get a personalised script written for you",
+    t: "Get a personalized script written for you",
     d: "Our AI reads your resume and the job posting together, then writes a pitch that connects your real experience to what they're actually looking for. No generic fluff — just your story, told well.",
   },
   {
@@ -163,61 +163,42 @@ function Landing({ onStart }) {
         background: "radial-gradient(circle, rgba(231,163,62,0.07) 0%, transparent 60%)",
         filter: "blur(90px)", pointerEvents: "none" }} />
 
-      {/* ── Hero ── */}
-      <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: "clamp(72px, 11vw, 130px)", paddingBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 36 }}>
-          <svg width="400" height="147" viewBox="0 0 600 220" role="img" xmlns="http://www.w3.org/2000/svg" style={{ maxWidth: "100%" }}>
-            <title>LiftPitch logo</title>
-            <desc>LiftPitch horizontal logo with elevator shaft icon and wordmark</desc>
-            <rect x="55" y="35" width="40" height="130" rx="7" fill="none" stroke="#0A66C2" strokeWidth="2"/>
-            <line x1="64" y1="36" x2="64" y2="164" stroke="#0A66C2" strokeWidth="0.8" strokeDasharray="5,5"/>
-            <line x1="87" y1="36" x2="87" y2="164" stroke="#0A66C2" strokeWidth="0.8" strokeDasharray="5,5"/>
-            <rect x="56" y="38" width="38" height="30" rx="5" fill="#0A66C2"/>
-            <line x1="75" y1="42" x2="75" y2="66" stroke="white" strokeWidth="2" opacity="0.45"/>
-            <circle cx="71" cy="55" r="2.5" fill="white" opacity="0.65"/>
-            <circle cx="79" cy="55" r="2.5" fill="white" opacity="0.65"/>
-            <line x1="64" y1="76" x2="87" y2="76" stroke="#0A66C2" strokeWidth="1.5" strokeLinecap="round" opacity="0.12"/>
-            <line x1="67" y1="86" x2="84" y2="86" stroke="#0A66C2" strokeWidth="1" strokeLinecap="round" opacity="0.07"/>
-            <circle cx="104" cy="48" r="4" fill="#0A66C2"/>
-            <circle cx="104" cy="75" r="4" fill="#0A66C2" opacity="0.28"/>
-            <circle cx="104" cy="102" r="4" fill="#0A66C2" opacity="0.14"/>
-            <circle cx="104" cy="129" r="4" fill="#0A66C2" opacity="0.07"/>
-            <circle cx="104" cy="156" r="4" fill="#0A66C2" opacity="0.04"/>
-            <path d="M66 29 L75 19 L84 29" fill="none" stroke="#0A66C2" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-            <text x="132" y="115" fontFamily="'Sora','Segoe UI',system-ui,sans-serif" fontSize="58" fontWeight="700" letterSpacing="-2" fill="#1A1A2E">Lift<tspan fill="#0A66C2">Pitch</tspan></text>
-            <text x="134" y="149" fontFamily="'DM Sans','Segoe UI',system-ui,sans-serif" fontSize="15" fontWeight="400" letterSpacing="0.5" fill="#56687A">Let them meet you before they meet you.</text>
-          </svg>
-        </div>
+      {/* ── Hero Illustration ── */}
+      <div
+        id="hero-illustration"
+        role="img"
+        aria-label="LiftPitch — candidate records their pitch while recruiter watches live."
+        style={{
+          maxWidth: 1100, width: "100%",
+          marginTop: "clamp(72px, 11vw, 130px)",
+          aspectRatio: "16/9",
+          borderRadius: 20,
+          background: "#E2E8F0",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+        }}
+      />
 
+      {/* ── Hero ── */}
+      <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: 48, paddingBottom: 24 }}>
         <h1 style={{
           fontFamily: "'Sora', sans-serif", fontSize: "clamp(36px, 6.5vw, 70px)", fontWeight: 800,
           lineHeight: 1.1, margin: "0 0 8px", color: B.text,
         }}>
-          Time to stand out<br />
+          You're More Than{" "}
           <span style={{ background: B.gradientHot, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            from the crowd.
+            a PDF.
           </span>
         </h1>
 
         <p style={{
           fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(17px, 2.4vw, 21px)", color: B.textMuted,
-          lineHeight: 1.8, margin: "24px auto 40px", maxWidth: 580,
+          lineHeight: 1.8, margin: "24px auto 32px", maxWidth: 580,
         }}>
-          Job searching is hard — and exhausting. You've sent dozens of applications and heard nothing back.
-          LiftPitch helps you show up as a real person — and make it impossible for recruiters to miss why you're the right fit.
-        </p>
-
-        <Btn onClick={onStart} style={{ padding: "18px 56px", fontSize: 17, borderRadius: 16,
-          boxShadow: "0 6px 28px rgba(10,102,194,0.2)" }}>
-          Create My Free Pitch →
-        </Btn>
-
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textDim, marginTop: 16 }}>
-          No account needed · Takes under 5 minutes · 100% free to start
+          LiftPitch lets you record a verified 60-second video pitch and share it right from your resume. Let them meet you before the interview.
         </p>
 
         {/* Feature pills */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginTop: 40 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 32 }}>
           {[
             { icon: "🛡️", label: "Live verified — no fakes" },
             { icon: "🎯", label: "Job-matched AI script" },
@@ -233,6 +214,15 @@ function Landing({ onStart }) {
             }}><span>{f.icon}</span> {f.label}</div>
           ))}
         </div>
+
+        <Btn onClick={onStart} style={{ padding: "18px 56px", fontSize: 17, borderRadius: 16,
+          boxShadow: "0 6px 28px rgba(10,102,194,0.2)" }}>
+          Create My Free Pitch →
+        </Btn>
+
+        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textDim, marginTop: 16 }}>
+          No account needed · Takes under 5 minutes · 100% free to start
+        </p>
       </div>
 
       {/* ── See It In Action ── */}
