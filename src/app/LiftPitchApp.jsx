@@ -147,7 +147,7 @@ function Landing({ onStart }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #FEF9F6 0%, #F7F4F0 50%, #EEF3FB 100%)",
+      background: "#F5F7FA",
       display: "flex", flexDirection: "column", alignItems: "center",
       padding: "0 20px", position: "relative", overflow: "hidden",
       opacity: vis ? 1 : 0, transition: "opacity 0.9s",
@@ -169,7 +169,6 @@ function Landing({ onStart }) {
           <svg width="400" height="147" viewBox="0 0 600 220" role="img" xmlns="http://www.w3.org/2000/svg" style={{ maxWidth: "100%" }}>
             <title>LiftPitch logo</title>
             <desc>LiftPitch horizontal logo with elevator shaft icon and wordmark</desc>
-            <rect x="0" y="0" width="600" height="220" rx="20" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1"/>
             <rect x="55" y="35" width="40" height="130" rx="7" fill="none" stroke="#0A66C2" strokeWidth="2"/>
             <line x1="64" y1="36" x2="64" y2="164" stroke="#0A66C2" strokeWidth="0.8" strokeDasharray="5,5"/>
             <line x1="87" y1="36" x2="87" y2="164" stroke="#0A66C2" strokeWidth="0.8" strokeDasharray="5,5"/>
@@ -186,7 +185,7 @@ function Landing({ onStart }) {
             <circle cx="104" cy="156" r="4" fill="#0A66C2" opacity="0.04"/>
             <path d="M66 29 L75 19 L84 29" fill="none" stroke="#0A66C2" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
             <text x="132" y="115" fontFamily="'Sora','Segoe UI',system-ui,sans-serif" fontSize="58" fontWeight="700" letterSpacing="-2" fill="#1A1A2E">Lift<tspan fill="#0A66C2">Pitch</tspan></text>
-            <text x="134" y="149" fontFamily="'DM Sans','Segoe UI',system-ui,sans-serif" fontSize="15" fontWeight="400" letterSpacing="0.5" fill="#56687A">Your verified video pitch — stand out, rise up</text>
+            <text x="134" y="149" fontFamily="'DM Sans','Segoe UI',system-ui,sans-serif" fontSize="15" fontWeight="400" letterSpacing="0.5" fill="#56687A">Let them meet you before they meet you.</text>
           </svg>
         </div>
 
@@ -205,7 +204,7 @@ function Landing({ onStart }) {
           lineHeight: 1.8, margin: "24px auto 40px", maxWidth: 580,
         }}>
           Job searching is hard — and exhausting. You've sent dozens of applications and heard nothing back.
-          LiftPitch helps you show up as a real person, not just another resume in a pile.
+          LiftPitch helps you show up as a real person — and make it impossible for recruiters to miss why you're the right fit.
         </p>
 
         <Btn onClick={onStart} style={{ padding: "18px 56px", fontSize: 17, borderRadius: 16,
