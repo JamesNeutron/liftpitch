@@ -119,24 +119,6 @@ function useTimer(max) {
 
 // ─── Landing Page ───
 
-const testimonials = [
-  {
-    quote: "I'd been applying for four months and heard nothing back. I sent my LiftPitch link with my next application and got a call the same week. I genuinely think it's what made the difference.",
-    name: "Marcus T.", role: "Software Engineer", outcome: "Landed 3 interviews in 2 weeks",
-    initials: "MT", avatarColor: "#0A66C2",
-  },
-  {
-    quote: "Job searching destroyed my confidence. Having a script that actually matched the job I wanted made me feel prepared for the first time in months. The video felt real — because it was really me.",
-    name: "Priya S.", role: "Product Manager", outcome: "Hired after 6-month search",
-    initials: "PS", avatarColor: "#E06847",
-  },
-  {
-    quote: "I'm terrible at self-promotion. The AI script helped me figure out what to actually say, and recording it live meant I wasn't just reading — I was talking to a real person. Got the job.",
-    name: "Jordan L.", role: "UX Designer", outcome: "Got the role she almost didn't apply for",
-    initials: "JL", avatarColor: "#057642",
-  },
-];
-
 const steps = [
   {
     n: "1", emoji: "📄",
@@ -236,50 +218,101 @@ function Landing({ onStart }) {
         </div>
       </div>
 
-      {/* ── Testimonials ── */}
-      <div style={{ maxWidth: 900, width: "100%", marginTop: "clamp(72px, 9vw, 112px)" }}>
+      {/* ── See It In Action ── */}
+      <div style={{ maxWidth: 700, width: "100%", marginTop: "clamp(72px, 9vw, 112px)", textAlign: "center" }}>
         <p style={{
           fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
           letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10,
-        }}>Real people, real outcomes</p>
+        }}>See it in action</p>
         <h2 style={{
-          fontFamily: "'Sora', sans-serif", fontSize: "clamp(20px, 3vw, 28px)", fontWeight: 700,
-          color: B.text, textAlign: "center", margin: "0 auto 40px", maxWidth: 460, lineHeight: 1.3,
-        }}>They were exactly where you are now.</h2>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 22, justifyContent: "center" }}>
-          {testimonials.map((t, i) => (
-            <div key={i} style={{
-              flex: "1 1 250px", maxWidth: 286,
-              background: "#FFFFFF",
-              border: "1px solid rgba(0,0,0,0.06)",
-              borderRadius: 24, padding: "32px 28px",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-              display: "flex", flexDirection: "column", gap: 18,
+          fontFamily: "'Sora', sans-serif", fontSize: "clamp(22px, 3.2vw, 32px)", fontWeight: 800,
+          color: B.text, textAlign: "center", margin: "0 auto 12px", maxWidth: 480, lineHeight: 1.25,
+        }}>See What Standing Out Looks Like</h2>
+        <p style={{
+          fontFamily: "'DM Sans', sans-serif", fontSize: 16, color: B.textMuted,
+          margin: "0 auto 36px", lineHeight: 1.6,
+        }}>A real LiftPitch — recorded live, verified instantly.</p>
+
+        {/* Video player mock */}
+        <div style={{
+          position: "relative", width: "100%", maxWidth: 640, margin: "0 auto",
+          aspectRatio: "16/9", borderRadius: 20, overflow: "hidden",
+          background: "linear-gradient(160deg, #1A1F2E 0%, #0D1117 100%)",
+          boxShadow: "0 12px 48px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06)",
+        }}>
+          {/* Subtle scanline texture */}
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.015) 3px, rgba(255,255,255,0.015) 4px)",
+            pointerEvents: "none",
+          }} />
+
+          {/* Verified badge top-right */}
+          <div style={{
+            position: "absolute", top: 14, right: 14, zIndex: 2,
+            display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px",
+            borderRadius: 100, background: "rgba(5,118,66,0.85)", backdropFilter: "blur(8px)",
+            border: "1px solid rgba(5,118,66,0.5)",
+          }}>
+            <svg width={11} height={11} viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L14.09 4.26L17 3.29L17.97 6.2L21 6.58L20.42 9.58L23 11.36L21.18 13.84L22.56 16.58L19.82 17.66L19.56 20.66L16.56 20.42L14.78 23L12 21.82L9.22 23L7.44 20.42L4.44 20.66L4.18 17.66L1.44 16.58L2.82 13.84L1 11.36L3.58 9.58L3 6.58L6.03 6.2L7 3.29L9.91 4.26L12 2Z" fill="white"/>
+              <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 700, color: "#fff", letterSpacing: "0.06em" }}>LIVE VERIFIED</span>
+          </div>
+
+          {/* Play button */}
+          <div style={{
+            position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+            alignItems: "center", justifyContent: "center", gap: 18,
+          }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: "50%",
+              background: "rgba(255,255,255,0.12)", backdropFilter: "blur(8px)",
+              border: "1.5px solid rgba(255,255,255,0.2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
             }}>
-              {/* Stars */}
-              <div style={{ display: "flex", gap: 3 }}>
-                {[1,2,3,4,5].map(s => <span key={s} style={{ fontSize: 14, color: "#E7A33E" }}>★</span>)}
-              </div>
-              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, color: B.text,
-                lineHeight: 1.8, margin: 0, flex: 1 }}>"{t.quote}"</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, borderTop: "1px solid rgba(0,0,0,0.05)", paddingTop: 18 }}>
-                <div style={{
-                  width: 40, height: 40, borderRadius: "50%", flexShrink: 0,
-                  background: t.avatarColor, display: "flex", alignItems: "center", justifyContent: "center",
-                  fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: "#fff",
-                }}>{t.initials}</div>
-                <div>
-                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.text }}>{t.name}</div>
-                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim, marginTop: 1 }}>{t.role}</div>
-                </div>
-              </div>
-              <div style={{
-                padding: "8px 14px", borderRadius: 10,
-                background: "rgba(5,118,66,0.07)", border: "1px solid rgba(5,118,66,0.14)",
-                fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, fontWeight: 600, color: B.success,
-              }}>✓ {t.outcome}</div>
+              {/* Triangle play icon */}
+              <svg width={26} height={26} viewBox="0 0 24 24" fill="none" style={{ marginLeft: 4 }}>
+                <path d="M6 4.5L20 12L6 19.5V4.5Z" fill="rgba(255,255,255,0.9)"/>
+              </svg>
             </div>
-          ))}
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: "rgba(255,255,255,0.45)",
+              letterSpacing: "0.02em",
+            }}>Example video coming soon</span>
+          </div>
+
+          {/* Progress bar mock at bottom */}
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px 16px",
+            background: "linear-gradient(to top, rgba(0,0,0,0.6), transparent)" }}>
+            <div style={{ height: 3, borderRadius: 2, background: "rgba(255,255,255,0.15)" }}>
+              <div style={{ width: "38%", height: "100%", borderRadius: 2,
+                background: "linear-gradient(90deg, #378FE9, #70B5F9)" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>0:22</span>
+              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11, color: "rgba(255,255,255,0.4)" }}>1:00</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Caption row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 20 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px",
+            borderRadius: 100, background: "rgba(5,118,66,0.08)", border: "1px solid rgba(5,118,66,0.18)",
+          }}>
+            <svg width={11} height={11} viewBox="0 0 24 24" fill="none">
+              <path d="M12 2L14.09 4.26L17 3.29L17.97 6.2L21 6.58L20.42 9.58L23 11.36L21.18 13.84L22.56 16.58L19.82 17.66L19.56 20.66L16.56 20.42L14.78 23L12 21.82L9.22 23L7.44 20.42L4.44 20.66L4.18 17.66L1.44 16.58L2.82 13.84L1 11.36L3.58 9.58L3 6.58L6.03 6.2L7 3.29L9.91 4.26L12 2Z" fill="#057642"/>
+              <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 700, color: B.success, letterSpacing: "0.07em", textTransform: "uppercase" }}>Live Verified</span>
+          </div>
+          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textMuted, lineHeight: 1.5 }}>
+            Every LiftPitch comes with a live verification certificate recruiters can trust.
+          </span>
         </div>
       </div>
 
