@@ -165,12 +165,30 @@ function Landing({ onStart }) {
 
       {/* ── Hero ── */}
       <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: "clamp(72px, 11vw, 130px)", paddingBottom: 24 }}>
-        <div style={{
-          display: "inline-flex", alignItems: "center", gap: 8, padding: "9px 20px",
-          borderRadius: 100, background: "rgba(224,104,71,0.1)", border: "1px solid rgba(224,104,71,0.22)",
-          marginBottom: 32, fontSize: 13, color: "#C4552E",
-          fontFamily: "'Sora', sans-serif", fontWeight: 600, letterSpacing: "0.04em",
-        }}>💛 For job seekers who deserve a fair shot</div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 36 }}>
+          <svg width="400" height="147" viewBox="0 0 600 220" role="img" xmlns="http://www.w3.org/2000/svg" style={{ maxWidth: "100%" }}>
+            <title>LiftPitch logo</title>
+            <desc>LiftPitch horizontal logo with elevator shaft icon and wordmark</desc>
+            <rect x="0" y="0" width="600" height="220" rx="20" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1"/>
+            <rect x="55" y="35" width="40" height="130" rx="7" fill="none" stroke="#0A66C2" strokeWidth="2"/>
+            <line x1="64" y1="36" x2="64" y2="164" stroke="#0A66C2" strokeWidth="0.8" strokeDasharray="5,5"/>
+            <line x1="87" y1="36" x2="87" y2="164" stroke="#0A66C2" strokeWidth="0.8" strokeDasharray="5,5"/>
+            <rect x="56" y="38" width="38" height="30" rx="5" fill="#0A66C2"/>
+            <line x1="75" y1="42" x2="75" y2="66" stroke="white" strokeWidth="2" opacity="0.45"/>
+            <circle cx="71" cy="55" r="2.5" fill="white" opacity="0.65"/>
+            <circle cx="79" cy="55" r="2.5" fill="white" opacity="0.65"/>
+            <line x1="64" y1="76" x2="87" y2="76" stroke="#0A66C2" strokeWidth="1.5" strokeLinecap="round" opacity="0.12"/>
+            <line x1="67" y1="86" x2="84" y2="86" stroke="#0A66C2" strokeWidth="1" strokeLinecap="round" opacity="0.07"/>
+            <circle cx="104" cy="48" r="4" fill="#0A66C2"/>
+            <circle cx="104" cy="75" r="4" fill="#0A66C2" opacity="0.28"/>
+            <circle cx="104" cy="102" r="4" fill="#0A66C2" opacity="0.14"/>
+            <circle cx="104" cy="129" r="4" fill="#0A66C2" opacity="0.07"/>
+            <circle cx="104" cy="156" r="4" fill="#0A66C2" opacity="0.04"/>
+            <path d="M66 29 L75 19 L84 29" fill="none" stroke="#0A66C2" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+            <text x="132" y="115" fontFamily="'Sora','Segoe UI',system-ui,sans-serif" fontSize="58" fontWeight="700" letterSpacing="-2" fill="#1A1A2E">Lift<tspan fill="#0A66C2">Pitch</tspan></text>
+            <text x="134" y="149" fontFamily="'DM Sans','Segoe UI',system-ui,sans-serif" fontSize="15" fontWeight="400" letterSpacing="0.5" fill="#56687A">Your verified video pitch — stand out, rise up</text>
+          </svg>
+        </div>
 
         <h1 style={{
           fontFamily: "'Sora', sans-serif", fontSize: "clamp(36px, 6.5vw, 70px)", fontWeight: 800,
