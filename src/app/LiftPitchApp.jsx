@@ -182,12 +182,10 @@ function Landing({ onStart }) {
       <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: 48, paddingBottom: 24 }}>
         <h1 style={{
           fontFamily: "'Sora', sans-serif", fontSize: "clamp(36px, 6.5vw, 70px)", fontWeight: 800,
-          lineHeight: 1.1, margin: "0 0 8px", color: B.text,
+          lineHeight: 1.1, margin: "0 0 8px",
+          background: B.gradientHot, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
         }}>
-          You're More Than{" "}
-          <span style={{ background: B.gradientHot, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            a PDF.
-          </span>
+          You're More Than a PDF.
         </h1>
 
         <p style={{
@@ -198,7 +196,7 @@ function Landing({ onStart }) {
         </p>
 
         {/* Feature pills */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center", marginBottom: 32 }}>
+        <div className="feature-pills" style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 32 }}>
           {[
             { icon: "🛡️", label: "Live verified — no fakes" },
             { icon: "🎯", label: "Job-matched AI script" },
