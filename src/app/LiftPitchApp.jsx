@@ -364,6 +364,175 @@ function Landing({ onStart }) {
         </div>
       </div>
 
+      {/* ── Pricing ── */}
+      <div style={{ maxWidth: 980, width: "100%", marginTop: "clamp(80px, 10vw, 124px)" }}>
+        <p style={{
+          fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
+          letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10,
+        }}>Pricing</p>
+        <h2 style={{
+          fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800,
+          color: B.text, textAlign: "center", margin: "0 auto 10px", lineHeight: 1.22,
+        }}>Simple Pricing. No Surprises.</h2>
+        <p style={{
+          fontFamily: "'DM Sans', sans-serif", fontSize: 17, color: B.textMuted,
+          textAlign: "center", margin: "0 auto 48px", lineHeight: 1.6,
+        }}>Start free. Upgrade when you're ready.</p>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, justifyContent: "center", alignItems: "stretch" }}>
+
+          {/* Free Card */}
+          <div style={{
+            flex: "1 1 280px", maxWidth: 300,
+            background: "#FFFFFF", border: `1px solid ${B.border}`,
+            borderRadius: 20, padding: 32,
+            boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+            display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.textMuted,
+              textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Free</div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 6 }}>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 52, fontWeight: 800, color: B.text, lineHeight: 1 }}>$0</span>
+            </div>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, marginBottom: 28 }}>
+              No credit card needed
+            </div>
+            <button style={{
+              width: "100%", padding: "14px 0", borderRadius: 12,
+              background: "#FFFFFF", color: B.text,
+              border: `1.5px solid ${B.border}`,
+              fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
+              cursor: "pointer", marginBottom: 28,
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = B.accent; e.currentTarget.style.color = B.accent; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.color = B.text; }}
+            >Get Started Free</button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+              {[
+                "1 AI script with match analysis",
+                "1 live-verified video pitch",
+                "1 shareable link",
+                "LiftPitch watermark on video",
+              ].map(f => (
+                <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <span style={{ color: B.success, fontWeight: 700, fontSize: 15, lineHeight: 1.4, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, lineHeight: 1.5 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Pro Monthly Card — Most Popular */}
+          <div style={{
+            flex: "1 1 280px", maxWidth: 300,
+            background: "linear-gradient(160deg, #0A66C2 0%, #1a7fd4 60%, #378FE9 100%)",
+            borderRadius: 20, padding: 32,
+            boxShadow: "0 12px 48px rgba(10,102,194,0.35), 0 2px 8px rgba(0,0,0,0.1)",
+            display: "flex", flexDirection: "column",
+            position: "relative",
+          }}>
+            {/* Most Popular badge */}
+            <div style={{
+              position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)",
+              background: "linear-gradient(135deg, #E06847, #e87d5a)",
+              color: "#fff", padding: "5px 18px", borderRadius: 100,
+              fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700,
+              letterSpacing: "0.08em", textTransform: "uppercase",
+              boxShadow: "0 4px 16px rgba(224,104,71,0.4)",
+              whiteSpace: "nowrap",
+            }}>Most Popular</div>
+
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.75)",
+              textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Pro</div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 6 }}>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 52, fontWeight: 800, color: "#fff", lineHeight: 1 }}>$8</span>
+            </div>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.75)", marginBottom: 28 }}>
+              per month, cancel anytime
+            </div>
+            <button style={{
+              width: "100%", padding: "14px 0", borderRadius: 12,
+              background: "#E06847", color: "#fff", border: "none",
+              fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 700,
+              cursor: "pointer", marginBottom: 28,
+              boxShadow: "0 4px 20px rgba(224,104,71,0.4)",
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(224,104,71,0.5)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 20px rgba(224,104,71,0.4)"; }}
+            >Start Pro — $8/mo</button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+              {[
+                "Unlimited unique video pitches",
+                "Unlimited role-specific scripts",
+                "No watermark",
+                "Full view analytics",
+                "See who watched and for how long",
+                "Custom link page",
+              ].map(f => (
+                <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <span style={{ color: "rgba(255,255,255,0.9)", fontWeight: 700, fontSize: 15, lineHeight: 1.4, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: "rgba(255,255,255,0.9)", lineHeight: 1.5 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Lifetime Card */}
+          <div style={{
+            flex: "1 1 280px", maxWidth: 300,
+            background: "#FFFFFF", border: `1px solid ${B.border}`,
+            borderRadius: 20, padding: 32,
+            boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+            display: "flex", flexDirection: "column",
+          }}>
+            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.textMuted,
+              textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 16 }}>Lifetime</div>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 6 }}>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 52, fontWeight: 800, color: B.text, lineHeight: 1 }}>$35</span>
+            </div>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, marginBottom: 6 }}>
+              one time, yours forever
+            </div>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#E06847", fontWeight: 600, marginBottom: 22 }}>
+              Best value — pays for itself in 5 months
+            </div>
+            <button style={{
+              width: "100%", padding: "14px 0", borderRadius: 12,
+              background: B.gradient, color: "#fff", border: "none",
+              fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
+              cursor: "pointer", marginBottom: 28,
+              boxShadow: `0 4px 20px ${B.accentGlow}`,
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(10,102,194,0.3)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 4px 20px ${B.accentGlow}`; }}
+            >Get Lifetime Access</button>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
+              {[
+                "Everything in Pro",
+                "Never pay again",
+                "Priority support",
+                "All future features included",
+              ].map(f => (
+                <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <span style={{ color: B.success, fontWeight: 700, fontSize: 15, lineHeight: 1.4, flexShrink: 0 }}>✓</span>
+                  <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, lineHeight: 1.5 }}>{f}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* Trust line */}
+        <p style={{
+          fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textDim,
+          textAlign: "center", marginTop: 28,
+        }}>🔒 Secure payments · Cancel anytime · Instant access</p>
+      </div>
+
       {/* ── Let's Get Started ── */}
       <div style={{
         maxWidth: 700, width: "100%",
