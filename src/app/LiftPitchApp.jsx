@@ -661,14 +661,6 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
         <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 700, color: B.text, margin: 0 }}>Script Generator</h2>
         {!isPaid && <PillBadge label="1 Free Use" color={B.warning} />}
         {isPaid && <PillBadge label="Unlimited" color={B.success} />}
-        {scriptUsed && !isPaid && (
-          <button onClick={onResetScript} style={{
-            marginLeft: "auto", padding: "4px 10px", borderRadius: 6, fontSize: 10,
-            fontFamily: "'Sora', sans-serif", fontWeight: 600, cursor: "pointer",
-            background: "rgba(150,150,150,0.1)", border: "1px solid rgba(150,150,150,0.25)",
-            color: B.textMuted,
-          }}>Reset (dev only)</button>
-        )}
       </div>
 
       <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, lineHeight: 1.6, marginBottom: 24 }}>
@@ -689,7 +681,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
             Upgrade to generate unlimited scripts for every job you apply to.
           </p>
           <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-            Upgrade — $5/mo or $29 lifetime
+            Upgrade — $8/mo or $35 lifetime
           </Btn>
         </div>
       )}
@@ -786,6 +778,14 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
                 : `linear-gradient(90deg, #E06847, #E7A33E)`,
               transition: "width 1s ease" }} />
           </div>
+          {analysis.matchScore < 70 && (
+            <div style={{ padding: "14px 16px", borderRadius: 12, marginBottom: 20,
+              background: "rgba(231,163,62,0.06)", border: "1px solid rgba(231,163,62,0.15)" }}>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: 0, lineHeight: 1.7 }}>
+                💛 You may not be a perfect match on paper — but here's how to frame your experience to still stand out. Focus on the transferable strengths below and let your personality shine through in your video.
+              </p>
+            </div>
+          )}
           {analysis.strongMatches?.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, color: B.success,
@@ -873,7 +873,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
 
 // ─── Video Recorder (Live-Only Verified) ───
 
-function VideoRecorder({ onVideoRecorded, script }) {
+function VideoRecorder({ onVideoRecorded, script, isPaid }) {
   const videoRef = useRef(null);
   const mrRef = useRef(null);
   const chunksRef = useRef([]);
@@ -886,6 +886,7 @@ function VideoRecorder({ onVideoRecorded, script }) {
   const [countdown, setCountdown] = useState(0);
   const [verification, setVerification] = useState(null);
   const [cameraError, setCameraError] = useState(null);
+  const [blurBg, setBlurBg] = useState(false);
   const timer = useTimer(maxDur);
 
   const genVerify = () => {
@@ -964,15 +965,30 @@ function VideoRecorder({ onVideoRecorded, script }) {
 
       {state === "idle" && (
         <div style={{ marginBottom: 20 }}>
-          <FieldLabel icon="⏱">Max Duration</FieldLabel>
-          <div style={{ display: "flex", gap: 8 }}>
-            {[30, 45, 60].map(d => (
-              <button key={d} onClick={() => setMaxDur(d)} style={{
-                padding: "8px 20px", borderRadius: 8, background: maxDur === d ? B.accent : B.surface,
-                color: maxDur === d ? "#fff" : B.textMuted, border: `1px solid ${maxDur === d ? B.accent : B.border}`,
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 24, flexWrap: "wrap" }}>
+            <div>
+              <FieldLabel icon="⏱">Max Duration</FieldLabel>
+              <div style={{ display: "flex", gap: 8 }}>
+                {[30, 45, 60].map(d => (
+                  <button key={d} onClick={() => setMaxDur(d)} style={{
+                    padding: "8px 20px", borderRadius: 8, background: maxDur === d ? B.accent : B.surface,
+                    color: maxDur === d ? "#fff" : B.textMuted, border: `1px solid ${maxDur === d ? B.accent : B.border}`,
+                    fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  }}>{d}s</button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <FieldLabel icon="🌫️">Blur Background</FieldLabel>
+              <button onClick={() => setBlurBg(b => !b)} style={{
+                padding: "8px 20px", borderRadius: 8,
+                background: blurBg ? B.accent : B.surface,
+                color: blurBg ? "#fff" : B.textMuted,
+                border: `1px solid ${blurBg ? B.accent : B.border}`,
                 fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
-              }}>{d}s</button>
-            ))}
+                transition: "all 0.2s",
+              }}>{blurBg ? "On" : "Off"}</button>
+            </div>
           </div>
         </div>
       )}
@@ -1012,7 +1028,10 @@ function VideoRecorder({ onVideoRecorded, script }) {
         border: state === "recording" ? "2px solid #DC3545" : state === "countdown" ? `2px solid ${B.warning}` : `1px solid ${B.border}` }}>
         <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover",
           display: state === "idle" ? "none" : "block",
-          transform: state !== "recorded" ? "scaleX(-1)" : "none" }} playsInline controls={state === "recorded"} />
+          transform: state !== "recorded" ? "scaleX(-1)" : "none",
+          filter: blurBg && state !== "recorded" ? "blur(8px)" : "none",
+          transition: "filter 0.3s",
+        }} playsInline controls={state === "recorded"} />
 
         {state === "idle" && (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column",
@@ -1038,6 +1057,16 @@ function VideoRecorder({ onVideoRecorded, script }) {
           </div>
         )}
         {state === "recorded" && <div style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }}><VerifiedBadge size="small" /></div>}
+        {state === "recorded" && !isPaid && (
+          <div style={{
+            position: "absolute", bottom: 48, right: 12, zIndex: 5,
+            padding: "4px 10px", borderRadius: 6,
+            background: "rgba(0,0,0,0.45)",
+            fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600,
+            color: "rgba(255,255,255,0.85)", letterSpacing: "0.04em",
+            pointerEvents: "none",
+          }}>✓ LiftPitch Verified</div>
+        )}
         {state === "recording" && (
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 4, background: "rgba(0,0,0,0.08)" }}>
             <div style={{ height: "100%", width: `${(timer.sec / maxDur) * 100}%`,
@@ -1130,7 +1159,7 @@ function Analytics({ isPaid, videos }) {
             Track total views, unique viewers, average watch time, and daily activity for every video you record.
             Know exactly when a recruiter clicks your link.</p>
           <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-            Upgrade — $5/mo or $29 lifetime</Btn>
+            Upgrade — $8/mo or $35 lifetime</Btn>
         </div>
       ) : videos.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px 20px" }}>
@@ -1313,13 +1342,6 @@ export default function App() {
           fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800,
           background: B.gradient, WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent", cursor: "pointer" }}>LiftPitch</div>
-        <button onClick={() => setIsPaid(!isPaid)} style={{
-          padding: "6px 14px", borderRadius: 8, fontSize: 11,
-          fontFamily: "'Sora', sans-serif", fontWeight: 600, cursor: "pointer",
-          background: isPaid ? "rgba(5,118,66,0.12)" : "rgba(231,163,62,0.1)",
-          border: `1px solid ${isPaid ? "rgba(5,118,66,0.2)" : "rgba(231,163,62,0.2)"}`,
-          color: isPaid ? B.success : B.warning,
-        }}>{isPaid ? "✓ Pro" : "Free Tier"} (toggle demo)</button>
       </header>
 
       <div style={{ display: "flex", justifyContent: "center", gap: 4, padding: "16px 24px",
@@ -1339,7 +1361,7 @@ export default function App() {
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
         {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} />}
-        {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} />}
+        {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} isPaid={isPaid} />}
         {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
         {tab === "tips" && <TipsAndTricks />}
       </div>
