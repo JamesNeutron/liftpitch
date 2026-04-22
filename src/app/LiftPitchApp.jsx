@@ -871,6 +871,144 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
   );
 }
 
+// ─── Survey Popup (shown after first recording) ───
+
+function SurveyPopup({ onComplete }) {
+  const [q1, setQ1] = useState(null);
+  const [q2, setQ2] = useState(null);
+  const [email, setEmail] = useState("");
+  const [tosChecked, setTosChecked] = useState(false);
+
+  const q1Options = [
+    { id: "overlooked", label: "🔍 I'm qualified but keep getting overlooked" },
+    { id: "switching",  label: "🔄 I'm switching careers and my resume doesn't tell my story yet" },
+    { id: "starting",   label: "🎓 Just starting out and need to stand out" },
+    { id: "searching",  label: "📉 Been searching too long with no results" },
+  ];
+  const q2Options = [
+    { id: "linkedin", label: "LinkedIn" },
+    { id: "reddit",   label: "Reddit" },
+    { id: "friend",   label: "Friend or colleague" },
+    { id: "google",   label: "Google search" },
+    { id: "other",    label: "Other" },
+  ];
+
+  const handleSubmit = () => {
+    console.log("LiftPitch survey response:", { situation: q1, source: q2, email });
+    onComplete();
+  };
+
+  const optionStyle = (selected) => ({
+    padding: "12px 16px", borderRadius: 12, textAlign: "left", width: "100%",
+    border: `1.5px solid ${selected ? "#0A66C2" : B.border}`,
+    background: selected ? "rgba(10,102,194,0.06)" : B.surface,
+    color: selected ? "#0A66C2" : B.text,
+    fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+    fontWeight: selected ? 600 : 400,
+    cursor: "pointer", transition: "all 0.15s",
+  });
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 2000,
+      background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: 20,
+    }}>
+      <div style={{
+        background: "#FFFFFF", borderRadius: 24, padding: "36px 32px 32px",
+        maxWidth: 520, width: "100%", maxHeight: "90vh", overflowY: "auto",
+        boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
+        position: "relative",
+      }}>
+        <button onClick={onComplete} style={{
+          position: "absolute", top: 16, right: 16,
+          background: "transparent", border: "none",
+          fontSize: 18, cursor: "pointer", color: B.textDim,
+          padding: "4px 8px", lineHeight: 1,
+        }}>✕</button>
+
+        <div style={{ textAlign: "center", marginBottom: 28 }}>
+          <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: B.text, margin: "0 0 10px" }}>
+            🎉 Your pitch is ready!
+          </h2>
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: B.textMuted, lineHeight: 1.6, margin: 0 }}>
+            Before you grab your link — help us make LiftPitch better for people like you.
+          </p>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.text, margin: "0 0 10px" }}>
+            Which best describes your situation?
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {q1Options.map(opt => (
+              <button key={opt.id} onClick={() => setQ1(opt.id)} style={optionStyle(q1 === opt.id)}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.text, margin: "0 0 10px" }}>
+            How did you hear about LiftPitch?
+          </p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {q2Options.map(opt => (
+              <button key={opt.id} onClick={() => setQ2(opt.id)} style={optionStyle(q2 === opt.id)}>
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.text, display: "block", marginBottom: 8 }}>
+            Drop your email to get your shareable link:
+          </label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder="your@email.com"
+            style={{
+              width: "100%", padding: "12px 16px", boxSizing: "border-box",
+              border: `1px solid ${B.border}`, borderRadius: 10,
+              fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.text,
+              background: B.bg, outline: "none",
+            }}
+            onFocus={e => e.target.style.borderColor = B.accent}
+            onBlur={e => e.target.style.borderColor = B.border}
+          />
+        </div>
+
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+            <input type="checkbox" checked={tosChecked} onChange={e => setTosChecked(e.target.checked)}
+              style={{ marginTop: 2, flexShrink: 0, width: 16, height: 16, cursor: "pointer" }} />
+            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, lineHeight: 1.6 }}>
+              I agree to LiftPitch's{" "}
+              <a href="/legal" target="_blank" rel="noopener noreferrer" style={{ color: B.accent, textDecoration: "none" }}>Terms of Service</a>
+              {" "}and{" "}
+              <a href="/legal" target="_blank" rel="noopener noreferrer" style={{ color: B.accent, textDecoration: "none" }}>Privacy Policy</a>
+            </span>
+          </label>
+        </div>
+
+        <button onClick={handleSubmit} disabled={!tosChecked} style={{
+          width: "100%", padding: "16px", borderRadius: 12,
+          background: tosChecked ? "#E06847" : "#C8D0D9",
+          color: "#fff", border: "none",
+          fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700,
+          cursor: tosChecked ? "pointer" : "not-allowed",
+          boxShadow: tosChecked ? "0 4px 20px rgba(224,104,71,0.3)" : "none",
+          transition: "all 0.2s",
+        }}>
+          Get My Link →
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Video Recorder (Live-Only Verified) ───
 
 function VideoRecorder({ onVideoRecorded, script, isPaid }) {
@@ -886,7 +1024,9 @@ function VideoRecorder({ onVideoRecorded, script, isPaid }) {
   const [countdown, setCountdown] = useState(0);
   const [verification, setVerification] = useState(null);
   const [cameraError, setCameraError] = useState(null);
-  const [blurBg, setBlurBg] = useState(false);
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
+  const [linkRevealed, setLinkRevealed] = useState(false);
+  const surveyShownRef = useRef(false);
   const timer = useTimer(maxDur);
 
   const genVerify = () => {
@@ -934,17 +1074,19 @@ function VideoRecorder({ onVideoRecorded, script, isPaid }) {
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (videoRef.current) { videoRef.current.srcObject = null; videoRef.current.src = url; videoRef.current.muted = false; }
       if (onVideoRecorded) onVideoRecorded(v.verificationHash);
+      if (!surveyShownRef.current) { surveyShownRef.current = true; setShowSurveyModal(true); } else { setLinkRevealed(true); }
     };
     mr.start(); mrRef.current = mr; timer.start(); setState("recording");
   };
 
   const stopRec = () => { mrRef.current?.stop(); timer.stop(); };
   useEffect(() => { if (timer.sec >= maxDur && state === "recording") stopRec(); }, [timer.sec, maxDur, state]);
-  const reset = () => { timer.reset(); setRecordedUrl(null); setShareLink(""); setCopied(false); setVerification(null); setState("idle"); streamRef.current?.getTracks().forEach(t => t.stop()); };
+  const reset = () => { timer.reset(); setRecordedUrl(null); setShareLink(""); setCopied(false); setVerification(null); setState("idle"); setLinkRevealed(false); streamRef.current?.getTracks().forEach(t => t.stop()); };
   const copyLink = () => { navigator.clipboard?.writeText(shareLink); setCopied(true); setTimeout(() => setCopied(false), 2500); };
   const fmt = s => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
   return (
+    <>
     <Card>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
         <span style={{ fontSize: 24 }}>🎥</span>
@@ -977,17 +1119,6 @@ function VideoRecorder({ onVideoRecorded, script, isPaid }) {
                   }}>{d}s</button>
                 ))}
               </div>
-            </div>
-            <div>
-              <FieldLabel icon="🌫️">Blur Background</FieldLabel>
-              <button onClick={() => setBlurBg(b => !b)} style={{
-                padding: "8px 20px", borderRadius: 8,
-                background: blurBg ? B.accent : B.surface,
-                color: blurBg ? "#fff" : B.textMuted,
-                border: `1px solid ${blurBg ? B.accent : B.border}`,
-                fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
-                transition: "all 0.2s",
-              }}>{blurBg ? "On" : "Off"}</button>
             </div>
           </div>
         </div>
@@ -1023,14 +1154,20 @@ function VideoRecorder({ onVideoRecorded, script, isPaid }) {
         </div>
       )}
 
+      <div style={{
+        marginBottom: 12, padding: "10px 16px", borderRadius: 10,
+        background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.10)",
+        fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textMuted, lineHeight: 1.55,
+      }}>
+        💡 <strong style={{ color: B.text }}>Pro tip:</strong> Find a plain wall or tidy corner — good lighting matters more than a perfect background!
+      </div>
+
       <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: "#000",
         aspectRatio: "16/9", marginBottom: 20,
         border: state === "recording" ? "2px solid #DC3545" : state === "countdown" ? `2px solid ${B.warning}` : `1px solid ${B.border}` }}>
         <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover",
           display: state === "idle" ? "none" : "block",
           transform: state !== "recorded" ? "scaleX(-1)" : "none",
-          filter: blurBg && state !== "recorded" ? "blur(8px)" : "none",
-          transition: "filter 0.3s",
         }} playsInline controls={state === "recorded"} />
 
         {state === "idle" && (
@@ -1057,14 +1194,15 @@ function VideoRecorder({ onVideoRecorded, script, isPaid }) {
           </div>
         )}
         {state === "recorded" && <div style={{ position: "absolute", top: 12, right: 12, zIndex: 5 }}><VerifiedBadge size="small" /></div>}
-        {state === "recorded" && !isPaid && (
+        {state === "recorded" && (
           <div style={{
             position: "absolute", bottom: 48, right: 12, zIndex: 5,
-            padding: "4px 10px", borderRadius: 6,
-            background: "rgba(0,0,0,0.45)",
-            fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600,
-            color: "rgba(255,255,255,0.85)", letterSpacing: "0.04em",
-            pointerEvents: "none",
+            padding: isPaid ? "3px 8px" : "5px 12px", borderRadius: 6,
+            background: "rgba(0,0,0,0.4)",
+            fontFamily: "'Sora', sans-serif",
+            fontSize: isPaid ? 10 : 12, fontWeight: 600,
+            color: isPaid ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.9)",
+            letterSpacing: "0.04em", pointerEvents: "none",
           }}>✓ LiftPitch Verified</div>
         )}
         {state === "recording" && (
@@ -1084,7 +1222,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid }) {
         {state === "recorded" && <Btn onClick={reset} variant="secondary">🔄 Record Again</Btn>}
       </div>
 
-      {state === "recorded" && shareLink && (
+      {state === "recorded" && shareLink && linkRevealed && (
         <div style={{ marginTop: 24, padding: 20, background: "rgba(5,118,66,0.05)",
           border: "1px solid rgba(5,118,66,0.15)", borderRadius: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -1122,6 +1260,10 @@ function VideoRecorder({ onVideoRecorded, script, isPaid }) {
         @keyframes countPulse { 0%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}100%{transform:scale(.8);opacity:.5} }
       `}</style>
     </Card>
+    {showSurveyModal && (
+      <SurveyPopup onComplete={() => { setShowSurveyModal(false); setLinkRevealed(true); }} />
+    )}
+    </>
   );
 }
 
