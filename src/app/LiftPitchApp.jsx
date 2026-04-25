@@ -895,13 +895,14 @@ function SurveyPopup({ onComplete, user }) {
   ];
 
   const handleSubmit = async () => {
+    const emailToSave = user ? user.email : email;
     if (user) {
       try {
         await supabase.from("survey_responses").insert({
           user_id: user.id,
           situation: q1,
           source: q2,
-          email,
+          email: emailToSave,
         });
       } catch (err) {
         console.error("Survey save error:", err);
@@ -975,6 +976,7 @@ function SurveyPopup({ onComplete, user }) {
           </div>
         </div>
 
+        {!user && (
         <div style={{ marginBottom: 20 }}>
           <label style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.text, display: "block", marginBottom: 8 }}>
             Drop your email to get your shareable link:
@@ -991,6 +993,7 @@ function SurveyPopup({ onComplete, user }) {
             onBlur={e => e.target.style.borderColor = B.border}
           />
         </div>
+        )}
 
         <div style={{ marginBottom: 24 }}>
           <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
@@ -1040,6 +1043,36 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const [linkRevealed, setLinkRevealed] = useState(false);
   const surveyShownRef = useRef(false);
   const timer = useTimer(maxDur);
+  const [editableScript, setEditableScript] = useState(script || "");
+  const [scrollPlaying, setScrollPlaying] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState("medium");
+  const scrollContainerRef = useRef(null);
+  const scrollAnimRef = useRef(null);
+  const scriptTextareaRef = useRef(null);
+
+  useEffect(() => { if (script) setEditableScript(script); }, [script]);
+
+  useEffect(() => {
+    const ta = scriptTextareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = ta.scrollHeight + "px";
+  }, [editableScript]);
+
+  useEffect(() => {
+    if (!scrollPlaying || !scrollContainerRef.current) return;
+    const speeds = { slow: 0.3, medium: 0.65, fast: 1.4 };
+    const px = speeds[scrollSpeed];
+    const step = () => {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+      if (el.scrollTop >= el.scrollHeight - el.clientHeight) { setScrollPlaying(false); return; }
+      el.scrollTop += px;
+      scrollAnimRef.current = requestAnimationFrame(step);
+    };
+    scrollAnimRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(scrollAnimRef.current);
+  }, [scrollPlaying, scrollSpeed]);
 
   const genVerify = () => {
     const now = new Date();
@@ -1136,7 +1169,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         </div>
       )}
 
-      {script ? (
+      {(script || editableScript) ? (
         <div style={{ marginBottom: 20, borderRadius: 14, background: "#111827",
           border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
           <div style={{ padding: "10px 16px", background: "rgba(255,255,255,0.04)",
@@ -1146,15 +1179,55 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
               color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
               📜 Teleprompter
             </span>
-            <button onClick={() => navigator.clipboard?.writeText(script)} style={{
+            <button onClick={() => navigator.clipboard?.writeText(editableScript)} style={{
               background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
               borderRadius: 6, padding: "4px 12px", color: "rgba(255,255,255,0.5)",
               fontSize: 11, cursor: "pointer", fontFamily: "'Sora', sans-serif",
             }}>📋 Copy</button>
           </div>
-          <div style={{ maxHeight: 180, overflowY: "auto", padding: "16px 20px" }}>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: "rgba(255,255,255,0.85)",
-              lineHeight: 1.9, margin: 0, whiteSpace: "pre-wrap" }}>{script}</p>
+          <div ref={scrollContainerRef} style={{ maxHeight: 180, overflowY: "auto", padding: "16px 20px" }}>
+            <textarea
+              ref={scriptTextareaRef}
+              value={editableScript}
+              onChange={e => setEditableScript(e.target.value)}
+              placeholder="Click to edit your script..."
+              style={{
+                width: "100%", background: "transparent", resize: "none", overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, outline: "none",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: "rgba(255,255,255,0.85)",
+                lineHeight: 1.9, margin: 0, padding: "8px 10px", boxSizing: "border-box",
+                minHeight: 80, caretColor: "#378FE9",
+              }}
+              onFocus={e => e.target.style.borderColor = "rgba(55,143,233,0.45)"}
+              onBlur={e => e.target.style.borderColor = "rgba(255,255,255,0.1)"}
+            />
+          </div>
+          <div style={{ padding: "8px 16px", background: "rgba(255,255,255,0.03)",
+            borderTop: "1px solid rgba(255,255,255,0.06)",
+            display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={() => setScrollPlaying(p => !p)} style={{
+              padding: "5px 14px", borderRadius: 6,
+              border: `1px solid ${scrollPlaying ? B.accent : "rgba(255,255,255,0.15)"}`,
+              background: scrollPlaying ? B.accent : "rgba(255,255,255,0.06)",
+              color: scrollPlaying ? "#fff" : "rgba(255,255,255,0.75)",
+              fontSize: 14, cursor: "pointer", fontFamily: "'Sora', sans-serif",
+              fontWeight: 600, transition: "all 0.15s", lineHeight: 1,
+            }}>{scrollPlaying ? "⏸" : "▶"}</button>
+            <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 10,
+              color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Speed:
+            </span>
+            {["slow", "medium", "fast"].map(s => (
+              <button key={s} onClick={() => setScrollSpeed(s)} style={{
+                padding: "4px 10px", borderRadius: 6,
+                border: `1px solid ${scrollSpeed === s ? "rgba(55,143,233,0.4)" : "rgba(255,255,255,0.1)"}`,
+                background: scrollSpeed === s ? "rgba(10,102,194,0.25)" : "rgba(255,255,255,0.04)",
+                color: scrollSpeed === s ? "#378FE9" : "rgba(255,255,255,0.4)",
+                fontSize: 11, cursor: "pointer", fontFamily: "'Sora', sans-serif",
+                fontWeight: scrollSpeed === s ? 600 : 400, transition: "all 0.15s",
+                textTransform: "capitalize",
+              }}>{s}</button>
+            ))}
           </div>
         </div>
       ) : (
@@ -1649,12 +1722,13 @@ export default function App() {
   const handleLogOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setPage("landing");
+    setFadeIn(false);
   };
 
   const openAuth = (mode = "signup") => { setAuthModalMode(mode); setShowAuthModal(true); };
 
   const goApp = () => { setPage("app"); setTimeout(() => setFadeIn(true), 50); };
-  if (page === "landing") return <Landing onStart={goApp} />;
 
   const tabs = [
     { id: "script", label: "🎯 Script" },
@@ -1664,8 +1738,7 @@ export default function App() {
   ];
 
   return (
-    <div style={{ minHeight: "100vh", background: B.bg, color: B.text,
-      fontFamily: "'DM Sans', sans-serif", opacity: fadeIn ? 1 : 0, transition: "opacity 0.6s" }}>
+    <div style={{ minHeight: "100vh", background: B.bg, color: B.text, fontFamily: "'DM Sans', sans-serif" }}>
       <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
         padding: "16px 24px", borderBottom: `1px solid ${B.border}`,
         background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
@@ -1705,27 +1778,33 @@ export default function App() {
         </div>
       </header>
 
-      <div style={{ display: "flex", justifyContent: "center", gap: 4, padding: "16px 24px",
-        background: B.bg, overflowX: "auto" }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            flex: "1 1 80px", maxWidth: 160, padding: "12px 16px",
-            background: tab === t.id ? B.surface : "transparent",
-            border: tab === t.id ? `1.5px solid ${B.accent}` : "1px solid transparent",
-            borderRadius: 12, cursor: "pointer", transition: "all 0.2s", textAlign: "center",
-          }}>
-            <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
-              color: tab === t.id ? B.text : B.textMuted }}>{t.label}</div>
-          </button>
-        ))}
-      </div>
+      {page === "landing" ? (
+        <Landing onStart={goApp} />
+      ) : (
+        <div style={{ opacity: fadeIn ? 1 : 0, transition: "opacity 0.6s" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 4, padding: "16px 24px",
+            background: B.bg, overflowX: "auto" }}>
+            {tabs.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                flex: "1 1 80px", maxWidth: 160, padding: "12px 16px",
+                background: tab === t.id ? B.surface : "transparent",
+                border: tab === t.id ? `1.5px solid ${B.accent}` : "1px solid transparent",
+                borderRadius: 12, cursor: "pointer", transition: "all 0.2s", textAlign: "center",
+              }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
+                  color: tab === t.id ? B.text : B.textMuted }}>{t.label}</div>
+              </button>
+            ))}
+          </div>
 
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
-        {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} />}
-        {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} isPaid={isPaid} user={user} onNeedAuth={() => openAuth("signup")} />}
-        {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
-        {tab === "tips" && <TipsAndTricks />}
-      </div>
+          <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
+            {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} />}
+            {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} isPaid={isPaid} user={user} onNeedAuth={() => openAuth("signup")} />}
+            {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
+            {tab === "tips" && <TipsAndTricks />}
+          </div>
+        </div>
+      )}
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} defaultMode={authModalMode} />}
     </div>
