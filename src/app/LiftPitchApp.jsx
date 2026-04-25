@@ -1041,6 +1041,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const [cameraError, setCameraError] = useState(null);
   const [showSurveyModal, setShowSurveyModal] = useState(false);
   const [linkRevealed, setLinkRevealed] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("idle"); // idle | uploading | done | error
   const surveyShownRef = useRef(false);
   const timer = useTimer(maxDur);
   const [editableScript, setEditableScript] = useState(script || "");
@@ -1073,6 +1074,35 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
     scrollAnimRef.current = requestAnimationFrame(step);
     return () => cancelAnimationFrame(scrollAnimRef.current);
   }, [scrollPlaying, scrollSpeed]);
+
+  const uploadToR2 = async (blob, verificationHash, contentType) => {
+    setUploadStatus("uploading");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Not authenticated");
+
+      const ext = contentType.includes("mp4") ? "mp4" : "webm";
+      const fd = new FormData();
+      fd.append("video", blob, `pitch.${ext}`);
+      fd.append("verificationHash", verificationHash);
+      fd.append("contentType", contentType);
+
+      const res = await fetch("/api/upload-video", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+      const { shareLink: realLink } = await res.json();
+      setShareLink(realLink);
+      setUploadStatus("done");
+    } catch (err) {
+      console.error("Video upload failed:", err);
+      setUploadStatus("error");
+    }
+  };
 
   const genVerify = () => {
     const now = new Date();
@@ -1109,16 +1139,18 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
     const mr = new MediaRecorder(streamRef.current, mimeType ? { mimeType } : {});
     mr.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
     mr.onstop = () => {
-      const blob = new Blob(chunksRef.current, { type: "video/webm" });
+      const blobType = mimeType || "video/webm";
+      const blob = new Blob(chunksRef.current, { type: blobType });
       const url = URL.createObjectURL(blob);
       setRecordedUrl(url);
       const v = genVerify(); setVerification(v);
-      const id = v.verificationHash.replace("VP-", "").toLowerCase();
-      setShareLink(`https://liftpitch.co/v/${id}`);
+      const fallbackId = v.verificationHash.replace("VP-", "").toLowerCase();
+      setShareLink(`https://liftpitch.co/v/${fallbackId}`);
       setState("recorded");
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (videoRef.current) { videoRef.current.srcObject = null; videoRef.current.src = url; videoRef.current.muted = false; }
       if (onVideoRecorded) onVideoRecorded(v.verificationHash);
+      if (user) uploadToR2(blob, v.verificationHash, blobType);
       if (!surveyShownRef.current) { surveyShownRef.current = true; setShowSurveyModal(true); } else { setLinkRevealed(true); }
     };
     mr.start(); mrRef.current = mr; timer.start(); setState("recording");
@@ -1126,7 +1158,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
 
   const stopRec = () => { mrRef.current?.stop(); timer.stop(); };
   useEffect(() => { if (timer.sec >= maxDur && state === "recording") stopRec(); }, [timer.sec, maxDur, state]);
-  const reset = () => { timer.reset(); setRecordedUrl(null); setShareLink(""); setCopied(false); setVerification(null); setState("idle"); setLinkRevealed(false); streamRef.current?.getTracks().forEach(t => t.stop()); };
+  const reset = () => { timer.reset(); setRecordedUrl(null); setShareLink(""); setCopied(false); setVerification(null); setState("idle"); setLinkRevealed(false); setUploadStatus("idle"); surveyShownRef.current = false; streamRef.current?.getTracks().forEach(t => t.stop()); };
   const copyLink = () => { navigator.clipboard?.writeText(shareLink); setCopied(true); setTimeout(() => setCopied(false), 2500); };
   const fmt = s => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
@@ -1307,7 +1339,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         {state === "recorded" && <Btn onClick={reset} variant="secondary">🔄 Record Again</Btn>}
       </div>
 
-      {state === "recorded" && shareLink && linkRevealed && (
+      {state === "recorded" && linkRevealed && (
         <div style={{ marginTop: 24, padding: 20, background: "rgba(5,118,66,0.05)",
           border: "1px solid rgba(5,118,66,0.15)", borderRadius: 14 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -1315,16 +1347,49 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
               textTransform: "uppercase", letterSpacing: "0.1em" }}>🔗 Your Verified Link</span>
             <VerifiedBadge size="small" />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ flex: 1, padding: "12px 16px", background: B.bg, borderRadius: 10,
-              border: `1px solid ${B.border}`, fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-              color: B.accentLight, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{shareLink}</div>
-            <Btn onClick={copyLink} variant={copied ? "success" : "secondary"} style={{ padding: "12px 20px", flexShrink: 0 }}>
-              {copied ? "✓ Copied!" : "📋 Copy"}</Btn>
-          </div>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textDim, marginTop: 12, lineHeight: 1.5 }}>
-            Add this link to your resume. Recruiters will see the verified badge confirming this was recorded live.</p>
-          {verification && (
+
+          {uploadStatus === "uploading" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+              background: B.bg, borderRadius: 10, border: `1px solid ${B.border}` }}>
+              <div style={{ width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
+                border: "2px solid transparent", borderTopColor: B.accent,
+                animation: "spin 0.8s linear infinite" }} />
+              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted }}>
+                Uploading your video…
+              </span>
+            </div>
+          )}
+
+          {uploadStatus === "error" && (
+            <div style={{ padding: "12px 14px", borderRadius: 10, marginBottom: 12,
+              background: "rgba(220,53,69,0.05)", border: "1px solid rgba(220,53,69,0.2)" }}>
+              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#DC3545" }}>
+                ⚠️ Upload failed — your video is only available in this browser session. Try recording again when you have a stable connection.
+              </span>
+            </div>
+          )}
+
+          {(uploadStatus === "done" || uploadStatus === "error") && shareLink && (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ flex: 1, padding: "12px 16px", background: B.bg, borderRadius: 10,
+                  border: `1px solid ${B.border}`, fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                  color: B.accentLight, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {shareLink}
+                </div>
+                <Btn onClick={copyLink} variant={copied ? "success" : "secondary"} style={{ padding: "12px 20px", flexShrink: 0 }}>
+                  {copied ? "✓ Copied!" : "📋 Copy"}
+                </Btn>
+              </div>
+              {uploadStatus === "done" && (
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textDim, marginTop: 12, lineHeight: 1.5 }}>
+                  Add this link to your resume. Recruiters will see the verified badge confirming this was recorded live.
+                </p>
+              )}
+            </>
+          )}
+
+          {verification && uploadStatus !== "uploading" && (
             <div style={{ marginTop: 16, padding: 14, borderRadius: 10, background: B.bg, border: `1px solid ${B.border}` }}>
               <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, color: B.textDim,
                 textTransform: "uppercase", letterSpacing: "0.1em" }}>Verification Certificate</span>
@@ -1343,6 +1408,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)} }
         @keyframes countPulse { 0%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}100%{transform:scale(.8);opacity:.5} }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </Card>
     {showSurveyModal && (

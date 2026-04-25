@@ -29,6 +29,8 @@ create table videos (
   user_id           uuid not null references profiles(id) on delete cascade,
   verification_hash text,
   share_link        text,
+  filename          text,       -- R2 storage key  e.g. "<user-id>/<timestamp>.webm"
+  r2_url            text,       -- public URL served from R2 / CDN
   company_name      text,
   role_name         text,
   created_at        timestamptz not null default now()
@@ -36,6 +38,12 @@ create table videos (
 
 alter table videos enable row level security;
 
+-- Anyone with the UUID link can watch the video (public shareable links)
+create policy "Anyone can view videos"
+  on videos for select
+  using (true);
+
+-- Keep the owner-only write policies below unchanged
 create policy "Users can view own videos"
   on videos for select
   using (auth.uid() = user_id);
