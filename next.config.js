@@ -25,7 +25,7 @@ const nextConfig = {
               "img-src 'self' data: blob:",
               // blob: needed for MediaRecorder / Web Workers
               "worker-src 'self' blob:",
-              "connect-src 'self'",
+              "connect-src 'self' https://epsfmdualbelgrfoshzt.supabase.co",
               "frame-ancestors 'none'",
             ].join("; "),
           },
