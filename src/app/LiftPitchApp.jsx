@@ -1145,7 +1145,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       setRecordedUrl(url);
       const v = genVerify(); setVerification(v);
       const fallbackId = v.verificationHash.replace("VP-", "").toLowerCase();
-      setShareLink(`https://liftpitch.co/v/${fallbackId}`);
+      setShareLink(`https://lift-pitch.co/v/${fallbackId}`);
       setState("recorded");
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (videoRef.current) { videoRef.current.srcObject = null; videoRef.current.src = url; videoRef.current.muted = false; }

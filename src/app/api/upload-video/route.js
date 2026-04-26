@@ -87,7 +87,7 @@ export async function POST(request) {
   }
 
   // ── Update share_link now that we have the video UUID ───────────────────────
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://liftpitch.co").replace(/\/$/, "");
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://lift-pitch.co").replace(/\/$/, "");
   const shareLink = `${appUrl}/v/${videoRecord.id}`;
 
   const { error: updateError } = await supabase
