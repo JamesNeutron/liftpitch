@@ -37,6 +37,8 @@ export async function POST(request) {
   const videoFile = formData.get("video");
   const verificationHash = formData.get("verificationHash") || "";
   const contentType = formData.get("contentType") || "video/webm";
+  const companyName = formData.get("companyName") || null;
+  const roleName = formData.get("roleName") || null;
 
   if (!videoFile || typeof videoFile === "string") {
     return Response.json({ error: "No video file provided" }, { status: 400 });
@@ -65,26 +67,35 @@ export async function POST(request) {
         verification_hash: verificationHash,
         filename,
         r2_url: r2Url,
+        company_name: companyName,
+        role_name: roleName,
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return Response.json(
+        { error: "Failed to save video record", detail: error.message, code: error.code },
+        { status: 500 }
+      );
+    }
     videoRecord = data;
   } catch (err) {
-    console.error("Supabase insert error:", err);
-    return Response.json({ error: "Failed to save video record", detail: String(err) }, { status: 500 });
+    console.error("Supabase insert exception:", err);
+    return Response.json({ error: "Failed to save video record", detail: err.message || String(err) }, { status: 500 });
   }
 
   // ── Update share_link now that we have the video UUID ───────────────────────
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://liftpitch.co").replace(/\/$/, "");
   const shareLink = `${appUrl}/v/${videoRecord.id}`;
 
-  try {
-    await supabase.from("videos").update({ share_link: shareLink }).eq("id", videoRecord.id);
-  } catch (err) {
-    console.error("Failed to persist share_link:", err);
-    // Non-fatal — we still return the link to the client.
+  const { error: updateError } = await supabase
+    .from("videos")
+    .update({ share_link: shareLink })
+    .eq("id", videoRecord.id);
+  if (updateError) {
+    console.error("Failed to persist share_link:", updateError.message);
   }
 
   return Response.json({
