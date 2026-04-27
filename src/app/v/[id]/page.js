@@ -22,13 +22,25 @@ export default function VideoPage({ params }) {
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase
-        .from("videos")
-        .select("id, r2_url, mp4_url, transcoded, verification_hash, created_at, share_link")
-        .eq("id", id)
-        .single();
+      let data;
+      try {
+        const res = await fetch(`/api/video/${id}`);
+        if (res.status === 404) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        data = await res.json();
+      } catch (err) {
+        console.error("Failed to load video:", err);
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
 
-      if (error || !data || !data.r2_url) {
+      // r2_url missing means the record exists but storage upload failed
+      if (!data.r2_url) {
         setNotFound(true);
         setLoading(false);
         return;
