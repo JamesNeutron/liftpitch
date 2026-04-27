@@ -20,12 +20,12 @@ const nextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              // blob: needed for recorded video playback; data: for thumbnails
-              "media-src 'self' blob:",
+              // blob: needed for recorded video playback; data: for thumbnails; R2 for stored videos
+              "media-src 'self' blob: https://pub-cfdd42a988b742699648f69597750833.r2.dev",
               "img-src 'self' data: blob:",
               // blob: needed for MediaRecorder / Web Workers
               "worker-src 'self' blob:",
-              "connect-src 'self' https://epsfmdualbelgrfoshzt.supabase.co",
+              "connect-src 'self' https://epsfmdualbelgrfoshzt.supabase.co https://pub-cfdd42a988b742699648f69597750833.r2.dev",
               "frame-ancestors 'none'",
             ].join("; "),
           },

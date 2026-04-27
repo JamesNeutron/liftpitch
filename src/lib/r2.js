@@ -2,7 +2,8 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const bucket = process.env.CLOUDFLARE_R2_BUCKET;
-const publicBaseUrl = (process.env.CLOUDFLARE_R2_PUBLIC_URL || "").replace(/\/$/, "");
+const R2_PUBLIC_URL = "https://pub-cfdd42a988b742699648f69597750833.r2.dev";
+const publicBaseUrl = (process.env.CLOUDFLARE_R2_PUBLIC_URL || R2_PUBLIC_URL).replace(/\/$/, "");
 
 const r2 = new S3Client({
   endpoint: process.env.CLOUDFLARE_R2_ENDPOINT,
