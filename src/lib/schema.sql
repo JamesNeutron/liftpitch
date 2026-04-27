@@ -30,7 +30,9 @@ create table videos (
   verification_hash text,
   share_link        text,
   filename          text,       -- R2 storage key  e.g. "<user-id>/<timestamp>.webm"
-  r2_url            text,       -- public URL served from R2 / CDN
+  r2_url            text,       -- public URL served from R2 / CDN (WebM)
+  mp4_url           text,       -- public URL for transcoded MP4 (set after transcode completes)
+  transcoded        boolean not null default false,
   company_name      text,
   role_name         text,
   created_at        timestamptz not null default now()

@@ -98,6 +98,19 @@ export async function POST(request) {
     console.error("Failed to persist share_link:", updateError.message);
   }
 
+  // Kick off WebM → MP4 transcoding in the background so Safari can play the video.
+  // Fire-and-forget: upload response returns immediately; viewer handles "still transcoding" state.
+  if (ext === "webm") {
+    fetch(`${appUrl}/api/transcode-video`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ videoId: videoRecord.id, r2Key: filename }),
+    }).catch((err) => console.error("Transcode trigger failed:", err));
+  }
+
   return Response.json({
     shareLink,
     videoUrl: r2Url,

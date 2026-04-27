@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const bucket = process.env.CLOUDFLARE_R2_BUCKET;
@@ -30,6 +30,21 @@ export async function uploadVideo(buffer, filename, contentType) {
     })
   );
   return getVideoUrl(filename);
+}
+
+/**
+ * Download a video from R2 and return it as a Buffer.
+ * @param {string} filename  e.g. "user-id/1234567890.webm"
+ */
+export async function downloadVideo(filename) {
+  const response = await r2.send(
+    new GetObjectCommand({ Bucket: bucket, Key: filename })
+  );
+  const chunks = [];
+  for await (const chunk of response.Body) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
 }
 
 /**

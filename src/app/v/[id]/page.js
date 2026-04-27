@@ -24,7 +24,7 @@ export default function VideoPage({ params }) {
     async function load() {
       const { data, error } = await supabase
         .from("videos")
-        .select("id, r2_url, verification_hash, created_at, share_link")
+        .select("id, r2_url, mp4_url, transcoded, verification_hash, created_at, share_link")
         .eq("id", id)
         .single();
 
@@ -137,12 +137,33 @@ export default function VideoPage({ params }) {
         }}>
           <video
             ref={videoRef}
-            src={video.r2_url}
             controls
             playsInline
             onPlay={handlePlay}
             style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
-          />
+          >
+            {video.mp4_url && <source src={video.mp4_url} type="video/mp4" />}
+            <source src={video.r2_url} type="video/webm" />
+          </video>
+
+          {!video.transcoded && (
+            <div style={{
+              position: "absolute", bottom: 14, left: 14, zIndex: 5,
+              display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px",
+              borderRadius: 100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.15)", pointerEvents: "none",
+            }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: "50%",
+                background: B.warning, flexShrink: 0,
+                animation: "pulse 1.4s ease-in-out infinite",
+              }} />
+              <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11,
+                color: "rgba(255,255,255,0.85)" }}>
+                Processing for all browsers — refresh in a moment
+              </span>
+            </div>
+          )}
 
           {/* Verified overlay badge */}
           <div style={{
@@ -240,6 +261,7 @@ export default function VideoPage({ params }) {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
       `}</style>
     </div>
   );
