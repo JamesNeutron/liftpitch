@@ -1,15 +1,17 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Public route — no auth required; videos table has `using (true)` select policy.
+// Server-side route — uses service role key to bypass RLS.
 // Using maybeSingle() instead of single() so PostgREST never returns 406:
 //   single()      → 406 when row count != 1 (breaks Safari)
 //   maybeSingle() → null data when 0 rows, error only on >1 row
-export async function GET(_request, { params }) {
+export async function GET(request, { params }) {
   const { id } = params;
+
+  console.log('[video-api] Looking up ID:', id);
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
   const { data, error } = await supabase
@@ -17,6 +19,9 @@ export async function GET(_request, { params }) {
     .select("id, r2_url, mp4_url, transcoded, verification_hash, created_at, share_link")
     .eq("id", id)
     .maybeSingle();
+
+  console.log('[video-api] Supabase result:', JSON.stringify(data));
+  console.log('[video-api] Supabase error:', JSON.stringify(error));
 
   if (error) {
     return Response.json({ error: error.message }, { status: 500 });
