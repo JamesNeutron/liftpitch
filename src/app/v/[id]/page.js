@@ -16,6 +16,7 @@ export default function VideoPage({ params }) {
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [showProcessing, setShowProcessing] = useState(false);
   const viewLoggedRef = useRef(false);
   const videoRef = useRef(null);
   const watchStartRef = useRef(null);
@@ -48,6 +49,11 @@ export default function VideoPage({ params }) {
 
       setVideo(data);
       setLoading(false);
+
+      if (!data.transcoded) {
+        setShowProcessing(true);
+        setTimeout(() => setShowProcessing(false), 4000);
+      }
     }
 
     load();
@@ -154,11 +160,12 @@ export default function VideoPage({ params }) {
             onPlay={handlePlay}
             style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
           >
-            {video.mp4_url && <source src={video.mp4_url} type="video/mp4" />}
-            <source src={video.r2_url} type="video/webm" />
+            {video.mp4_url && video.transcoded
+              ? <source src={video.mp4_url} type="video/mp4" />
+              : <source src={video.r2_url} type="video/webm" />}
           </video>
 
-          {!video.transcoded && (
+          {showProcessing && (
             <div style={{
               position: "absolute", bottom: 14, left: 14, zIndex: 5,
               display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px",
