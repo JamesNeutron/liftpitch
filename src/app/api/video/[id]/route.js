@@ -5,31 +5,40 @@ import { createClient } from "@supabase/supabase-js";
 //   single()      → 406 when row count != 1 (breaks Safari)
 //   maybeSingle() → null data when 0 rows, error only on >1 row
 export async function GET(request, { params }) {
-  const { id } = params;
+  try {
+    const { id } = params;
 
-  console.log('[video-api] Looking up ID:', id);
+    console.log('[video-api] Looking up ID:', id);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
 
-  const { data, error } = await supabase
-    .from("videos")
-    .select("id, r2_url, mp4_url, stream_uid, transcoded, verification_hash, created_at, share_link")
-    .eq("id", id)
-    .maybeSingle();
+    const { data, error } = await supabase
+      .from("videos")
+      .select("id, r2_url, mp4_url, stream_uid, transcoded, verification_hash, created_at, share_link")
+      .eq("id", id)
+      .maybeSingle();
 
-  console.log('[video-api] Supabase result:', JSON.stringify(data));
-  console.log('[video-api] Supabase error:', JSON.stringify(error));
+    console.log('[video-api] Supabase result:', JSON.stringify(data));
+    console.log('[video-api] Supabase error:', JSON.stringify(error));
 
-  if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    if (error) {
+      return Response.json({ error: error.message }, { status: 500 });
+    }
+
+    if (!data) {
+      return Response.json({ error: "Video not found" }, { status: 404 });
+    }
+
+    // Normalize: stream_uid present but mp4_url not yet available is valid — return null explicitly.
+    return Response.json({
+      ...data,
+      mp4_url: data.mp4_url ?? null,
+    });
+  } catch (err) {
+    console.error('[video-api] Unhandled error:', err);
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
-
-  if (!data) {
-    return Response.json({ error: "Video not found" }, { status: 404 });
-  }
-
-  return Response.json(data);
 }

@@ -1091,12 +1091,14 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       if (!urlRes.ok) throw new Error(`get-upload-url: ${await urlRes.text()}`);
       const { uploadURL, uid } = await urlRes.json();
 
-      // Step 2: PUT blob directly to Cloudflare Stream — bypasses Vercel entirely.
+      // Step 2: POST blob to Cloudflare Stream direct upload URL.
+      const formData = new FormData();
+      formData.append('file', blob, 'video.webm');
       const putRes = await fetch(uploadURL, {
-        method: "PUT",
-        body: blob,
+        method: "POST",
+        body: formData,
       });
-      if (!putRes.ok) throw new Error(`Stream PUT failed: ${putRes.status}`);
+      if (!putRes.ok) throw new Error(`Stream upload failed: ${putRes.status}`);
 
       // Step 3: register the video in Supabase (server polls Stream until ready).
       const regRes = await fetch("/api/register-video", {
