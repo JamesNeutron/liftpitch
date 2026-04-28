@@ -1,20 +1,42 @@
 import { createClient } from "@supabase/supabase-js";
 import { downloadVideo, uploadVideo, getVideoUrl } from "../../../lib/r2";
 import { writeFile, readFile, unlink } from "fs/promises";
+import { existsSync, copyFileSync, chmodSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import ffmpeg from "fluent-ffmpeg";
-import ffmpegStatic from "ffmpeg-static";
+import fluent from "fluent-ffmpeg";
+import ffmpegStaticPath from "ffmpeg-static";
 
+export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
-// Log the resolved ffmpeg binary path at module load so it appears in cold-start logs.
-console.log("[register-video] ffmpeg-static path:", ffmpegStatic);
-if (ffmpegStatic) {
-  ffmpeg.setFfmpegPath(ffmpegStatic);
-} else {
-  console.error("[register-video] ffmpeg-static returned null — transcoding will be skipped");
+// ── Ensure the ffmpeg binary is executable ────────────────────────────────────
+// On Vercel/Lambda the deployment package is read-only. Copying the binary to
+// /tmp (the only writable directory) and chmod-ing it lets Node.js exec it.
+// This runs once per cold start; subsequent warm invocations reuse the copy.
+const TMP_FFMPEG = join(tmpdir(), "ffmpeg-lp");
+
+function ensureFfmpegExecutable() {
+  console.log("[register-video] ffmpeg-static source path:", ffmpegStaticPath);
+  if (!ffmpegStaticPath) {
+    throw new Error("ffmpeg-static did not resolve a binary path");
+  }
+  if (!existsSync(TMP_FFMPEG)) {
+    console.log("[register-video] Copying ffmpeg binary to", TMP_FFMPEG);
+    copyFileSync(ffmpegStaticPath, TMP_FFMPEG);
+    chmodSync(TMP_FFMPEG, 0o755);
+    console.log("[register-video] ffmpeg binary ready");
+  } else {
+    console.log("[register-video] ffmpeg binary already present at", TMP_FFMPEG);
+  }
+  fluent.setFfmpegPath(TMP_FFMPEG);
+}
+
+try {
+  ensureFfmpegExecutable();
+} catch (err) {
+  console.error("[register-video] Failed to initialise ffmpeg binary:", err?.message, err?.stack);
 }
 
 export async function POST(request) {
@@ -65,13 +87,13 @@ export async function POST(request) {
   }
   console.log("[register-video] filename:", filename, "| verificationHash:", verificationHash);
 
-  // ── Construct URLs ────────────────────────────────────────────────────────
+  // ── Construct public R2 URL ───────────────────────────────────────────────
   const r2Url = getVideoUrl(filename);
   console.log("[register-video] r2Url:", r2Url);
 
-  // ── Insert the Supabase row immediately ───────────────────────────────────
-  // We insert first so the share link can be returned even if transcoding fails.
-  // The transcoding step below then updates mp4_url / transcoded on the same row.
+  // ── Insert Supabase row immediately ──────────────────────────────────────
+  // Row is created before transcoding so the share link can always be returned.
+  // The transcoding step below then updates mp4_url / transcoded on this row.
   let videoRecord;
   try {
     const { data, error } = await supabase
@@ -119,8 +141,8 @@ export async function POST(request) {
   const isWebm = filename.endsWith(".webm");
   if (!isWebm) {
     console.log("[register-video] Not a WebM file — skipping transcode");
-  } else if (!ffmpegStatic) {
-    console.error("[register-video] Skipping transcode — ffmpeg binary unavailable");
+  } else if (!existsSync(TMP_FFMPEG)) {
+    console.error("[register-video] Skipping transcode — ffmpeg binary not available at", TMP_FFMPEG);
   } else {
     const mp4Key = filename.replace(/\.webm$/, ".mp4");
     const stamp = Date.now();
@@ -136,24 +158,24 @@ export async function POST(request) {
 
       // 2. Write to /tmp
       await writeFile(tmpIn, webmBuffer);
-      console.log("[register-video] Wrote tmpIn:", tmpIn);
+      console.log("[register-video] Wrote input to", tmpIn);
 
       // 3. Run ffmpeg
-      console.log("[register-video] Starting ffmpeg transcode → MP4");
+      console.log("[register-video] Starting ffmpeg transcode");
       await new Promise((resolve, reject) => {
-        ffmpeg(tmpIn)
+        fluent(tmpIn)
           .videoCodec("libx264")
           .audioCodec("aac")
           .outputOptions(["-movflags faststart", "-preset fast", "-crf 23"])
           .output(tmpOut)
           .on("start", (cmd) => console.log("[register-video] ffmpeg cmd:", cmd))
           .on("stderr", (line) => console.log("[register-video] ffmpeg:", line))
-          .on("end", () => { console.log("[register-video] ffmpeg done"); resolve(); })
+          .on("end", () => { console.log("[register-video] ffmpeg finished"); resolve(); })
           .on("error", (err) => { console.error("[register-video] ffmpeg error:", err?.message, err?.stack); reject(err); })
           .run();
       });
 
-      // 4. Read output and upload to R2
+      // 4. Upload MP4 to R2
       const mp4Buffer = await readFile(tmpOut);
       console.log("[register-video] MP4 size:", mp4Buffer.length, "bytes");
       mp4Url = await uploadVideo(mp4Buffer, mp4Key, "video/mp4");
@@ -161,11 +183,11 @@ export async function POST(request) {
     } catch (err) {
       console.error("[register-video] Transcode pipeline failed:", err?.message, err?.stack);
     } finally {
-      await unlink(tmpIn).catch((e) => console.error("[register-video] unlink tmpIn failed:", e?.message));
-      await unlink(tmpOut).catch((e) => console.error("[register-video] unlink tmpOut failed:", e?.message));
+      await unlink(tmpIn).catch((e) => console.error("[register-video] unlink tmpIn:", e?.message));
+      await unlink(tmpOut).catch((e) => console.error("[register-video] unlink tmpOut:", e?.message));
     }
 
-    // 5. Update the row with transcode result (success or failure is visible from logs above)
+    // 5. Update row with transcode result
     if (mp4Url) {
       try {
         const { error } = await supabase
@@ -173,12 +195,12 @@ export async function POST(request) {
           .update({ mp4_url: mp4Url, transcoded: true })
           .eq("id", videoRecord.id);
         if (error) console.error("[register-video] mp4_url update error:", error.message);
-        else console.log("[register-video] Supabase updated with mp4_url:", mp4Url);
+        else console.log("[register-video] Supabase row updated with mp4_url:", mp4Url);
       } catch (err) {
         console.error("[register-video] mp4_url update exception:", err?.message, err?.stack);
       }
     } else {
-      console.warn("[register-video] Transcode did not produce an MP4 — row left with transcoded=false");
+      console.warn("[register-video] Transcode produced no MP4 — row left with transcoded=false, viewer falls back to WebM");
     }
   }
 
