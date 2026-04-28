@@ -6,15 +6,27 @@ import { join } from "path";
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegStatic from "ffmpeg-static";
 
-ffmpeg.setFfmpegPath(ffmpegStatic);
-
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
 
+// Log the resolved ffmpeg binary path at module load so it appears in cold-start logs.
+console.log("[register-video] ffmpeg-static path:", ffmpegStatic);
+if (ffmpegStatic) {
+  ffmpeg.setFfmpegPath(ffmpegStatic);
+} else {
+  console.error("[register-video] ffmpeg-static returned null — transcoding will be skipped");
+}
+
 export async function POST(request) {
+  console.log("[register-video] POST received");
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const authHeader = request.headers.get("Authorization");
   const token = authHeader?.replace("Bearer ", "").trim();
-  if (!token) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!token) {
+    console.error("[register-video] Missing auth token");
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -22,57 +34,44 @@ export async function POST(request) {
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
-  let body;
+  let user;
   try {
-    body = await request.json();
-  } catch {
+    const { data: { user: u }, error } = await supabase.auth.getUser();
+    if (error || !u) {
+      console.error("[register-video] Auth failed:", error?.message);
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    user = u;
+    console.log("[register-video] Authenticated user:", user.id);
+  } catch (err) {
+    console.error("[register-video] Auth exception:", err?.message, err?.stack);
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ── Parse body ────────────────────────────────────────────────────────────
+  let filename, verificationHash;
+  try {
+    const body = await request.json();
+    filename = body.filename;
+    verificationHash = body.verificationHash || "";
+  } catch (err) {
+    console.error("[register-video] Body parse error:", err?.message);
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { filename, verificationHash = "" } = body;
-  if (!filename) return Response.json({ error: "Missing filename" }, { status: 400 });
-
-  const r2Url = getVideoUrl(filename);
-  const isWebm = filename.endsWith(".webm");
-
-  // ── Transcode WebM → MP4 (awaited inline) ──────────────────────────────────
-  // The file was uploaded directly to R2 by the client, so we download it here
-  // for transcoding. Transcoding is done synchronously so the share link is only
-  // returned once the MP4 is ready.
-  let mp4Url = null;
-  if (isWebm) {
-    const mp4Key = filename.replace(/\.webm$/, ".mp4");
-    const stamp = Date.now();
-    const tmpIn = join(tmpdir(), `lp-${stamp}.webm`);
-    const tmpOut = join(tmpdir(), `lp-${stamp}.mp4`);
-    try {
-      const webmBuffer = await downloadVideo(filename);
-      await writeFile(tmpIn, webmBuffer);
-      await new Promise((resolve, reject) => {
-        ffmpeg(tmpIn)
-          .videoCodec("libx264")
-          .audioCodec("aac")
-          .outputOptions(["-movflags faststart", "-preset fast", "-crf 23"])
-          .output(tmpOut)
-          .on("end", resolve)
-          .on("error", reject)
-          .run();
-      });
-      const mp4Buffer = await readFile(tmpOut);
-      mp4Url = await uploadVideo(mp4Buffer, mp4Key, "video/mp4");
-    } catch (err) {
-      // Non-fatal: viewer falls back to the WebM source.
-      console.error("Transcode error:", err);
-    } finally {
-      await unlink(tmpIn).catch(() => {});
-      await unlink(tmpOut).catch(() => {});
-    }
+  if (!filename) {
+    console.error("[register-video] Missing filename in body");
+    return Response.json({ error: "Missing filename" }, { status: 400 });
   }
+  console.log("[register-video] filename:", filename, "| verificationHash:", verificationHash);
 
-  // ── Save record to Supabase ─────────────────────────────────────────────────
+  // ── Construct URLs ────────────────────────────────────────────────────────
+  const r2Url = getVideoUrl(filename);
+  console.log("[register-video] r2Url:", r2Url);
+
+  // ── Insert the Supabase row immediately ───────────────────────────────────
+  // We insert first so the share link can be returned even if transcoding fails.
+  // The transcoding step below then updates mp4_url / transcoded on the same row.
   let videoRecord;
   try {
     const { data, error } = await supabase
@@ -82,29 +81,106 @@ export async function POST(request) {
         verification_hash: verificationHash,
         filename,
         r2_url: r2Url,
-        mp4_url: mp4Url,
-        transcoded: mp4Url !== null,
+        mp4_url: null,
+        transcoded: false,
       })
       .select()
       .single();
 
     if (error) {
-      console.error("Supabase insert error:", error);
+      console.error("[register-video] Supabase insert error:", error.message, "code:", error.code, "details:", error.details);
       return Response.json(
         { error: "Failed to save video record", detail: error.message, code: error.code },
         { status: 500 }
       );
     }
     videoRecord = data;
+    console.log("[register-video] Supabase row created, id:", videoRecord.id);
   } catch (err) {
+    console.error("[register-video] Supabase insert exception:", err?.message, err?.stack);
     return Response.json({ error: "Failed to save video record", detail: String(err) }, { status: 500 });
   }
 
-  // ── Persist share_link ──────────────────────────────────────────────────────
+  // ── Persist share_link ────────────────────────────────────────────────────
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://lift-pitch.co").replace(/\/$/, "");
   const shareLink = `${appUrl}/v/${videoRecord.id}`;
+  try {
+    const { error } = await supabase
+      .from("videos")
+      .update({ share_link: shareLink })
+      .eq("id", videoRecord.id);
+    if (error) console.error("[register-video] share_link update error:", error.message);
+    else console.log("[register-video] share_link set:", shareLink);
+  } catch (err) {
+    console.error("[register-video] share_link update exception:", err?.message);
+  }
 
-  await supabase.from("videos").update({ share_link: shareLink }).eq("id", videoRecord.id);
+  // ── Transcode WebM → MP4 ──────────────────────────────────────────────────
+  const isWebm = filename.endsWith(".webm");
+  if (!isWebm) {
+    console.log("[register-video] Not a WebM file — skipping transcode");
+  } else if (!ffmpegStatic) {
+    console.error("[register-video] Skipping transcode — ffmpeg binary unavailable");
+  } else {
+    const mp4Key = filename.replace(/\.webm$/, ".mp4");
+    const stamp = Date.now();
+    const tmpIn = join(tmpdir(), `lp-${stamp}.webm`);
+    const tmpOut = join(tmpdir(), `lp-${stamp}.mp4`);
+    let mp4Url = null;
+
+    try {
+      // 1. Download WebM from R2
+      console.log("[register-video] Downloading WebM from R2:", filename);
+      const webmBuffer = await downloadVideo(filename);
+      console.log("[register-video] Downloaded", webmBuffer.length, "bytes");
+
+      // 2. Write to /tmp
+      await writeFile(tmpIn, webmBuffer);
+      console.log("[register-video] Wrote tmpIn:", tmpIn);
+
+      // 3. Run ffmpeg
+      console.log("[register-video] Starting ffmpeg transcode → MP4");
+      await new Promise((resolve, reject) => {
+        ffmpeg(tmpIn)
+          .videoCodec("libx264")
+          .audioCodec("aac")
+          .outputOptions(["-movflags faststart", "-preset fast", "-crf 23"])
+          .output(tmpOut)
+          .on("start", (cmd) => console.log("[register-video] ffmpeg cmd:", cmd))
+          .on("stderr", (line) => console.log("[register-video] ffmpeg:", line))
+          .on("end", () => { console.log("[register-video] ffmpeg done"); resolve(); })
+          .on("error", (err) => { console.error("[register-video] ffmpeg error:", err?.message, err?.stack); reject(err); })
+          .run();
+      });
+
+      // 4. Read output and upload to R2
+      const mp4Buffer = await readFile(tmpOut);
+      console.log("[register-video] MP4 size:", mp4Buffer.length, "bytes");
+      mp4Url = await uploadVideo(mp4Buffer, mp4Key, "video/mp4");
+      console.log("[register-video] MP4 uploaded:", mp4Url);
+    } catch (err) {
+      console.error("[register-video] Transcode pipeline failed:", err?.message, err?.stack);
+    } finally {
+      await unlink(tmpIn).catch((e) => console.error("[register-video] unlink tmpIn failed:", e?.message));
+      await unlink(tmpOut).catch((e) => console.error("[register-video] unlink tmpOut failed:", e?.message));
+    }
+
+    // 5. Update the row with transcode result (success or failure is visible from logs above)
+    if (mp4Url) {
+      try {
+        const { error } = await supabase
+          .from("videos")
+          .update({ mp4_url: mp4Url, transcoded: true })
+          .eq("id", videoRecord.id);
+        if (error) console.error("[register-video] mp4_url update error:", error.message);
+        else console.log("[register-video] Supabase updated with mp4_url:", mp4Url);
+      } catch (err) {
+        console.error("[register-video] mp4_url update exception:", err?.message, err?.stack);
+      }
+    } else {
+      console.warn("[register-video] Transcode did not produce an MP4 — row left with transcoded=false");
+    }
+  }
 
   return Response.json({ shareLink, videoUrl: r2Url, videoId: videoRecord.id });
 }
