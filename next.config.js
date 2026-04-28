@@ -25,7 +25,8 @@ const nextConfig = {
               "img-src 'self' data: blob:",
               // blob: needed for MediaRecorder / Web Workers
               "worker-src 'self' blob:",
-              "connect-src 'self' https://epsfmdualbelgrfoshzt.supabase.co https://pub-cfdd42a988b742699648f69597750833.r2.dev",
+              // r2.cloudflarestorage.com covers presigned PUT uploads to R2 directly from the browser.
+              "connect-src 'self' https://epsfmdualbelgrfoshzt.supabase.co https://pub-cfdd42a988b742699648f69597750833.r2.dev https://*.r2.cloudflarestorage.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },

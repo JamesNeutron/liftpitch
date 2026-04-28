@@ -1082,20 +1082,33 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       const token = session?.access_token;
       if (!token) throw new Error("Not authenticated");
 
-      const ext = contentType.includes("mp4") ? "mp4" : "webm";
-      const fd = new FormData();
-      fd.append("video", blob, `pitch.${ext}`);
-      fd.append("verificationHash", verificationHash);
-      fd.append("contentType", contentType);
-
-      const res = await fetch("/api/upload-video", {
+      // Step 1: get a presigned PUT URL from R2 (no Vercel body-size limit applies).
+      const urlRes = await fetch("/api/get-upload-url", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ contentType }),
       });
+      if (!urlRes.ok) throw new Error(`get-upload-url: ${await urlRes.text()}`);
+      // Server normalises the content type (strips codec params) and returns it so
+      // the PUT Content-Type header matches the presigned URL signature exactly.
+      const { presignedUrl, filename, contentType: uploadContentType } = await urlRes.json();
 
-      if (!res.ok) throw new Error(await res.text());
-      const { shareLink: realLink } = await res.json();
+      // Step 2: PUT blob directly to R2 — bypasses Vercel entirely.
+      const putRes = await fetch(presignedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": uploadContentType },
+        body: blob,
+      });
+      if (!putRes.ok) throw new Error(`R2 PUT failed: ${putRes.status}`);
+
+      // Step 3: register the video in Supabase and trigger server-side transcoding.
+      const regRes = await fetch("/api/register-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ filename, verificationHash }),
+      });
+      if (!regRes.ok) throw new Error(`register-video: ${await regRes.text()}`);
+      const { shareLink: realLink } = await regRes.json();
       setShareLink(realLink);
       setUploadStatus("done");
     } catch (err) {
