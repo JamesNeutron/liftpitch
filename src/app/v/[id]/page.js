@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { Stream } from "@cloudflare/stream-react";
 import { supabase } from "../../../lib/supabase";
 
 const B = {
@@ -40,8 +41,7 @@ export default function VideoPage({ params }) {
         return;
       }
 
-      // r2_url missing means the record exists but storage upload failed
-      if (!data.r2_url) {
+      if (!data.stream_uid && !data.r2_url) {
         setNotFound(true);
         setLoading(false);
         return;
@@ -153,17 +153,27 @@ export default function VideoPage({ params }) {
           boxShadow: "0 16px 56px rgba(0,0,0,0.2)", position: "relative",
           aspectRatio: "16/9",
         }}>
-          <video
-            ref={videoRef}
-            controls
-            playsInline
-            onPlay={handlePlay}
-            style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
-          >
-            {video.mp4_url && video.transcoded
-              ? <source src={video.mp4_url} type="video/mp4" />
-              : <source src={video.r2_url} type="video/webm" />}
-          </video>
+          {video.stream_uid ? (
+            <Stream
+              src={video.stream_uid}
+              controls
+              responsive={false}
+              onPlay={handlePlay}
+              style={{ width: "100%", height: "100%", display: "block" }}
+            />
+          ) : (
+            <video
+              ref={videoRef}
+              controls
+              playsInline
+              onPlay={handlePlay}
+              style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
+            >
+              {video.mp4_url && video.transcoded
+                ? <source src={video.mp4_url} type="video/mp4" />
+                : <source src={video.r2_url} type="video/webm" />}
+            </video>
+          )}
 
           {showProcessing && (
             <div style={{

@@ -30,13 +30,17 @@ create table videos (
   verification_hash text,
   share_link        text,
   filename          text,       -- R2 storage key  e.g. "<user-id>/<timestamp>.webm"
-  r2_url            text,       -- public URL served from R2 / CDN (WebM)
-  mp4_url           text,       -- public URL for transcoded MP4 (set after transcode completes)
+  r2_url            text,       -- public URL served from R2 / CDN (WebM) — legacy
+  mp4_url           text,       -- HLS manifest URL from Cloudflare Stream (set once ready)
+  stream_uid        text,       -- Cloudflare Stream video UID
   transcoded        boolean not null default false,
   company_name      text,
   role_name         text,
   created_at        timestamptz not null default now()
 );
+
+-- Migration: add stream_uid column to existing deployments
+-- alter table videos add column if not exists stream_uid text;
 
 alter table videos enable row level security;
 

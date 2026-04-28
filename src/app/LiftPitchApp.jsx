@@ -1075,37 +1075,34 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
     return () => cancelAnimationFrame(scrollAnimRef.current);
   }, [scrollPlaying, scrollSpeed]);
 
-  const uploadToR2 = async (blob, verificationHash, contentType) => {
+  const uploadToStream = async (blob, verificationHash) => {
     setUploadStatus("uploading");
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       if (!token) throw new Error("Not authenticated");
 
-      // Step 1: get a presigned PUT URL from R2 (no Vercel body-size limit applies).
+      // Step 1: get a Cloudflare Stream direct upload URL.
       const urlRes = await fetch("/api/get-upload-url", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ contentType }),
+        body: JSON.stringify({}),
       });
       if (!urlRes.ok) throw new Error(`get-upload-url: ${await urlRes.text()}`);
-      // Server normalises the content type (strips codec params) and returns it so
-      // the PUT Content-Type header matches the presigned URL signature exactly.
-      const { presignedUrl, filename, contentType: uploadContentType } = await urlRes.json();
+      const { uploadURL, uid } = await urlRes.json();
 
-      // Step 2: PUT blob directly to R2 — bypasses Vercel entirely.
-      const putRes = await fetch(presignedUrl, {
+      // Step 2: PUT blob directly to Cloudflare Stream — bypasses Vercel entirely.
+      const putRes = await fetch(uploadURL, {
         method: "PUT",
-        headers: { "Content-Type": uploadContentType },
         body: blob,
       });
-      if (!putRes.ok) throw new Error(`R2 PUT failed: ${putRes.status}`);
+      if (!putRes.ok) throw new Error(`Stream PUT failed: ${putRes.status}`);
 
-      // Step 3: register the video in Supabase and trigger server-side transcoding.
+      // Step 3: register the video in Supabase (server polls Stream until ready).
       const regRes = await fetch("/api/register-video", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ filename, verificationHash }),
+        body: JSON.stringify({ streamUid: uid, verificationHash }),
       });
       if (!regRes.ok) throw new Error(`register-video: ${await regRes.text()}`);
       const { shareLink: realLink } = await regRes.json();
@@ -1163,7 +1160,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (videoRef.current) { videoRef.current.srcObject = null; videoRef.current.src = url; videoRef.current.muted = false; }
       if (onVideoRecorded) onVideoRecorded(v.verificationHash);
-      if (user) uploadToR2(blob, v.verificationHash, blobType);
+      if (user) uploadToStream(blob, v.verificationHash);
       if (!surveyShownRef.current) { surveyShownRef.current = true; setShowSurveyModal(true); } else { setLinkRevealed(true); }
     };
     mr.start(); mrRef.current = mr; timer.start(); setState("recording");

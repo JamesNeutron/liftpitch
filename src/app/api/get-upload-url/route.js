@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import { getPresignedUploadUrl } from "../../../lib/r2";
 
 export async function POST(request) {
   const authHeader = request.headers.get("Authorization");
@@ -15,20 +14,27 @@ export async function POST(request) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  let rawContentType = "video/webm";
-  try {
-    const body = await request.json();
-    if (body.contentType) rawContentType = body.contentType;
-  } catch { /* default to webm */ }
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const streamToken = process.env.CLOUDFLARE_STREAM_TOKEN;
 
-  // Strip codec parameters — R2 requires a bare MIME type when signing.
-  const contentType = rawContentType.split(";")[0].trim();
-  const ext = contentType.includes("mp4") ? "mp4" : "webm";
-  const filename = `${user.id}/${Date.now()}.${ext}`;
+  const res = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/direct_upload`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${streamToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ maxDurationSeconds: 120, requireSignedURLs: false }),
+    }
+  );
 
-  const presignedUrl = await getPresignedUploadUrl(filename, contentType);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("[get-upload-url] Stream API error:", res.status, text);
+    return Response.json({ error: "Failed to get Stream upload URL" }, { status: 500 });
+  }
 
-  // Return the normalised contentType so the client uses the exact same value
-  // in the PUT Content-Type header (required for presigned URL signature match).
-  return Response.json({ presignedUrl, filename, contentType });
+  const { result } = await res.json();
+  return Response.json({ uploadURL: result.uploadURL, uid: result.uid });
 }

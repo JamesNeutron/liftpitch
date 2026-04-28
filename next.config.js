@@ -20,13 +20,15 @@ const nextConfig = {
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
-              // blob: needed for recorded video playback; data: for thumbnails; R2 for stored videos
-              "media-src 'self' blob: https://pub-cfdd42a988b742699648f69597750833.r2.dev",
+              // blob: for recorded video playback; R2 and Cloudflare Stream for stored/streamed videos
+              "media-src 'self' blob: https://pub-cfdd42a988b742699648f69597750833.r2.dev https://*.cloudflarestream.com",
               "img-src 'self' data: blob:",
               // blob: needed for MediaRecorder / Web Workers
               "worker-src 'self' blob:",
-              // r2.cloudflarestorage.com covers presigned PUT uploads to R2 directly from the browser.
-              "connect-src 'self' https://epsfmdualbelgrfoshzt.supabase.co https://pub-cfdd42a988b742699648f69597750833.r2.dev https://*.r2.cloudflarestorage.com",
+              // Cloudflare Stream upload endpoint + HLS playback + Supabase
+              "connect-src 'self' https://epsfmdualbelgrfoshzt.supabase.co https://pub-cfdd42a988b742699648f69597750833.r2.dev https://*.r2.cloudflarestorage.com https://upload.videodelivery.net https://*.cloudflarestream.com https://api.cloudflare.com",
+              // Cloudflare Stream embeds its player in an iframe
+              "frame-src https://*.cloudflarestream.com",
               "frame-ancestors 'none'",
             ].join("; "),
           },

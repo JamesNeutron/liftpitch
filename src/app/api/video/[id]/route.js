@@ -16,7 +16,7 @@ export async function GET(request, { params }) {
 
   const { data, error } = await supabase
     .from("videos")
-    .select("id, r2_url, mp4_url, transcoded, verification_hash, created_at, share_link")
+    .select("id, r2_url, mp4_url, stream_uid, transcoded, verification_hash, created_at, share_link")
     .eq("id", id)
     .maybeSingle();
 
