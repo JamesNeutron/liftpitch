@@ -1794,7 +1794,7 @@ export default function App() {
       .select("plan")
       .eq("id", userId)
       .single();
-    setIsPaid(data?.plan === "paid");
+    setIsPaid(data?.plan === "pro" || data?.plan === "lifetime");
   };
 
   useEffect(() => {

@@ -118,7 +118,7 @@ export default function DashboardRecord() {
         .eq("id", session.user.id)
         .single();
 
-      if (profile?.plan !== "paid") { router.replace("/"); return; }
+      if (profile?.plan !== "pro" && profile?.plan !== "lifetime") { router.replace("/"); return; }
 
       setUser(session.user);
       setAuthLoading(false);
