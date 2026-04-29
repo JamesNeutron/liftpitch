@@ -132,12 +132,20 @@ function ConfirmModal({ title, onConfirm, onCancel }) {
   );
 }
 
+function scoreColor(score) {
+  if (score >= 75) return B.success;
+  if (score >= 50) return B.warning;
+  return "#E06847";
+}
+
 export default function MyVideos() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [videos, setVideos] = useState([]);
-  const [confirmDelete, setConfirmDelete] = useState(null); // { id, streamUid, title }
+  const [scriptsByVideoId, setScriptsByVideoId] = useState({});
+  const [expandedScript, setExpandedScript] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [copied, setCopied] = useState(null);
 
@@ -162,7 +170,26 @@ export default function MyVideos() {
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false });
 
-      setVideos(data || []);
+      const videoList = data || [];
+      setVideos(videoList);
+
+      // Load linked scripts for these videos
+      if (videoList.length > 0) {
+        const videoIds = videoList.map(v => v.id);
+        const { data: scripts } = await supabase
+          .from("scripts")
+          .select("id, video_id, script, match_score, job_description, duration, angle_to_play")
+          .in("video_id", videoIds);
+
+        if (scripts) {
+          const map = {};
+          for (const s of scripts) {
+            if (s.video_id) map[s.video_id] = s;
+          }
+          setScriptsByVideoId(map);
+        }
+      }
+
       setLoading(false);
     }
     init();
@@ -196,6 +223,11 @@ export default function MyVideos() {
         alert("Failed to delete video. Please try again.");
       } else {
         setVideos(v => v.filter(x => x.id !== id));
+        setScriptsByVideoId(prev => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
       }
     } catch (err) {
       console.error("Delete error:", err);
@@ -277,6 +309,7 @@ export default function MyVideos() {
               const shareUrl = video.share_link || `${appUrl}/v/${video.id}`;
               const title = video.video_title || "Untitled Pitch";
               const isDeleting = deleting === video.id;
+              const linkedScript = scriptsByVideoId[video.id] || null;
 
               return (
                 <div key={video.id} style={{
@@ -342,6 +375,62 @@ export default function MyVideos() {
                       cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap",
                     }}>{copied === video.id ? "✓ Copied" : "📋 Copy"}</button>
                   </div>
+
+                  {/* Linked script */}
+                  {linkedScript && (
+                    <div style={{ marginBottom: 14 }}>
+                      <button
+                        onClick={() => setExpandedScript(expandedScript === video.id ? null : video.id)}
+                        style={{
+                          width: "100%", padding: "9px 14px", borderRadius: 10,
+                          border: "1px solid rgba(10,102,194,0.25)",
+                          background: "rgba(10,102,194,0.04)",
+                          color: B.accent, fontFamily: "'Sora', sans-serif",
+                          fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                          transition: "all 0.15s",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(10,102,194,0.09)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(10,102,194,0.04)"; }}
+                      >
+                        <span>
+                          📋 View Script
+                          {linkedScript.match_score !== null && linkedScript.match_score !== undefined && (
+                            <span style={{
+                              marginLeft: 8, fontWeight: 700,
+                              color: scoreColor(linkedScript.match_score),
+                            }}>{linkedScript.match_score}% match</span>
+                          )}
+                        </span>
+                        <span>{expandedScript === video.id ? "▲" : "▼"}</span>
+                      </button>
+
+                      {expandedScript === video.id && (
+                        <div style={{
+                          marginTop: 8, padding: "14px 16px",
+                          background: B.bg, border: `1px solid ${B.border}`,
+                          borderRadius: 10,
+                        }}>
+                          {linkedScript.angle_to_play && (
+                            <p style={{
+                              fontFamily: "'DM Sans', sans-serif", fontSize: 12,
+                              color: B.textMuted, margin: "0 0 10px", fontStyle: "italic",
+                            }}>{linkedScript.angle_to_play}</p>
+                          )}
+                          <div style={{
+                            fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.text,
+                            lineHeight: 1.8, whiteSpace: "pre-wrap",
+                            maxHeight: 180, overflowY: "auto",
+                          }}>{linkedScript.script}</div>
+                          <a href={`/dashboard/script`} style={{
+                            display: "inline-block", marginTop: 10,
+                            fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600,
+                            color: B.accent, textDecoration: "none",
+                          }}>View all scripts →</a>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Delete */}
                   <button

@@ -17,7 +17,7 @@ const tools = [
     icon: "🎯",
     title: "Generate Script",
     desc: "Paste your resume and the job description. Get a personalized pitch script in seconds.",
-    href: "/",
+    href: "/dashboard/script",
     cta: "Open Generator",
     primary: false,
   },

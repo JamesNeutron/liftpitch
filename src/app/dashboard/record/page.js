@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 const B = {
@@ -86,17 +86,34 @@ function DashboardHeader({ email, onSignOut }) {
   );
 }
 
-export default function DashboardRecord() {
+function LoadingScreen() {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
+      justifyContent: "center", background: B.bg }}>
+      <div style={{ width: 40, height: 40, borderRadius: "50%",
+        border: "3px solid transparent", borderTopColor: B.accent,
+        animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+function RecordPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const scriptId = searchParams.get("script_id");
+
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [scriptData, setScriptData] = useState(null);
+  const [scriptExpanded, setScriptExpanded] = useState(true);
 
   const [videoTitle, setVideoTitle] = useState("");
   const [maxDur, setMaxDur] = useState(60);
-  const [state, setState] = useState("idle"); // idle | previewing | countdown | recording | recorded
+  const [state, setState] = useState("idle");
   const [countdown, setCountdown] = useState(3);
   const [cameraError, setCameraError] = useState(null);
-  const [uploadStatus, setUploadStatus] = useState("idle"); // idle | uploading | done | error
+  const [uploadStatus, setUploadStatus] = useState("idle");
   const [shareLink, setShareLink] = useState("");
   const [copied, setCopied] = useState(false);
   const [verification, setVerification] = useState(null);
@@ -122,9 +139,22 @@ export default function DashboardRecord() {
 
       setUser(session.user);
       setAuthLoading(false);
+
+      if (scriptId) {
+        const { data: script } = await supabase
+          .from("scripts")
+          .select("*")
+          .eq("id", scriptId)
+          .eq("user_id", session.user.id)
+          .single();
+        if (script) {
+          setScriptData(script);
+          if (script.duration) setMaxDur(Number(script.duration));
+        }
+      }
     }
     init();
-  }, [router]);
+  }, [router, scriptId]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -232,9 +262,14 @@ export default function DashboardRecord() {
         body: JSON.stringify({ streamUid: uid, verificationHash, videoTitle }),
       });
       if (!regRes.ok) throw new Error(`register-video: ${await regRes.text()}`);
-      const { shareLink: realLink } = await regRes.json();
+      const { shareLink: realLink, videoId } = await regRes.json();
       setShareLink(realLink);
       setUploadStatus("done");
+
+      // Link script to the new video
+      if (scriptId && videoId) {
+        await supabase.from("scripts").update({ video_id: videoId }).eq("id", scriptId);
+      }
     } catch (err) {
       console.error("Upload failed:", err);
       setUploadStatus("error");
@@ -248,20 +283,9 @@ export default function DashboardRecord() {
   };
 
   const fmt = s => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
-
   const titleMissing = !videoTitle.trim();
 
-  if (authLoading) {
-    return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
-        justifyContent: "center", background: B.bg }}>
-        <div style={{ width: 40, height: 40, borderRadius: "50%",
-          border: "3px solid transparent", borderTopColor: B.accent,
-          animation: "spin 0.8s linear infinite" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
+  if (authLoading) return <LoadingScreen />;
 
   return (
     <div style={{ minHeight: "100vh", background: B.bg, fontFamily: "'DM Sans', sans-serif" }}>
@@ -272,6 +296,54 @@ export default function DashboardRecord() {
           fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800,
           color: B.text, margin: "0 0 32px",
         }}>🎥 Record a Pitch</h1>
+
+        {/* Teleprompter panel — shown when coming from a saved script */}
+        {scriptData && (
+          <div style={{
+            background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+            padding: 24, marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+          }}>
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              marginBottom: scriptExpanded ? 14 : 0,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 16 }}>📋</span>
+                <span style={{
+                  fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+                  color: B.accentLight, textTransform: "uppercase", letterSpacing: "0.08em",
+                }}>Your Script</span>
+                {scriptData.match_score !== null && scriptData.match_score !== undefined && (
+                  <span style={{
+                    padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                    fontFamily: "'Sora', sans-serif",
+                    color: scriptData.match_score >= 75 ? B.success : B.warning,
+                    background: scriptData.match_score >= 75
+                      ? "rgba(5,118,66,0.08)" : "rgba(231,163,62,0.08)",
+                    border: `1px solid ${scriptData.match_score >= 75 ? "rgba(5,118,66,0.2)" : "rgba(231,163,62,0.2)"}`,
+                  }}>{scriptData.match_score}% match</span>
+                )}
+              </div>
+              <button
+                onClick={() => setScriptExpanded(v => !v)}
+                style={{
+                  padding: "5px 12px", borderRadius: 8,
+                  background: B.bg, border: `1px solid ${B.border}`,
+                  color: B.textMuted, fontFamily: "'Sora', sans-serif",
+                  fontSize: 11, fontWeight: 600, cursor: "pointer",
+                }}
+              >{scriptExpanded ? "▲ Collapse" : "▼ Expand"}</button>
+            </div>
+            {scriptExpanded && (
+              <div style={{
+                padding: "16px 18px", background: B.bg, border: `1px solid ${B.border}`,
+                borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 14.5,
+                color: B.text, lineHeight: 1.9, whiteSpace: "pre-wrap",
+                maxHeight: 260, overflowY: "auto",
+              }}>{scriptData.script}</div>
+            )}
+          </div>
+        )}
 
         {/* Job title input */}
         <div style={{
@@ -572,5 +644,13 @@ export default function DashboardRecord() {
         @keyframes countPulse { 0%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}100%{transform:scale(.8);opacity:.5} }
       `}</style>
     </div>
+  );
+}
+
+export default function DashboardRecord() {
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <RecordPageInner />
+    </Suspense>
   );
 }
