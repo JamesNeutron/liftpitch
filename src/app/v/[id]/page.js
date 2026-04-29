@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Stream } from "@cloudflare/stream-react";
 import { supabase } from "../../../lib/supabase";
 
 const B = {
@@ -149,17 +148,16 @@ export default function VideoPage({ params }) {
 
         {/* Video player */}
         <div style={{
-          borderRadius: 20, overflow: "hidden", background: "#000",
-          boxShadow: "0 16px 56px rgba(0,0,0,0.2)", position: "relative",
-          aspectRatio: "16/9",
+          position: "relative", width: "100%", aspectRatio: "16/9", background: "#000",
+          borderRadius: 16, overflow: "hidden",
+          boxShadow: "0 16px 56px rgba(0,0,0,0.2)",
         }}>
           {video.stream_uid ? (
-            <Stream
-              src={video.stream_uid}
-              controls
-              responsive={false}
-              onPlay={handlePlay}
-              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+            <iframe
+              src={`https://customer-${process.env.NEXT_PUBLIC_CLOUDFLARE_STREAM_CUSTOMER_CODE}.cloudflarestream.com/${video.stream_uid}/iframe`}
+              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
             />
           ) : (
             <video
