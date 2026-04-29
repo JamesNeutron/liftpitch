@@ -1788,11 +1788,28 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signup");
 
+  const loadPaidStatus = async (userId) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("is_paid")
+      .eq("id", userId)
+      .single();
+    setIsPaid(!!data?.is_paid);
+  };
+
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user ?? null));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user ?? null);
+      if (user) loadPaidStatus(user.id);
+    });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) setShowAuthModal(false);
+      if (session?.user) {
+        setShowAuthModal(false);
+        loadPaidStatus(session.user.id);
+      } else {
+        setIsPaid(false);
+      }
     });
     return () => subscription.unsubscribe();
   }, []);
@@ -1826,6 +1843,14 @@ export default function App() {
           background: B.gradient, WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent", cursor: "pointer" }}>LiftPitch</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {user && isPaid && (
+            <a href="/dashboard" style={{
+              padding: "8px 16px", borderRadius: 10,
+              background: B.gradient, color: "#fff",
+              fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+              textDecoration: "none", boxShadow: `0 2px 10px ${B.accentGlow}`,
+            }}>Dashboard</a>
+          )}
           {user ? (
             <>
               <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted,

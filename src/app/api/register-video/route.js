@@ -56,11 +56,12 @@ export async function POST(request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let streamUid, verificationHash;
+  let streamUid, verificationHash, videoTitle;
   try {
     const body = await request.json();
     streamUid = body.streamUid;
     verificationHash = body.verificationHash || "";
+    videoTitle = body.videoTitle || null;
   } catch (err) {
     console.error("[register-video] Body parse error:", err?.message);
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -82,6 +83,7 @@ export async function POST(request) {
         verification_hash: verificationHash,
         stream_uid: streamUid,
         transcoded: false,
+        ...(videoTitle ? { video_title: videoTitle } : {}),
       })
       .select()
       .single();
