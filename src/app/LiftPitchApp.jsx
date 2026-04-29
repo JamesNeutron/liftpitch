@@ -1411,7 +1411,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
                 <span style={{ color: B.textDim }}>Verification ID</span><span style={{ color: B.text, fontFamily: "monospace", fontSize: 11 }}>{verification.verificationHash}</span>
                 <span style={{ color: B.textDim }}>Recorded</span><span style={{ color: B.text }}>{new Date(verification.recordedAt).toLocaleString()}</span>
                 <span style={{ color: B.textDim }}>Device Stream</span><span style={{ color: B.success }}>✓ Verified</span>
-                <span style={{ color: B.textDim }}>Upload</span><span style={{ color: "#E06847" }}>✗ Blocked</span>
+                <span style={{ color: B.textDim }}>No Uploads</span><span style={{ color: B.success }}>✓ Live only</span>
               </div>
             </div>
           )}

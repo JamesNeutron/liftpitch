@@ -253,11 +253,11 @@ export default function VideoPage({ params }) {
             <span style={{ color: B.textDim }}>Device Stream</span>
             <span style={{ color: B.success }}>✓ Verified from webcam</span>
 
-            <span style={{ color: B.textDim }}>File Upload</span>
-            <span style={{ color: "#E06847" }}>✗ Blocked — live recordings only</span>
+            <span style={{ color: B.textDim }}>Live Recording</span>
+            <span style={{ color: B.success }}>✓ Recorded in real-time</span>
 
-            <span style={{ color: B.textDim }}>AI Video</span>
-            <span style={{ color: "#E06847" }}>✗ Blocked — real person only</span>
+            <span style={{ color: B.textDim }}>Real Person</span>
+            <span style={{ color: B.success }}>✓ No AI-generated video</span>
           </div>
         </div>
 
