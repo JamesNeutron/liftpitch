@@ -1791,10 +1791,10 @@ export default function App() {
   const loadPaidStatus = async (userId) => {
     const { data } = await supabase
       .from("profiles")
-      .select("is_paid")
+      .select("plan")
       .eq("id", userId)
       .single();
-    setIsPaid(!!data?.is_paid);
+    setIsPaid(data?.plan === "paid");
   };
 
   useEffect(() => {

@@ -114,11 +114,11 @@ export default function DashboardRecord() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("is_paid")
+        .select("plan")
         .eq("id", session.user.id)
         .single();
 
-      if (!profile?.is_paid) { router.replace("/"); return; }
+      if (profile?.plan !== "paid") { router.replace("/"); return; }
 
       setUser(session.user);
       setAuthLoading(false);
