@@ -159,7 +159,7 @@ export default function VideoPage({ params }) {
               controls
               responsive={false}
               onPlay={handlePlay}
-              style={{ width: "100%", height: "100%", display: "block" }}
+              style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
             />
           ) : (
             <video

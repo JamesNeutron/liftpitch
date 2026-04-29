@@ -28,7 +28,7 @@ const nextConfig = {
               // Cloudflare Stream upload endpoint + HLS playback + Supabase
               "connect-src 'self' https://epsfmdualbelgrfoshzt.supabase.co https://pub-cfdd42a988b742699648f69597750833.r2.dev https://*.r2.cloudflarestorage.com https://upload.videodelivery.net https://upload.cloudflarestream.com https://*.cloudflarestream.com https://api.cloudflare.com",
               // Cloudflare Stream embeds its player in an iframe
-              "frame-src https://embed.cloudflarestream.com https://customer-*.cloudflarestream.com https://*.cloudflarestream.com",
+              `frame-src https://embed.cloudflarestream.com${process.env.CLOUDFLARE_STREAM_CUSTOMER_CODE ? ` https://customer-${process.env.CLOUDFLARE_STREAM_CUSTOMER_CODE}.cloudflarestream.com` : ""} https://*.cloudflarestream.com`,
               "frame-ancestors 'none'",
             ].join("; "),
           },
