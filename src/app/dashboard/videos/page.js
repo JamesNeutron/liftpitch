@@ -148,6 +148,10 @@ export default function MyVideos() {
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [copied, setCopied] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingTitle, setEditingTitle] = useState("");
+  const [titleError, setTitleError] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -243,6 +247,52 @@ export default function MyVideos() {
     setTimeout(() => setCopied(null), 2500);
   };
 
+  const startEdit = (videoId, videoTitle) => {
+    setEditingId(videoId);
+    setEditingTitle(videoTitle || "");
+    setTitleError("");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingTitle("");
+    setTitleError("");
+  };
+
+  const handleSaveTitle = async () => {
+    if (!editingTitle.trim()) {
+      setTitleError("Please enter a title");
+      return;
+    }
+    setSavingTitle(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch("/api/update-video-title", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ videoId: editingId, newTitle: editingTitle.trim() }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setTitleError(err.error || "Failed to save. Please try again.");
+        return;
+      }
+      setVideos(prev => prev.map(v =>
+        v.id === editingId ? { ...v, video_title: editingTitle.trim() } : v
+      ));
+      setEditingId(null);
+      setEditingTitle("");
+      setTitleError("");
+    } catch {
+      setTitleError("Failed to save. Please try again.");
+    } finally {
+      setSavingTitle(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
@@ -319,11 +369,79 @@ export default function MyVideos() {
                   opacity: isDeleting ? 0.5 : 1, transition: "opacity 0.2s",
                 }}>
                   {/* Title */}
-                  <h3 style={{
-                    fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 700,
-                    color: B.text, margin: "0 0 6px",
-                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                  }} title={title}>{title}</h3>
+                  {editingId === video.id ? (
+                    <div style={{ marginBottom: 6 }}>
+                      <input
+                        autoFocus
+                        value={editingTitle}
+                        onChange={e => { setEditingTitle(e.target.value); setTitleError(""); }}
+                        onKeyDown={e => { if (e.key === "Enter") handleSaveTitle(); if (e.key === "Escape") cancelEdit(); }}
+                        placeholder="Video title"
+                        style={{
+                          width: "100%", boxSizing: "border-box",
+                          padding: "8px 12px", borderRadius: 9,
+                          border: `1.5px solid ${titleError ? "#DC3545" : B.accent}`,
+                          fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 600,
+                          color: B.text, background: B.bg, outline: "none",
+                        }}
+                      />
+                      {titleError && (
+                        <p style={{
+                          fontFamily: "'DM Sans', sans-serif", fontSize: 11,
+                          color: "#DC3545", margin: "4px 0 0",
+                        }}>{titleError}</p>
+                      )}
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <button
+                          onClick={handleSaveTitle}
+                          disabled={savingTitle}
+                          style={{
+                            flex: 1, padding: "8px 0", borderRadius: 9, border: "none",
+                            background: B.gradient, color: "#fff",
+                            fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700,
+                            cursor: savingTitle ? "not-allowed" : "pointer",
+                            opacity: savingTitle ? 0.7 : 1,
+                          }}
+                        >{savingTitle ? "Saving…" : "Save"}</button>
+                        <button
+                          onClick={cancelEdit}
+                          disabled={savingTitle}
+                          style={{
+                            flex: 1, padding: "8px 0", borderRadius: 9,
+                            border: `1.5px solid ${B.border}`, background: B.surface,
+                            color: B.text, fontFamily: "'Sora', sans-serif",
+                            fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          }}
+                        >Cancel</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 4, marginBottom: 6 }}>
+                      <h3 style={{
+                        fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 700,
+                        color: B.text, margin: 0, flex: 1, minWidth: 0,
+                        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                      }} title={title}>{title}</h3>
+                      <button
+                        onClick={() => startEdit(video.id, video.video_title)}
+                        title="Edit title"
+                        style={{
+                          flexShrink: 0, background: "none", border: "none",
+                          padding: "2px 4px", borderRadius: 6, cursor: "pointer",
+                          color: B.textDim, lineHeight: 1, transition: "color 0.15s",
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = B.accent; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = B.textDim; }}
+                      >
+                        <svg width={13} height={13} viewBox="0 0 24 24" fill="none"
+                          stroke="currentColor" strokeWidth="2.5"
+                          strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                    </div>
+                  )}
 
                   {/* Date */}
                   <p style={{
