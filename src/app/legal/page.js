@@ -87,10 +87,6 @@ function TermsOfService() {
         </div>
       </div>
 
-      <div style={{ margin: "28px 40px 0", padding: "16px 20px", background: "rgba(231,163,62,0.08)", border: "1px solid rgba(231,163,62,0.25)", borderRadius: 12, fontSize: 13, color: "#7A5C1E", lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif" }}>
-        <strong style={{ color: "#B5780F" }}>⚠️ Draft — Not Legal Advice.</strong> Have a licensed Michigan attorney review and finalize before publishing. Fill in every [bracketed field].
-      </div>
-
       <div style={{ margin: "28px 40px 0", padding: "20px 24px", background: B.bg, border: `1px solid ${B.border}`, borderRadius: 14 }}>
         <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: B.textDim, marginBottom: 12 }}>Table of Contents</div>
         <ol style={{ listStyle: "decimal", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 5 }}>
@@ -273,10 +269,6 @@ function PrivacyPolicy() {
         <div style={{ fontSize: 13, color: B.textDim, display: "flex", gap: 20, flexWrap: "wrap", fontFamily: "'DM Sans', sans-serif" }}>
           <span>📅 Effective Date: [INSERT DATE]</span><span>📍 Michigan, United States</span>
         </div>
-      </div>
-
-      <div style={{ margin: "28px 40px 0", padding: "16px 20px", background: "rgba(231,163,62,0.08)", border: "1px solid rgba(231,163,62,0.25)", borderRadius: 12, fontSize: 13, color: "#7A5C1E", lineHeight: 1.6, fontFamily: "'DM Sans', sans-serif" }}>
-        <strong style={{ color: "#B5780F" }}>⚠️ Draft — Not Legal Advice.</strong> Have a licensed Michigan attorney review and finalize before publishing. Fill in every [bracketed field].
       </div>
 
       <div style={{ margin: "28px 40px 0", padding: "20px 24px", background: B.bg, border: `1px solid ${B.border}`, borderRadius: 14 }}>
