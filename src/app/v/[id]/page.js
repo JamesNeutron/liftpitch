@@ -18,6 +18,7 @@ export default function VideoPage({ params }) {
   const [notFound, setNotFound] = useState(false);
   const [showProcessing, setShowProcessing] = useState(false);
   const viewLoggedRef = useRef(false);
+  const viewRecordedRef = useRef(false);
   const videoRef = useRef(null);
   const watchStartRef = useRef(null);
 
@@ -57,6 +58,16 @@ export default function VideoPage({ params }) {
 
     load();
   }, [id]);
+
+  useEffect(() => {
+    if (!video || viewRecordedRef.current) return;
+    viewRecordedRef.current = true;
+    fetch("/api/record-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ videoId: id }),
+    }).catch(() => {});
+  }, [video, id]);
 
   const handlePlay = async () => {
     watchStartRef.current = Date.now();
