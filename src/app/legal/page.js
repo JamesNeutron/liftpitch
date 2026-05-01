@@ -80,10 +80,10 @@ function TermsOfService() {
   return (
     <div style={{ background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
       <div style={{ padding: "36px 40px 28px", borderBottom: `1px solid ${B.border}`, background: "linear-gradient(135deg, rgba(10,102,194,0.04), rgba(55,143,233,0.02))" }}>
-        <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: B.accentLight, marginBottom: 10 }}>Pangea Square LLC · Legal · Version 2</div>
+        <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: B.accentLight, marginBottom: 10 }}>Pangea Square LLC · Legal</div>
         <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 28, fontWeight: 800, color: B.text, marginBottom: 12 }}>Terms of Service</div>
         <div style={{ fontSize: 13, color: B.textDim, display: "flex", gap: 20, flexWrap: "wrap", fontFamily: "'DM Sans', sans-serif" }}>
-          <span>📅 Effective Date: [INSERT DATE]</span><span>📍 Michigan, United States</span>
+          <span>📅 Effective Date: April 22, 2026</span><span>📍 Michigan, United States</span>
         </div>
       </div>
 
@@ -137,20 +137,20 @@ function TermsOfService() {
         </div>
 
         <div id="t6" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={6} title="Video Recording & Content License" badge="Updated" />
+          <SectionTitle number={6} title="Video Recording & Content License" />
           <P>By recording a video you consent to live capture, processing, and storage of your video, audio, and likeness; represent you are the sole individual appearing; acknowledge anyone with your link can view it; and accept responsibility for all content including incidental third-party material.</P>
           <P>You retain full ownership of your recordings. LiftPitch will not use your video for advertising without explicit written consent.</P>
           <HL><strong>License Grant:</strong> You grant Pangea Square LLC a worldwide, non-exclusive, royalty-free, sublicensable license to host, store, reproduce, transcode, distribute, transmit, display, and perform your video as necessary to provide, operate, and improve the Service — including CDN delivery, thumbnail generation, secure backups, and anonymized aggregate analytics. This license does not permit Pangea Square LLC to sell your content or use it in advertising.</HL>
         </div>
 
         <div id="t7" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={7} title="Video Deletion & Link Expiration" badge="New" />
+          <SectionTitle number={7} title="Video Deletion & Link Expiration" />
           <P>Videos are retained for up to <strong>[INSERT PERIOD, e.g., 12 months]</strong> from recording date unless you request earlier deletion at <A href="mailto:support@liftpitch.co">support@liftpitch.co</A>. Deletion is honored within 30 days. Upon deletion your shareable link is disabled and the file removed from active storage. Secure backup copies may persist up to [INSERT, e.g., 30 days] before purge.</P>
           <P><strong>Important:</strong> LiftPitch cannot retrieve or delete copies that third parties (recruiters, employers) may have saved before deletion. You acknowledge this limitation when sharing your link.</P>
         </div>
 
         <div id="t8" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={8} title="AI-Generated Scripts" badge="Updated" />
+          <SectionTitle number={8} title="AI-Generated Scripts" />
           <P>Scripts are generated using third-party AI providers processing your resume, job description, and About Me text. You acknowledge that:</P>
           <UL items={[
             "Scripts are for your personal job-search use only",
@@ -167,7 +167,7 @@ function TermsOfService() {
         </div>
 
         <div id="t10" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={10} title="DMCA & Copyright" badge="New" />
+          <SectionTitle number={10} title="DMCA & Copyright" />
           <P>LiftPitch complies with the Digital Millennium Copyright Act. To report infringing content, send a written notice to our designated agent at <A href="mailto:legal@liftpitch.co">legal@liftpitch.co</A> (Subject: "DMCA Takedown Request") including: description of the copyrighted work; URL of infringing content; your contact info; good-faith belief statement; accuracy statement under penalty of perjury; and your signature. Repeat infringers may have accounts terminated.</P>
         </div>
 
@@ -177,7 +177,7 @@ function TermsOfService() {
         </div>
 
         <div id="t12" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={12} title="Third-Party Services" badge="New" />
+          <SectionTitle number={12} title="Third-Party Services" />
           <P>LiftPitch integrates with third-party providers for cloud storage, database, payments, email, and AI. These providers operate under their own terms and privacy policies. LiftPitch is not responsible for third-party practices and does not endorse any third-party service.</P>
         </div>
 
@@ -197,7 +197,7 @@ function TermsOfService() {
         </div>
 
         <div id="t16" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={16} title="Dispute Resolution & Arbitration" badge="New" />
+          <SectionTitle number={16} title="Dispute Resolution & Arbitration" />
           <P>Disputes shall first be addressed informally by contacting <A href="mailto:legal@liftpitch.co">legal@liftpitch.co</A> (30-day resolution period). If unresolved, disputes shall be settled by binding individual arbitration — not in court. <strong>You waive any right to jury trial and class action participation.</strong> Emergency injunctive relief remains available in court pending arbitration.</P>
         </div>
 
@@ -212,7 +212,7 @@ function TermsOfService() {
         </div>
 
         <div id="t19" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={19} title="General Provisions" badge="New" />
+          <SectionTitle number={19} title="General Provisions" />
           <UL items={[
             <><strong>Entire Agreement:</strong> These Terms and Privacy Policy constitute the entire agreement between you and LiftPitch.</>,
             <><strong>Severability:</strong> If any provision is found invalid, remaining provisions continue in full effect.</>,
@@ -240,7 +240,7 @@ function TermsOfService() {
       </div>
 
       <div style={{ padding: "24px 40px", borderTop: `1px solid ${B.border}`, background: B.bg, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <span style={{ fontSize: 12, color: B.textDim, fontFamily: "'DM Sans', sans-serif" }}>© [YEAR] Pangea Square LLC · All rights reserved · Michigan LLC · v2</span>
+        <span style={{ fontSize: 12, color: B.textDim, fontFamily: "'DM Sans', sans-serif" }}>© [YEAR] Pangea Square LLC · All rights reserved · Michigan LLC</span>
         <button onClick={() => window.print()} style={{ padding: "10px 20px", borderRadius: 8, border: `1px solid ${B.border}`, background: B.surface, fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 600, color: B.textMuted, cursor: "pointer" }}>🖨️ Print / Save PDF</button>
       </div>
     </div>
@@ -264,10 +264,10 @@ function PrivacyPolicy() {
   return (
     <div style={{ background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
       <div style={{ padding: "36px 40px 28px", borderBottom: `1px solid ${B.border}`, background: "linear-gradient(135deg, rgba(10,102,194,0.04), rgba(55,143,233,0.02))" }}>
-        <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: B.accentLight, marginBottom: 10 }}>Pangea Square LLC · Legal · Version 2</div>
+        <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: B.accentLight, marginBottom: 10 }}>Pangea Square LLC · Legal</div>
         <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 28, fontWeight: 800, color: B.text, marginBottom: 12 }}>Privacy Policy</div>
         <div style={{ fontSize: 13, color: B.textDim, display: "flex", gap: 20, flexWrap: "wrap", fontFamily: "'DM Sans', sans-serif" }}>
-          <span>📅 Effective Date: [INSERT DATE]</span><span>📍 Michigan, United States</span>
+          <span>📅 Effective Date: April 22, 2026</span><span>📍 Michigan, United States</span>
         </div>
       </div>
 
@@ -282,8 +282,8 @@ function PrivacyPolicy() {
 
       <div style={{ padding: "36px 40px" }}>
         <div id="p1" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={1} title="Who We Are & Relationship to Terms of Service" badge="Updated" />
-          <P>Pangea Square LLC ("Pangea Square," "we," "our," or "us") is a Michigan limited liability company and the legal entity behind LiftPitch, the product and platform operating at <A href="https://liftpitch.co">liftpitch.co</A>. References to "LiftPitch" throughout this Policy refer to the product and Service; references to "Pangea Square LLC" refer to the legal entity responsible for your data. This Privacy Policy is incorporated into and subject to our <A href="#tos">Terms of Service</A>. Together they govern your use of the Service. Users must affirmatively accept both documents during account creation.</P>
+          <SectionTitle number={1} title="Who We Are & Relationship to Terms of Service" />
+          <P>Pangea Square LLC ("Pangea Square," "we," "our," or "us") is a Michigan limited liability company and the legal entity behind LiftPitch, the product and platform operating at <A href="https://lift-pitch.co">lift-pitch.co</A>. References to "LiftPitch" throughout this Policy refer to the product and Service; references to "Pangea Square LLC" refer to the legal entity responsible for your data. This Privacy Policy is incorporated into and subject to our <A href="#tos">Terms of Service</A>. Together they govern your use of the Service. Users must affirmatively accept both documents during account creation.</P>
         </div>
 
         <div id="p2" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -327,7 +327,7 @@ function PrivacyPolicy() {
         </div>
 
         <div id="p4" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={4} title="Video Data & Biometric Notice" badge="Strengthened" />
+          <SectionTitle number={4} title="Video Data & Biometric Notice" />
           <HL><strong>Sensitive Data Notice:</strong> LiftPitch captures live video and audio through your device camera. Your recording includes your facial image and voice, which may be treated as sensitive personal information or biometric data under laws including California's CPRA.</HL>
           <P>By recording a video you explicitly consent to: live capture of your video and audio; secure cloud storage of your recording; delivery to anyone who accesses your shareable link; and retention for up to <strong>[INSERT PERIOD, e.g., 12 months]</strong> unless you request earlier deletion.</P>
           <P><strong>What we do NOT do with your video:</strong></P>
@@ -353,12 +353,12 @@ function PrivacyPolicy() {
         </div>
 
         <div id="p6" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={6} title="Third-Party AI Providers" badge="New" />
+          <SectionTitle number={6} title="Third-Party AI Providers" />
           <P>To generate scripts, LiftPitch sends your resume content, job description, and About Me text to third-party AI providers operating under their own terms and data processing agreements. We select providers that maintain industry-standard data protection and do not authorize them to train models on your personal data. We do not send your video recordings to any AI provider.</P>
         </div>
 
         <div id="p7" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={7} title="Data Retention" badge="Updated" />
+          <SectionTitle number={7} title="Data Retention" />
           <table style={tableStyle}>
             <thead>
               <tr>
@@ -417,7 +417,7 @@ function PrivacyPolicy() {
         </div>
 
         <div id="p12" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
-          <SectionTitle number={12} title="California Residents (CCPA/CPRA)" badge="Expanded" />
+          <SectionTitle number={12} title="California Residents (CCPA/CPRA)" />
           <P>California residents have rights under the CCPA as amended by CPRA. Categories of personal information we collect:</P>
           <table style={tableStyle}>
             <thead>
@@ -475,7 +475,7 @@ function PrivacyPolicy() {
       </div>
 
       <div style={{ padding: "24px 40px", borderTop: `1px solid ${B.border}`, background: B.bg, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <span style={{ fontSize: 12, color: B.textDim, fontFamily: "'DM Sans', sans-serif" }}>© [YEAR] Pangea Square LLC · All rights reserved · Michigan LLC · v2</span>
+        <span style={{ fontSize: 12, color: B.textDim, fontFamily: "'DM Sans', sans-serif" }}>© [YEAR] Pangea Square LLC · All rights reserved · Michigan LLC</span>
         <button onClick={() => window.print()} style={{ padding: "10px 20px", borderRadius: 8, border: `1px solid ${B.border}`, background: B.surface, fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 600, color: B.textMuted, cursor: "pointer" }}>🖨️ Print / Save PDF</button>
       </div>
     </div>
