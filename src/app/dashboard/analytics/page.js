@@ -26,20 +26,77 @@ function getDailyViewsArray(dailyViews, days) {
   });
 }
 
-function BarChart({ data, height = 80, color = B.gradient }) {
+function computeNiceMax(v) {
+  if (v <= 1) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / p;
+  if (n <= 1) return p;
+  if (n <= 2) return 2 * p;
+  if (n <= 5) return 5 * p;
+  return 10 * p;
+}
+
+function getDateLabels(days) {
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (days - 1 - i));
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  });
+}
+
+function BarChart({ data, height = 80, color = B.gradient, showYAxis = false, dates = null }) {
+  const [hovered, setHovered] = useState(null);
   const max = Math.max(...data, 1);
+  const yNice = computeNiceMax(max);
+  const scale = showYAxis ? yNice : max;
+  const yTicks = yNice <= 2 ? [0, yNice] : [0, Math.floor(yNice / 2), yNice];
+
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height }}>
-      {data.map((v, i) => (
-        <div key={i} style={{
-          flex: 1,
-          height: `${Math.max((v / max) * 100, 3)}%`,
-          borderRadius: "3px 3px 0 0",
-          background: color,
-          opacity: 0.5 + (v / max) * 0.5,
-          transition: "height 0.3s",
-        }} />
-      ))}
+    <div style={{ display: "flex", gap: 8, overflow: "visible" }}>
+      {showYAxis && (
+        <div style={{
+          display: "flex", flexDirection: "column-reverse",
+          justifyContent: "space-between", height,
+          width: 32, flexShrink: 0, alignItems: "flex-end", paddingRight: 4,
+        }}>
+          {yTicks.map(t => (
+            <span key={t} style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: B.textDim, lineHeight: 1,
+            }}>{t}</span>
+          ))}
+        </div>
+      )}
+      <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 3, height, overflow: "visible" }}>
+        {data.map((v, i) => (
+          <div key={i} style={{ flex: 1, height: "100%", display: "flex", alignItems: "flex-end", position: "relative" }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          >
+            {hovered === i && (
+              <div style={{
+                position: "absolute", bottom: "calc(100% + 6px)", left: "50%",
+                transform: "translateX(-50%)",
+                background: "rgba(26,26,46,0.92)", color: "#fff",
+                padding: "5px 9px", borderRadius: 7, fontSize: 11,
+                whiteSpace: "nowrap", zIndex: 20, pointerEvents: "none",
+                fontFamily: "'DM Sans', sans-serif", lineHeight: 1.4,
+              }}>
+                {dates?.[i] && <div style={{ fontWeight: 600, opacity: 0.75, fontSize: 10 }}>{dates[i]}</div>}
+                <div style={{ fontWeight: 700 }}>{v} view{v !== 1 ? "s" : ""}</div>
+              </div>
+            )}
+            <div style={{
+              width: "100%",
+              height: `${(v / scale) * 100}%`,
+              minHeight: 2,
+              borderRadius: "3px 3px 0 0",
+              background: color,
+              opacity: v === 0 ? 0.25 : 0.5 + (v / max) * 0.5,
+              transition: "height 0.3s, opacity 0.3s",
+            }} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -153,6 +210,8 @@ export default function Analytics() {
     return videos.reduce((s, v) => s + ((v.daily_views || {})[key] || 0), 0);
   });
 
+  const allDateLabels30 = getDateLabels(30);
+
   const dateLabels30 = [0, 6, 13, 20, 29].map(i => {
     const d = new Date();
     d.setDate(d.getDate() - (29 - i));
@@ -222,7 +281,7 @@ export default function Analytics() {
                 fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 700,
                 color: B.text, margin: "0 0 20px",
               }}>Total daily views — last 30 days</h2>
-              <BarChart data={combined30} height={100} />
+              <BarChart data={combined30} height={100} showYAxis dates={allDateLabels30} />
               <div style={{
                 display: "flex", justifyContent: "space-between", marginTop: 8,
                 fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: B.textDim,
@@ -241,7 +300,7 @@ export default function Analytics() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {videos.map(video => {
-                const daily7 = getDailyViewsArray(video.daily_views, 7);
+                const daily30 = getDailyViewsArray(video.daily_views, 30);
                 const title = video.video_title || "Untitled Pitch";
                 return (
                   <div key={video.id} style={{
@@ -277,10 +336,10 @@ export default function Analytics() {
                       </div>
                     </div>
 
-                    <BarChart data={daily7} height={48} />
+                    <BarChart data={daily30} height={48} dates={allDateLabels30} />
                     <p style={{
                       fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: B.textDim, margin: "4px 0 0",
-                    }}>Last 7 days</p>
+                    }}>Last 30 days</p>
                   </div>
                 );
               })}

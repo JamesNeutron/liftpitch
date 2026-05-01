@@ -24,18 +24,46 @@ function getDailyViewsArray(dailyViews, days = 7) {
   return result;
 }
 
-function MiniBarChart({ data }) {
+function getDateLabels(days) {
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (days - 1 - i));
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  });
+}
+
+function MiniBarChart({ data, dates = null }) {
+  const [hovered, setHovered] = useState(null);
   const max = Math.max(...data, 1);
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 36 }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 36, overflow: "visible" }}>
       {data.map((v, i) => (
-        <div key={i} style={{
-          flex: 1,
-          height: `${Math.max((v / max) * 100, 6)}%`,
-          borderRadius: 3,
-          background: B.gradient,
-          opacity: 0.55 + (v / max) * 0.45,
-        }} />
+        <div key={i} style={{ flex: 1, height: "100%", display: "flex", alignItems: "flex-end", position: "relative" }}
+          onMouseEnter={() => setHovered(i)}
+          onMouseLeave={() => setHovered(null)}
+        >
+          {hovered === i && (
+            <div style={{
+              position: "absolute", bottom: "calc(100% + 6px)", left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(26,26,46,0.92)", color: "#fff",
+              padding: "5px 9px", borderRadius: 7, fontSize: 11,
+              whiteSpace: "nowrap", zIndex: 20, pointerEvents: "none",
+              fontFamily: "'DM Sans', sans-serif", lineHeight: 1.4,
+            }}>
+              {dates?.[i] && <div style={{ fontWeight: 600, opacity: 0.75, fontSize: 10 }}>{dates[i]}</div>}
+              <div style={{ fontWeight: 700 }}>{v} view{v !== 1 ? "s" : ""}</div>
+            </div>
+          )}
+          <div style={{
+            width: "100%",
+            height: `${(v / max) * 100}%`,
+            minHeight: 2,
+            borderRadius: 3,
+            background: B.gradient,
+            opacity: v === 0 ? 0.25 : 0.55 + (v / max) * 0.45,
+          }} />
+        </div>
       ))}
     </div>
   );
@@ -305,6 +333,7 @@ export default function MyVideos() {
     );
   }
 
+  const videoDateLabels = getDateLabels(30);
   const appUrl = typeof window !== "undefined" ? window.location.origin : "https://lift-pitch.co";
 
   return (
@@ -355,7 +384,7 @@ export default function MyVideos() {
             gap: 20,
           }}>
             {videos.map(video => {
-              const dailyData = getDailyViewsArray(video.daily_views, 7);
+              const dailyData = getDailyViewsArray(video.daily_views, 30);
               const shareUrl = video.share_link || `${appUrl}/v/${video.id}`;
               const title = video.video_title || "Untitled Pitch";
               const isDeleting = deleting === video.id;
@@ -466,11 +495,11 @@ export default function MyVideos() {
                   </div>
 
                   {/* 7-day bar chart */}
-                  <MiniBarChart data={dailyData} />
+                  <MiniBarChart data={dailyData} dates={videoDateLabels} />
                   <p style={{
                     fontFamily: "'DM Sans', sans-serif", fontSize: 10, color: B.textDim,
                     margin: "4px 0 16px",
-                  }}>Last 7 days</p>
+                  }}>Last 30 days</p>
 
                   {/* Share link */}
                   <div style={{
