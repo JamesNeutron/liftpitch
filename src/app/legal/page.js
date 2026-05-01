@@ -145,7 +145,7 @@ function TermsOfService() {
 
         <div id="t7" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={7} title="Video Deletion & Link Expiration" />
-          <P>Videos are retained for up to <strong>[INSERT PERIOD, e.g., 12 months]</strong> from recording date unless you request earlier deletion at <A href="mailto:support@liftpitch.co">support@liftpitch.co</A>. Deletion is honored within 30 days. Upon deletion your shareable link is disabled and the file removed from active storage. Secure backup copies may persist up to [INSERT, e.g., 30 days] before purge.</P>
+          <P>Videos are retained for up to <strong>12 months</strong> from recording date unless you request earlier deletion at <A href="mailto:support@liftpitch.co">support@liftpitch.co</A>. Deletion is honored within 30 days. Upon deletion your shareable link is disabled and the file removed from active storage. Secure backup copies may persist up to 30 days before purge.</P>
           <P><strong>Important:</strong> LiftPitch cannot retrieve or delete copies that third parties (recruiters, employers) may have saved before deletion. You acknowledge this limitation when sharing your link.</P>
         </div>
 
@@ -188,7 +188,7 @@ function TermsOfService() {
 
         <div id="t14" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={14} title="Limitation of Liability" />
-          <P>TO THE MAXIMUM EXTENT PERMITTED BY MICHIGAN LAW, LIFTPITCH LLC SHALL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES. TOTAL LIABILITY SHALL NOT EXCEED THE GREATER OF (A) AMOUNTS PAID IN THE THREE MONTHS PRECEDING THE CLAIM OR (B) FIFTY DOLLARS ($50.00).</P>
+          <P>TO THE MAXIMUM EXTENT PERMITTED BY MICHIGAN LAW, PANGEA SQUARE LLC SHALL NOT BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES. TOTAL LIABILITY SHALL NOT EXCEED THE GREATER OF (A) AMOUNTS PAID IN THE THREE MONTHS PRECEDING THE CLAIM OR (B) FIFTY DOLLARS ($50.00).</P>
         </div>
 
         <div id="t15" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -208,7 +208,7 @@ function TermsOfService() {
 
         <div id="t18" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={18} title="Governing Law" />
-          <P>These Terms are governed by Michigan law. Non-arbitrated disputes shall be brought exclusively in <strong>[INSERT COUNTY, e.g., Oakland County]</strong>, Michigan courts.</P>
+          <P>These Terms are governed by Michigan law. Non-arbitrated disputes shall be brought exclusively in <strong>Macomb County</strong>, Michigan courts.</P>
         </div>
 
         <div id="t19" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -233,14 +233,14 @@ function TermsOfService() {
             <><strong>Pangea Square LLC</strong></>,
             <>📧 General: <A href="mailto:support@liftpitch.co">support@liftpitch.co</A></>,
             <>📧 Legal / DMCA: <A href="mailto:legal@liftpitch.co">legal@liftpitch.co</A></>,
-            <>🌐 <A href="https://liftpitch.co">liftpitch.co</A></>,
+            <>🌐 <A href="https://lift-pitch.co">lift-pitch.co</A></>,
             <>📍 Michigan, United States</>,
           ]} />
         </div>
       </div>
 
       <div style={{ padding: "24px 40px", borderTop: `1px solid ${B.border}`, background: B.bg, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <span style={{ fontSize: 12, color: B.textDim, fontFamily: "'DM Sans', sans-serif" }}>© [YEAR] Pangea Square LLC · All rights reserved · Michigan LLC</span>
+        <span style={{ fontSize: 12, color: B.textDim, fontFamily: "'DM Sans', sans-serif" }}>© 2026 Pangea Square LLC · All rights reserved · Michigan LLC</span>
         <button onClick={() => window.print()} style={{ padding: "10px 20px", borderRadius: 8, border: `1px solid ${B.border}`, background: B.surface, fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 600, color: B.textMuted, cursor: "pointer" }}>🖨️ Print / Save PDF</button>
       </div>
     </div>
@@ -329,7 +329,7 @@ function PrivacyPolicy() {
         <div id="p4" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={4} title="Video Data & Biometric Notice" />
           <HL><strong>Sensitive Data Notice:</strong> LiftPitch captures live video and audio through your device camera. Your recording includes your facial image and voice, which may be treated as sensitive personal information or biometric data under laws including California's CPRA.</HL>
-          <P>By recording a video you explicitly consent to: live capture of your video and audio; secure cloud storage of your recording; delivery to anyone who accesses your shareable link; and retention for up to <strong>[INSERT PERIOD, e.g., 12 months]</strong> unless you request earlier deletion.</P>
+          <P>By recording a video you explicitly consent to: live capture of your video and audio; secure cloud storage of your recording; delivery to anyone who accesses your shareable link; and retention for up to <strong>12 months</strong> unless you request earlier deletion.</P>
           <P><strong>What we do NOT do with your video:</strong></P>
           <UL items={[
             "We do not extract, derive, or store separate facial geometry, voiceprints, or biometric templates",
@@ -369,12 +369,12 @@ function PrivacyPolicy() {
             </thead>
             <tbody>
               {[
-                ["Video recordings", "[e.g., 12 months] from recording date", "Shareable link disabled upon deletion."],
-                ["Backup copies of videos", "Up to [e.g., 30 days] after deletion", "Purged from backup systems on rolling schedule."],
-                ["Resume & script data", "Duration of account or [INSERT] after last activity", "Deleted on account closure request."],
+                ["Video recordings", "12 months from recording date", "Shareable link disabled upon deletion."],
+                ["Backup copies of videos", "Up to 30 days after deletion", "Purged from backup systems on rolling schedule."],
+                ["Resume & script data", "Duration of account, or 90 days after last activity", "Deleted on account closure request."],
                 ["Account data", "Until deletion requested", "Processed within 30 days."],
                 ["Payment records", "7 years", "Required by U.S. tax law."],
-                ["Analytics & logs", "[e.g., 24 months]", "Anonymized after [INSERT period]."],
+                ["Analytics & logs", "25 months", "Anonymized after 25 months."],
               ].map(([type, period, notes], i, arr) => (
                 <tr key={i}>
                   <td style={{ ...tdStyle, borderBottom: i === arr.length - 1 ? "none" : `1px solid ${B.border}` }}>{type}</td>
@@ -468,14 +468,14 @@ function PrivacyPolicy() {
             <>📧 Privacy requests: <A href="mailto:privacy@liftpitch.co">privacy@liftpitch.co</A></>,
             <>📧 General support: <A href="mailto:support@liftpitch.co">support@liftpitch.co</A></>,
             <>📧 Legal / DMCA: <A href="mailto:legal@liftpitch.co">legal@liftpitch.co</A></>,
-            <>🌐 <A href="https://liftpitch.co">liftpitch.co</A></>,
+            <>🌐 <A href="https://lift-pitch.co">lift-pitch.co</A></>,
             <>📍 Michigan, United States</>,
           ]} />
         </div>
       </div>
 
       <div style={{ padding: "24px 40px", borderTop: `1px solid ${B.border}`, background: B.bg, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-        <span style={{ fontSize: 12, color: B.textDim, fontFamily: "'DM Sans', sans-serif" }}>© [YEAR] Pangea Square LLC · All rights reserved · Michigan LLC</span>
+        <span style={{ fontSize: 12, color: B.textDim, fontFamily: "'DM Sans', sans-serif" }}>© 2026 Pangea Square LLC · All rights reserved · Michigan LLC</span>
         <button onClick={() => window.print()} style={{ padding: "10px 20px", borderRadius: 8, border: `1px solid ${B.border}`, background: B.surface, fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 600, color: B.textMuted, cursor: "pointer" }}>🖨️ Print / Save PDF</button>
       </div>
     </div>
