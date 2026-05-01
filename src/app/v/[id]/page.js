@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "../../../lib/supabase";
 
 const B = {
   accent: "#0A66C2", accentLight: "#378FE9",
@@ -17,10 +16,10 @@ export default function VideoPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showProcessing, setShowProcessing] = useState(false);
-  const viewLoggedRef = useRef(false);
   const viewRecordedRef = useRef(false);
   const videoRef = useRef(null);
-  const watchStartRef = useRef(null);
+  const watchStartRef = useRef(null);   // ms timestamp of current play segment start
+  const totalWatchedRef = useRef(0);   // accumulated seconds across segments
 
   useEffect(() => {
     async function load() {
@@ -67,15 +66,65 @@ export default function VideoPage({ params }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ videoId: id }),
     }).catch(() => {});
+    // Cloudflare Stream iframes don't emit play events — start timing from page load
+    if (video.stream_uid) {
+      watchStartRef.current = Date.now();
+    }
   }, [video, id]);
 
-  const handlePlay = async () => {
+  useEffect(() => {
+    if (!video) return;
+
+    function flushWatchTime() {
+      if (watchStartRef.current !== null) {
+        totalWatchedRef.current += (Date.now() - watchStartRef.current) / 1000;
+        watchStartRef.current = null;
+      }
+      const seconds = Math.round(totalWatchedRef.current);
+      if (seconds < 1) return;
+      totalWatchedRef.current = 0;
+      const payload = JSON.stringify({ videoId: id, watchSeconds: seconds });
+      if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+        navigator.sendBeacon("/api/record-view", new Blob([payload], { type: "application/json" }));
+      } else {
+        fetch("/api/record-view", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {});
+      }
+    }
+
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        flushWatchTime();
+      } else if (watchStartRef.current === null) {
+        // Resume timing when tab becomes visible again
+        const vid = videoRef.current;
+        if (video.stream_uid || (vid && !vid.paused)) {
+          watchStartRef.current = Date.now();
+        }
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", flushWatchTime);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", flushWatchTime);
+      flushWatchTime();
+    };
+  }, [video, id]);
+
+  const handlePlay = () => {
     watchStartRef.current = Date.now();
-    if (!viewLoggedRef.current && id) {
-      viewLoggedRef.current = true;
-      try {
-        await supabase.from("video_views").insert({ video_id: id });
-      } catch (_) {}
+  };
+
+  const handlePause = () => {
+    if (watchStartRef.current !== null) {
+      totalWatchedRef.current += (Date.now() - watchStartRef.current) / 1000;
+      watchStartRef.current = null;
     }
   };
 
@@ -176,6 +225,8 @@ export default function VideoPage({ params }) {
               controls
               playsInline
               onPlay={handlePlay}
+              onPause={handlePause}
+              onEnded={handlePause}
               style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
             >
               {video.mp4_url && video.transcoded

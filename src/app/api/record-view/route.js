@@ -4,9 +4,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request) {
-  let videoId;
+  let videoId, watchSeconds;
   try {
-    ({ videoId } = await request.json());
+    ({ videoId, watchSeconds } = await request.json());
   } catch {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
@@ -20,6 +20,21 @@ export async function POST(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
+  // Watch-duration ping: log to video_views only, no view counter increment
+  if (watchSeconds != null) {
+    const { error } = await supabase.from("video_views").insert({
+      video_id: videoId,
+      watch_duration_seconds: Math.round(watchSeconds),
+      viewed_at: new Date().toISOString(),
+    });
+    if (error) {
+      console.error("[record-view] video_views insert error:", error.message);
+      return Response.json({ error: error.message }, { status: 500 });
+    }
+    return Response.json({ success: true });
+  }
+
+  // Initial page-load ping: increment total_views and daily_views
   const { data, error: fetchError } = await supabase
     .from("videos")
     .select("total_views, daily_views")
