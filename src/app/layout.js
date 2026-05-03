@@ -2,7 +2,11 @@ import './globals.css';
 
 export const metadata = {
   title: 'LiftPitch — Your Resume, Now in Motion',
-  description: 'Record a verified, live video pitch. Get a shareable link and let AI craft your perfect script.',
+  description: 'Record a verified live video pitch and share it on your resume',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default function RootLayout({ children }) {
