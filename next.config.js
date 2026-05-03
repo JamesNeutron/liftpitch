@@ -17,7 +17,7 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               // Next.js requires unsafe-eval (dev HMR + prod chunks) and unsafe-inline
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://embed.cloudflarestream.com",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://embed.cloudflarestream.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               // blob: for recorded video playback; R2 and Cloudflare Stream for stored/streamed videos

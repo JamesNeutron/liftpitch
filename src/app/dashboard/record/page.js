@@ -128,8 +128,40 @@ function RecordPageInner() {
   const streamRef = useRef(null);
   const timer = useTimer(maxDur);
 
+  const teleRef = useRef(null);
+  const rafRef = useRef(null);
+  const lastTimeRef = useRef(null);
+  const [scrollActive, setScrollActive] = useState(false);
+  const [scrollSpeed, setScrollSpeed] = useState("medium");
+  const scrollSpeedRef = useRef(60);
+  const SCROLL_SPEEDS = { slow: 30, medium: 60, fast: 100 };
+
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
   const atVideoLimit = !isPaid && videoCount >= 1;
+
+  const changeSpeed = (speed) => {
+    setScrollSpeed(speed);
+    scrollSpeedRef.current = SCROLL_SPEEDS[speed];
+  };
+
+  const startScroll = () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    lastTimeRef.current = null;
+    setScrollActive(true);
+    const tick = (ts) => {
+      if (lastTimeRef.current === null) lastTimeRef.current = ts;
+      const dt = (ts - lastTimeRef.current) / 1000;
+      lastTimeRef.current = ts;
+      if (teleRef.current) teleRef.current.scrollTop += scrollSpeedRef.current * dt;
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
+  const stopScroll = () => {
+    setScrollActive(false);
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+  };
 
   useEffect(() => {
     async function init() {
@@ -178,6 +210,8 @@ function RecordPageInner() {
       setShowUpgradeModal(true);
     }
   }, [authLoading, atVideoLimit]);
+
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -346,29 +380,39 @@ function RecordPageInner() {
           color: B.text, margin: "0 0 32px",
         }}>🎥 Record a Pitch</h1>
 
-        {/* Limit banner for free users at their video limit */}
+        {/* Upgrade wall — shown when free user has already used their 1 video */}
         {atVideoLimit && (
           <div style={{
-            padding: "16px 20px", borderRadius: 14, marginBottom: 24,
-            background: "rgba(220,53,69,0.05)", border: "1px solid rgba(220,53,69,0.2)",
-            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-            flexWrap: "wrap",
+            padding: 24, borderRadius: 16, marginBottom: 24,
+            background: B.surface, border: "1.5px solid rgba(220,53,69,0.25)",
+            boxShadow: "0 2px 16px rgba(220,53,69,0.08)",
           }}>
-            <div>
-              <span style={{
-                fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: "#DC3545",
-              }}>Free video used</span>
-              <p style={{
-                fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted,
-                margin: "4px 0 0",
-              }}>Upgrade to record unlimited videos without watermarks.</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+              <span style={{ fontSize: 22 }}>🔒</span>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 800, color: "#DC3545" }}>
+                You&apos;ve used your free video
+              </span>
             </div>
-            <a href="/pricing" style={{
-              padding: "10px 20px", borderRadius: 10,
-              background: B.gradient, color: "#fff", textDecoration: "none",
-              fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
-              whiteSpace: "nowrap",
-            }}>Upgrade →</a>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: "0 0 20px", lineHeight: 1.6 }}>
+              Upgrade to record unlimited videos and remove the watermark from your pitches.
+            </p>
+            <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 130, padding: "16px", borderRadius: 12, border: `1.5px solid ${B.border}` }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, color: B.textMuted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Pro Monthly</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: B.text }}>
+                  $8<span style={{ fontSize: 13, fontWeight: 400, color: B.textMuted }}>/mo</span>
+                </div>
+              </div>
+              <div style={{ flex: 1, minWidth: 130, padding: "16px", borderRadius: 12, border: `1.5px solid ${B.accent}`, background: "linear-gradient(135deg, rgba(10,102,194,0.06), rgba(55,143,233,0.06))" }}>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, color: B.accent, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Lifetime Pass</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: B.text }}>
+                  $35<span style={{ fontSize: 13, fontWeight: 400, color: B.textMuted }}> once</span>
+                </div>
+              </div>
+            </div>
+            <a href="/pricing" style={{ display: "inline-block", padding: "12px 28px", borderRadius: 12, background: B.gradient, color: "#fff", textDecoration: "none", fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700, boxShadow: "0 4px 16px rgba(10,102,194,0.25)" }}>
+              View Pricing &amp; Upgrade →
+            </a>
           </div>
         )}
 
@@ -380,7 +424,7 @@ function RecordPageInner() {
           }}>
             <div style={{
               display: "flex", justifyContent: "space-between", alignItems: "center",
-              marginBottom: scriptExpanded ? 14 : 0,
+              marginBottom: scriptExpanded ? 14 : 0, flexWrap: "wrap", gap: 8,
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 16 }}>📋</span>
@@ -399,22 +443,44 @@ function RecordPageInner() {
                   }}>{scriptData.match_score}% match</span>
                 )}
               </div>
-              <button
-                onClick={() => setScriptExpanded(v => !v)}
-                style={{
-                  padding: "5px 12px", borderRadius: 8,
-                  background: B.bg, border: `1px solid ${B.border}`,
-                  color: B.textMuted, fontFamily: "'Sora', sans-serif",
-                  fontSize: 11, fontWeight: 600, cursor: "pointer",
-                }}
-              >{scriptExpanded ? "▲ Collapse" : "▼ Expand"}</button>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                {scriptExpanded && (
+                  <>
+                    {[["slow", "Slow"], ["medium", "Med"], ["fast", "Fast"]].map(([s, label]) => (
+                      <button key={s} onClick={() => changeSpeed(s)} style={{
+                        padding: "4px 10px", borderRadius: 6,
+                        background: scrollSpeed === s ? B.accent : B.bg,
+                        color: scrollSpeed === s ? "#fff" : B.textMuted,
+                        border: `1px solid ${scrollSpeed === s ? B.accent : B.border}`,
+                        fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      }}>{label}</button>
+                    ))}
+                    <button onClick={scrollActive ? stopScroll : startScroll} style={{
+                      padding: "4px 10px", borderRadius: 6,
+                      background: scrollActive ? "rgba(220,53,69,0.08)" : "rgba(5,118,66,0.08)",
+                      border: `1px solid ${scrollActive ? "rgba(220,53,69,0.25)" : "rgba(5,118,66,0.25)"}`,
+                      color: scrollActive ? "#DC3545" : B.success,
+                      fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                    }}>{scrollActive ? "⏸ Stop" : "▶ Scroll"}</button>
+                  </>
+                )}
+                <button
+                  onClick={() => { setScriptExpanded(v => !v); if (scrollActive) stopScroll(); }}
+                  style={{
+                    padding: "5px 12px", borderRadius: 8,
+                    background: B.bg, border: `1px solid ${B.border}`,
+                    color: B.textMuted, fontFamily: "'Sora', sans-serif",
+                    fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  }}
+                >{scriptExpanded ? "▲ Collapse" : "▼ Expand"}</button>
+              </div>
             </div>
             {scriptExpanded && (
-              <div style={{
+              <div ref={teleRef} style={{
                 padding: "16px 18px", background: B.bg, border: `1px solid ${B.border}`,
                 borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 14.5,
                 color: B.text, lineHeight: 1.9, whiteSpace: "pre-wrap",
-                maxHeight: 260, overflowY: "auto",
+                maxHeight: 260, overflowY: "auto", scrollBehavior: "auto",
               }}>{scriptData.script}</div>
             )}
           </div>
@@ -603,11 +669,11 @@ function RecordPageInner() {
           {/* Controls */}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {state === "idle" && (
-              <button onClick={startCamera} disabled={titleMissing} style={{
+              <button onClick={startCamera} disabled={titleMissing || atVideoLimit} style={{
                 padding: "14px 32px", borderRadius: 12, border: "none",
-                background: titleMissing ? "#C8D0D9" : atVideoLimit ? "#C8D0D9" : B.gradient,
+                background: (titleMissing || atVideoLimit) ? "#C8D0D9" : B.gradient,
                 color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
-                cursor: titleMissing ? "not-allowed" : "pointer",
+                cursor: (titleMissing || atVideoLimit) ? "not-allowed" : "pointer",
                 boxShadow: (titleMissing || atVideoLimit) ? "none" : `0 4px 24px ${B.accentGlow}`,
                 transition: "all 0.2s",
               }}>
