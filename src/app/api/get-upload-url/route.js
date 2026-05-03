@@ -14,6 +14,22 @@ export async function POST(request) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Free tier: max 1 video
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+  if (profile?.plan !== "pro" && profile?.plan !== "lifetime") {
+    const { count } = await supabase
+      .from("videos")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if ((count ?? 0) >= 1) {
+      return Response.json({ error: "free_limit_reached" }, { status: 403 });
+    }
+  }
+
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   const streamToken = process.env.CLOUDFLARE_STREAM_TOKEN;
 

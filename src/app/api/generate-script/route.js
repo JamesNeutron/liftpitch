@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 export async function POST(request) {
   let rawBody;
   try {
@@ -20,6 +22,34 @@ export async function POST(request) {
     const missing = ["resume", "jobDesc", "bio"].filter((k) => !{ resume, jobDesc, bio }[k]);
     console.error("generate-script: missing required fields:", missing);
     return Response.json({ error: "Missing required fields", missing }, { status: 400 });
+  }
+
+  // Server-side free tier enforcement for authenticated users
+  const authHeader = request.headers.get("Authorization");
+  const token = authHeader?.replace("Bearer ", "").trim();
+  if (token) {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
+    );
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("plan")
+        .eq("id", user.id)
+        .single();
+      if (profile?.plan !== "pro" && profile?.plan !== "lifetime") {
+        const { count } = await supabase
+          .from("scripts")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id);
+        if ((count ?? 0) >= 1) {
+          return Response.json({ error: "free_limit_reached" }, { status: 403 });
+        }
+      }
+    }
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {

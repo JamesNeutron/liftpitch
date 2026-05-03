@@ -17,7 +17,7 @@ export async function GET(request, { params }) {
 
     const { data, error } = await supabase
       .from("videos")
-      .select("id, r2_url, mp4_url, stream_uid, transcoded, verification_hash, created_at, share_link")
+      .select("id, r2_url, mp4_url, stream_uid, transcoded, verification_hash, created_at, share_link, user_id")
       .eq("id", id)
       .maybeSingle();
 
@@ -32,10 +32,19 @@ export async function GET(request, { params }) {
       return Response.json({ error: "Video not found" }, { status: 404 });
     }
 
-    // Normalize: stream_uid present but mp4_url not yet available is valid — return null explicitly.
+    // Determine if owner is on free tier for watermark display
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("plan")
+      .eq("id", data.user_id)
+      .maybeSingle();
+    const is_free_tier = profile?.plan !== "pro" && profile?.plan !== "lifetime";
+
+    const { user_id, ...videoData } = data;
     return Response.json({
-      ...data,
+      ...videoData,
       mp4_url: data.mp4_url ?? null,
+      is_free_tier,
     });
   } catch (err) {
     console.error('[video-api] Unhandled error:', err);

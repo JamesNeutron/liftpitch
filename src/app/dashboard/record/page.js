@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import UpgradeModal from "../../../components/UpgradeModal";
 
 const B = {
   bg: "#F5F7FA", surface: "#FFFFFF", border: "#E2E8F0",
@@ -104,6 +105,9 @@ function RecordPageInner() {
   const scriptId = searchParams.get("script_id");
 
   const [user, setUser] = useState(null);
+  const [userPlan, setUserPlan] = useState("free");
+  const [videoCount, setVideoCount] = useState(0);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [scriptData, setScriptData] = useState(null);
   const [scriptExpanded, setScriptExpanded] = useState(true);
@@ -124,6 +128,9 @@ function RecordPageInner() {
   const streamRef = useRef(null);
   const timer = useTimer(maxDur);
 
+  const isPaid = userPlan === "pro" || userPlan === "lifetime";
+  const atVideoLimit = !isPaid && videoCount >= 1;
+
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -135,7 +142,16 @@ function RecordPageInner() {
         .eq("id", session.user.id)
         .single();
 
-      if (profile?.plan !== "pro" && profile?.plan !== "lifetime") { router.replace("/"); return; }
+      const plan = profile?.plan || "free";
+      setUserPlan(plan);
+
+      if (plan !== "pro" && plan !== "lifetime") {
+        const { count } = await supabase
+          .from("videos")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", session.user.id);
+        setVideoCount(count ?? 0);
+      }
 
       setUser(session.user);
       setAuthLoading(false);
@@ -156,6 +172,13 @@ function RecordPageInner() {
     init();
   }, [router, scriptId]);
 
+  // Show upgrade modal automatically if at limit after loading
+  useEffect(() => {
+    if (!authLoading && atVideoLimit) {
+      setShowUpgradeModal(true);
+    }
+  }, [authLoading, atVideoLimit]);
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     router.replace("/");
@@ -169,6 +192,10 @@ function RecordPageInner() {
   };
 
   const startCamera = async () => {
+    if (atVideoLimit) {
+      setShowUpgradeModal(true);
+      return;
+    }
     setCameraError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -234,6 +261,8 @@ function RecordPageInner() {
     setVerification(null);
     setUploadStatus("idle");
     streamRef.current?.getTracks().forEach(t => t.stop());
+    // After recording, re-check limit
+    if (atVideoLimit) setShowUpgradeModal(true);
   };
 
   const uploadToStream = async (blob, verificationHash) => {
@@ -248,7 +277,10 @@ function RecordPageInner() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({}),
       });
-      if (!urlRes.ok) throw new Error(`get-upload-url: ${await urlRes.text()}`);
+      if (!urlRes.ok) {
+        if (urlRes.status === 403) throw new Error("free_limit_reached");
+        throw new Error(`get-upload-url: ${await urlRes.text()}`);
+      }
       const { uploadURL, uid } = await urlRes.json();
 
       const formData = new FormData();
@@ -261,10 +293,18 @@ function RecordPageInner() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ streamUid: uid, verificationHash, videoTitle }),
       });
-      if (!regRes.ok) throw new Error(`register-video: ${await regRes.text()}`);
+      if (!regRes.ok) {
+        if (regRes.status === 403) throw new Error("free_limit_reached");
+        throw new Error(`register-video: ${await regRes.text()}`);
+      }
       const { shareLink: realLink, videoId } = await regRes.json();
       setShareLink(realLink);
       setUploadStatus("done");
+
+      // Update video count for free users after successful upload
+      if (!isPaid) {
+        setVideoCount(prev => prev + 1);
+      }
 
       // Link script to the new video
       if (scriptId && videoId) {
@@ -272,7 +312,12 @@ function RecordPageInner() {
       }
     } catch (err) {
       console.error("Upload failed:", err);
-      setUploadStatus("error");
+      if (err.message === "free_limit_reached") {
+        setUploadStatus("error");
+        setShowUpgradeModal(true);
+      } else {
+        setUploadStatus("error");
+      }
     }
   };
 
@@ -291,11 +336,41 @@ function RecordPageInner() {
     <div style={{ minHeight: "100vh", background: B.bg, fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardHeader email={user?.email} onSignOut={handleSignOut} />
 
+      {showUpgradeModal && (
+        <UpgradeModal feature="video" onClose={() => setShowUpgradeModal(false)} />
+      )}
+
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "40px 20px 80px" }}>
         <h1 style={{
           fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 800,
           color: B.text, margin: "0 0 32px",
         }}>🎥 Record a Pitch</h1>
+
+        {/* Limit banner for free users at their video limit */}
+        {atVideoLimit && (
+          <div style={{
+            padding: "16px 20px", borderRadius: 14, marginBottom: 24,
+            background: "rgba(220,53,69,0.05)", border: "1px solid rgba(220,53,69,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+            flexWrap: "wrap",
+          }}>
+            <div>
+              <span style={{
+                fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: "#DC3545",
+              }}>Free video used</span>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted,
+                margin: "4px 0 0",
+              }}>Upgrade to record unlimited videos without watermarks.</p>
+            </div>
+            <a href="/pricing" style={{
+              padding: "10px 20px", borderRadius: 10,
+              background: B.gradient, color: "#fff", textDecoration: "none",
+              fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+              whiteSpace: "nowrap",
+            }}>Upgrade →</a>
+          </div>
+        )}
 
         {/* Teleprompter panel — shown when coming from a saved script */}
         {scriptData && (
@@ -452,7 +527,7 @@ function RecordPageInner() {
                 {cameraError
                   ? <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#DC3545", textAlign: "center", padding: "0 16px" }}>{cameraError}</span>
                   : <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textDim }}>
-                      {titleMissing ? "Enter a job title above first" : "Click below to start your camera"}
+                      {titleMissing ? "Enter a job title above first" : atVideoLimit ? "Upgrade to record more videos" : "Click below to start your camera"}
                     </span>
                 }
               </div>
@@ -508,6 +583,21 @@ function RecordPageInner() {
                 <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 700, color: "#fff", letterSpacing: "0.06em" }}>LIVE VERIFIED</span>
               </div>
             )}
+
+            {/* Watermark for free users during active recording states */}
+            {!isPaid && state !== "idle" && (
+              <div style={{
+                position: "absolute", bottom: state === "recording" ? 12 : 14, left: 12, zIndex: 6,
+                display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px",
+                borderRadius: 100, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)",
+                border: "1px solid rgba(255,255,255,0.15)", pointerEvents: "none",
+              }}>
+                <span style={{
+                  fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 700,
+                  color: "rgba(255,255,255,0.75)", letterSpacing: "0.06em",
+                }}>liftpitch.co</span>
+              </div>
+            )}
           </div>
 
           {/* Controls */}
@@ -515,12 +605,14 @@ function RecordPageInner() {
             {state === "idle" && (
               <button onClick={startCamera} disabled={titleMissing} style={{
                 padding: "14px 32px", borderRadius: 12, border: "none",
-                background: titleMissing ? "#C8D0D9" : B.gradient,
+                background: titleMissing ? "#C8D0D9" : atVideoLimit ? "#C8D0D9" : B.gradient,
                 color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
                 cursor: titleMissing ? "not-allowed" : "pointer",
-                boxShadow: titleMissing ? "none" : `0 4px 24px ${B.accentGlow}`,
+                boxShadow: (titleMissing || atVideoLimit) ? "none" : `0 4px 24px ${B.accentGlow}`,
                 transition: "all 0.2s",
-              }}>📷 Open Camera</button>
+              }}>
+                {atVideoLimit ? "🔒 Upgrade to Record" : "📷 Open Camera"}
+              </button>
             )}
             {state === "previewing" && (
               <button onClick={startCountdown} style={{
@@ -625,12 +717,19 @@ function RecordPageInner() {
               )}
 
               {uploadStatus === "done" && (
-                <div style={{ marginTop: 14, display: "flex", gap: 10 }}>
+                <div style={{ marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
                   <a href="/dashboard/videos" style={{
                     padding: "10px 20px", borderRadius: 10, background: B.bg,
                     border: `1px solid ${B.border}`, fontFamily: "'Sora', sans-serif",
                     fontSize: 13, fontWeight: 600, color: B.accent, textDecoration: "none",
                   }}>View My Videos →</a>
+                  {!isPaid && (
+                    <a href="/pricing" style={{
+                      padding: "10px 20px", borderRadius: 10,
+                      background: B.gradient, color: "#fff", textDecoration: "none",
+                      fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+                    }}>Remove Watermark →</a>
+                  )}
                 </div>
               )}
             </div>

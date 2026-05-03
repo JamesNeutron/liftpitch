@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import UpgradeModal from "../../../components/UpgradeModal";
 
 const B = {
   bg: "#F5F7FA", surface: "#FFFFFF", border: "#E2E8F0",
@@ -46,19 +47,30 @@ function DashboardHeader({ email, onSignOut }) {
       </nav>
 
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <span style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted,
-          maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-        }}>{email}</span>
-        <button onClick={onSignOut} style={{
-          padding: "8px 18px", borderRadius: 10, border: `1.5px solid ${B.border}`,
-          background: B.surface, color: B.textMuted,
-          fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
-          transition: "all 0.2s",
-        }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = "#DC3545"; e.currentTarget.style.color = "#DC3545"; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.color = B.textMuted; }}
-        >Log Out</button>
+        {email ? (
+          <>
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted,
+              maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+            }}>{email}</span>
+            <button onClick={onSignOut} style={{
+              padding: "8px 18px", borderRadius: 10, border: `1.5px solid ${B.border}`,
+              background: B.surface, color: B.textMuted,
+              fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = "#DC3545"; e.currentTarget.style.color = "#DC3545"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.color = B.textMuted; }}
+            >Log Out</button>
+          </>
+        ) : (
+          <a href="/" style={{
+            padding: "8px 18px", borderRadius: 10, border: `1.5px solid ${B.accent}`,
+            background: B.surface, color: B.accent,
+            fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
+            textDecoration: "none",
+          }}>Sign In</a>
+        )}
       </div>
     </header>
   );
@@ -73,6 +85,10 @@ function scoreColor(score) {
 export default function DashboardScript() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [userPlan, setUserPlan] = useState("free");
+  const [scriptCount, setScriptCount] = useState(0);
+  const [scriptLimitReached, setScriptLimitReached] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [resume, setResume] = useState("");
@@ -90,14 +106,23 @@ export default function DashboardScript() {
   const [savedId, setSavedId] = useState(null);
 
   const [history, setHistory] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [expandedScript, setExpandedScript] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+
+  const isPaid = userPlan === "pro" || userPlan === "lifetime";
 
   useEffect(() => {
     async function init() {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.replace("/"); return; }
+
+      if (!session) {
+        // Unauthenticated free user — check localStorage
+        const used = typeof window !== "undefined" && localStorage.getItem("lp_script_used");
+        setScriptLimitReached(!!used);
+        setLoading(false);
+        return;
+      }
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -105,14 +130,27 @@ export default function DashboardScript() {
         .eq("id", session.user.id)
         .single();
 
-      if (profile?.plan !== "pro" && profile?.plan !== "lifetime") {
-        router.replace("/");
+      const plan = profile?.plan || "free";
+      setUserPlan(plan);
+      setUser(session.user);
+
+      if (plan === "pro" || plan === "lifetime") {
+        setScriptLimitReached(false);
+        setLoading(false);
+        loadHistory(session.user.id);
         return;
       }
 
-      setUser(session.user);
+      // Free plan: check script count
+      const { count } = await supabase
+        .from("scripts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", session.user.id);
+      const n = count ?? 0;
+      setScriptCount(n);
+      setScriptLimitReached(n >= 1);
       setLoading(false);
-      loadHistory(session.user.id);
+      if (n > 0) loadHistory(session.user.id);
     }
     init();
   }, [router]);
@@ -164,17 +202,37 @@ export default function DashboardScript() {
 
   const generate = async () => {
     if (!resume.trim() || !jobDesc.trim() || !bio.trim()) return;
+
+    if (scriptLimitReached) {
+      setShowUpgradeModal(true);
+      return;
+    }
+
     setGenerating(true);
     setScript("");
     setAnalysis(null);
     setSavedId(null);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch("/api/generate-script", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ resume, jobDesc, bio, duration }),
       });
+
+      if (response.status === 403) {
+        setScriptLimitReached(true);
+        setShowUpgradeModal(true);
+        setGenerating(false);
+        return;
+      }
+
       const data = await response.json();
       const text = data.text || "";
       const m = text.match(/<analysis>\s*([\s\S]*?)\s*<\/analysis>/);
@@ -183,6 +241,12 @@ export default function DashboardScript() {
       const scriptText = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
       setAnalysis(parsedAnalysis);
       setScript(scriptText || "Could not generate script. Please try again.");
+
+      // Mark localStorage for unauthenticated users
+      if (!user && typeof window !== "undefined") {
+        localStorage.setItem("lp_script_used", "1");
+        setScriptLimitReached(true);
+      }
     } catch {
       setScript("Something went wrong. Please check your connection and try again.");
     }
@@ -208,6 +272,12 @@ export default function DashboardScript() {
     if (!error && data) {
       setSavedId(data.id);
       setHistory(prev => [data, ...prev]);
+      // Update count for free users
+      if (!isPaid) {
+        const newCount = scriptCount + 1;
+        setScriptCount(newCount);
+        setScriptLimitReached(newCount >= 1);
+      }
     }
     setSaving(false);
   };
@@ -238,6 +308,10 @@ export default function DashboardScript() {
     <div style={{ minHeight: "100vh", background: B.bg, fontFamily: "'DM Sans', sans-serif" }}>
       <DashboardHeader email={user?.email} onSignOut={handleSignOut} />
 
+      {showUpgradeModal && (
+        <UpgradeModal feature="script" onClose={() => setShowUpgradeModal(false)} />
+      )}
+
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "40px 20px 80px" }}>
 
         {/* Breadcrumb */}
@@ -258,16 +332,54 @@ export default function DashboardScript() {
             fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800,
             color: B.text, margin: 0,
           }}>Generate Script</h1>
-          <span style={{
-            padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700,
-            fontFamily: "'Sora', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
-            background: "linear-gradient(135deg, #057642, #046636)", color: "#0A0A0F",
-          }}>Unlimited</span>
+          {isPaid ? (
+            <span style={{
+              padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700,
+              fontFamily: "'Sora', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
+              background: "linear-gradient(135deg, #057642, #046636)", color: "#fff",
+            }}>Unlimited</span>
+          ) : (
+            <span style={{
+              padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 700,
+              fontFamily: "'Sora', sans-serif", letterSpacing: "0.1em", textTransform: "uppercase",
+              background: scriptLimitReached
+                ? "rgba(220,53,69,0.1)"
+                : "rgba(10,102,194,0.1)",
+              color: scriptLimitReached ? "#DC3545" : B.accent,
+              border: `1px solid ${scriptLimitReached ? "rgba(220,53,69,0.25)" : "rgba(10,102,194,0.25)"}`,
+            }}>{scriptLimitReached ? "Limit Reached" : "1 Free"}</span>
+          )}
         </div>
         <p style={{
           fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted,
           lineHeight: 1.6, margin: "0 0 32px",
         }}>Upload your resume, paste the job description, and add a paragraph about yourself. Get a tailored pitch script in seconds.</p>
+
+        {/* Limit banner for free users */}
+        {!isPaid && scriptLimitReached && (
+          <div style={{
+            padding: "16px 20px", borderRadius: 14, marginBottom: 24,
+            background: "rgba(220,53,69,0.05)", border: "1px solid rgba(220,53,69,0.2)",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+            flexWrap: "wrap",
+          }}>
+            <div>
+              <span style={{
+                fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: "#DC3545",
+              }}>Free script used</span>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted,
+                margin: "4px 0 0",
+              }}>Upgrade to generate unlimited AI scripts.</p>
+            </div>
+            <a href="/pricing" style={{
+              padding: "10px 20px", borderRadius: 10,
+              background: B.gradient, color: "#fff", textDecoration: "none",
+              fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+              whiteSpace: "nowrap",
+            }}>Upgrade →</a>
+          </div>
+        )}
 
         {/* Generator card */}
         <div style={{
@@ -389,7 +501,7 @@ export default function DashboardScript() {
               transition: "all 0.2s",
             }}
           >
-            {generating ? "⏳ Analyzing & Writing..." : "🎯 Generate My Script"}
+            {generating ? "⏳ Analyzing & Writing..." : scriptLimitReached ? "🔒 Upgrade to Generate More" : "🎯 Generate My Script"}
           </button>
         </div>
 
@@ -487,134 +599,155 @@ export default function DashboardScript() {
                   lineHeight: 1.8, whiteSpace: "pre-wrap",
                 }}>{script}</div>
 
-                {savedId ? (
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-                    <div style={{
-                      padding: "10px 16px", borderRadius: 10,
-                      background: "rgba(5,118,66,0.07)", border: "1px solid rgba(5,118,66,0.2)",
-                      fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.success,
-                    }}>✓ Script saved</div>
-                    <a href={`/dashboard/record?script_id=${savedId}`} style={{
-                      padding: "12px 28px", borderRadius: 12,
-                      background: B.gradient, color: "#fff", textDecoration: "none",
-                      fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
-                      boxShadow: `0 4px 16px ${B.accentGlow}`,
-                    }}>🎥 Use This Script →</a>
-                  </div>
+                {user ? (
+                  savedId ? (
+                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                      <div style={{
+                        padding: "10px 16px", borderRadius: 10,
+                        background: "rgba(5,118,66,0.07)", border: "1px solid rgba(5,118,66,0.2)",
+                        fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.success,
+                      }}>✓ Script saved</div>
+                      <a href={`/dashboard/record?script_id=${savedId}`} style={{
+                        padding: "12px 28px", borderRadius: 12,
+                        background: B.gradient, color: "#fff", textDecoration: "none",
+                        fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+                        boxShadow: `0 4px 16px ${B.accentGlow}`,
+                      }}>🎥 Use This Script →</a>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={saveScript}
+                      disabled={saving}
+                      style={{
+                        padding: "12px 28px", borderRadius: 12, border: "none",
+                        background: saving ? "#C8D0D9" : B.gradient,
+                        color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+                        cursor: saving ? "not-allowed" : "pointer",
+                        boxShadow: saving ? "none" : `0 4px 16px ${B.accentGlow}`,
+                      }}
+                    >{saving ? "Saving..." : "💾 Save & Use This Script"}</button>
+                  )
                 ) : (
-                  <button
-                    onClick={saveScript}
-                    disabled={saving}
-                    style={{
-                      padding: "12px 28px", borderRadius: 12, border: "none",
-                      background: saving ? "#C8D0D9" : B.gradient,
-                      color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
-                      cursor: saving ? "not-allowed" : "pointer",
-                      boxShadow: saving ? "none" : `0 4px 16px ${B.accentGlow}`,
-                    }}
-                  >{saving ? "Saving..." : "💾 Save & Use This Script"}</button>
+                  <div style={{
+                    padding: "16px 20px", borderRadius: 12,
+                    background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.15)",
+                  }}>
+                    <p style={{
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted,
+                      margin: "0 0 12px",
+                    }}>Create a free account to save this script and record your pitch.</p>
+                    <a href="/" style={{
+                      padding: "10px 22px", borderRadius: 10,
+                      background: B.gradient, color: "#fff", textDecoration: "none",
+                      fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+                    }}>Sign Up Free →</a>
+                  </div>
                 )}
               </>
             )}
           </div>
         )}
 
-        {/* History */}
-        <div>
-          <p style={{
-            fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, color: B.textDim,
-            textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 16px",
-          }}>Script History</p>
+        {/* History — only for authenticated users */}
+        {user && (
+          <div>
+            <p style={{
+              fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, color: B.textDim,
+              textTransform: "uppercase", letterSpacing: "0.12em", margin: "0 0 16px",
+            }}>Script History</p>
 
-          {historyLoading ? (
-            <div style={{ padding: "32px 0", textAlign: "center" }}>
-              <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid transparent",
-                borderTopColor: B.accent, animation: "spin 0.8s linear infinite", display: "inline-block" }} />
-            </div>
-          ) : history.length === 0 ? (
-            <div style={{
-              padding: "40px 24px", textAlign: "center", background: B.surface,
-              border: `1px solid ${B.border}`, borderRadius: 16,
-            }}>
-              <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.4 }}>🎯</div>
-              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: 0 }}>
-                No scripts saved yet. Generate your first one above.
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {history.map(item => (
-                <div key={item.id} style={{
-                  background: B.surface, border: `1px solid ${B.border}`, borderRadius: 16,
-                  padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                  opacity: deletingId === item.id ? 0.5 : 1, transition: "opacity 0.2s",
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{
-                        fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.text,
-                        margin: "0 0 5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                      }}>{(item.job_description || "No job description").slice(0, 90)}{(item.job_description?.length || 0) > 90 ? "…" : ""}</p>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                        {item.match_score !== null && item.match_score !== undefined && (
-                          <span style={{
-                            fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700,
-                            color: scoreColor(item.match_score),
-                          }}>{item.match_score}% match</span>
-                        )}
-                        {item.duration && (
+            {historyLoading ? (
+              <div style={{ padding: "32px 0", textAlign: "center" }}>
+                <div style={{ width: 28, height: 28, borderRadius: "50%", border: "2px solid transparent",
+                  borderTopColor: B.accent, animation: "spin 0.8s linear infinite", display: "inline-block" }} />
+              </div>
+            ) : history.length === 0 ? (
+              <div style={{
+                padding: "40px 24px", textAlign: "center", background: B.surface,
+                border: `1px solid ${B.border}`, borderRadius: 16,
+              }}>
+                <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.4 }}>🎯</div>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: 0 }}>
+                  No scripts saved yet. Generate your first one above.
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {history.map(item => (
+                  <div key={item.id} style={{
+                    background: B.surface, border: `1px solid ${B.border}`, borderRadius: 16,
+                    padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                    opacity: deletingId === item.id ? 0.5 : 1, transition: "opacity 0.2s",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{
+                          fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.text,
+                          margin: "0 0 5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>{(item.job_description || "No job description").slice(0, 90)}{(item.job_description?.length || 0) > 90 ? "…" : ""}</p>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                          {item.match_score !== null && item.match_score !== undefined && (
+                            <span style={{
+                              fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700,
+                              color: scoreColor(item.match_score),
+                            }}>{item.match_score}% match</span>
+                          )}
+                          {item.duration && (
+                            <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim }}>
+                              {item.duration}s script
+                            </span>
+                          )}
                           <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim }}>
-                            {item.duration}s script
+                            {new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </span>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                        <a href={`/dashboard/record?script_id=${item.id}`} style={{
+                          padding: "7px 14px", borderRadius: 8,
+                          background: B.gradient, color: "#fff", textDecoration: "none",
+                          fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700,
+                          whiteSpace: "nowrap",
+                        }}>🎥 Use</a>
+                        {isPaid && (
+                          <button
+                            disabled={deletingId === item.id}
+                            onClick={() => deleteScript(item.id)}
+                            style={{
+                              padding: "7px 14px", borderRadius: 8,
+                              border: "1px solid rgba(220,53,69,0.25)",
+                              background: "rgba(220,53,69,0.04)",
+                              color: "#DC3545", fontFamily: "'Sora', sans-serif",
+                              fontSize: 12, fontWeight: 600,
+                              cursor: deletingId === item.id ? "not-allowed" : "pointer",
+                            }}
+                          >{deletingId === item.id ? "…" : "🗑"}</button>
                         )}
-                        <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim }}>
-                          {new Date(item.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                        </span>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                      <a href={`/dashboard/record?script_id=${item.id}`} style={{
-                        padding: "7px 14px", borderRadius: 8,
-                        background: B.gradient, color: "#fff", textDecoration: "none",
-                        fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700,
-                        whiteSpace: "nowrap",
-                      }}>🎥 Use</a>
-                      <button
-                        disabled={deletingId === item.id}
-                        onClick={() => deleteScript(item.id)}
-                        style={{
-                          padding: "7px 14px", borderRadius: 8,
-                          border: "1px solid rgba(220,53,69,0.25)",
-                          background: "rgba(220,53,69,0.04)",
-                          color: "#DC3545", fontFamily: "'Sora', sans-serif",
-                          fontSize: 12, fontWeight: 600,
-                          cursor: deletingId === item.id ? "not-allowed" : "pointer",
-                        }}
-                      >{deletingId === item.id ? "…" : "🗑"}</button>
-                    </div>
+                    <button
+                      onClick={() => setExpandedScript(expandedScript === item.id ? null : item.id)}
+                      style={{
+                        padding: "6px 12px", borderRadius: 8,
+                        background: B.bg, border: `1px solid ${B.border}`,
+                        color: B.textMuted, fontFamily: "'Sora', sans-serif",
+                        fontSize: 11, fontWeight: 600, cursor: "pointer",
+                      }}
+                    >{expandedScript === item.id ? "▲ Hide Script" : "▼ View Script"}</button>
+                    {expandedScript === item.id && item.script && (
+                      <div style={{
+                        marginTop: 12, padding: "16px 18px",
+                        background: B.bg, border: `1px solid ${B.border}`,
+                        borderRadius: 10, fontFamily: "'DM Sans', sans-serif",
+                        fontSize: 13.5, color: B.text, lineHeight: 1.8, whiteSpace: "pre-wrap",
+                      }}>{item.script}</div>
+                    )}
                   </div>
-                  <button
-                    onClick={() => setExpandedScript(expandedScript === item.id ? null : item.id)}
-                    style={{
-                      padding: "6px 12px", borderRadius: 8,
-                      background: B.bg, border: `1px solid ${B.border}`,
-                      color: B.textMuted, fontFamily: "'Sora', sans-serif",
-                      fontSize: 11, fontWeight: 600, cursor: "pointer",
-                    }}
-                  >{expandedScript === item.id ? "▲ Hide Script" : "▼ View Script"}</button>
-                  {expandedScript === item.id && item.script && (
-                    <div style={{
-                      marginTop: 12, padding: "16px 18px",
-                      background: B.bg, border: `1px solid ${B.border}`,
-                      borderRadius: 10, fontFamily: "'DM Sans', sans-serif",
-                      fontSize: 13.5, color: B.text, lineHeight: 1.8, whiteSpace: "pre-wrap",
-                    }}>{item.script}</div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

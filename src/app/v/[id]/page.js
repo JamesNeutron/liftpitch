@@ -254,6 +254,20 @@ export default function VideoPage({ params }) {
             </div>
           )}
 
+          {video.is_free_tier && (
+            <div style={{
+              position: "absolute", bottom: 14, right: 14, zIndex: 5,
+              display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px",
+              borderRadius: 100, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255,255,255,0.15)", pointerEvents: "none",
+            }}>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700,
+                color: "rgba(255,255,255,0.75)", letterSpacing: "0.06em" }}>
+                liftpitch.co
+              </span>
+            </div>
+          )}
+
           {/* Verified overlay badge */}
           <div style={{
             position: "absolute", top: 14, right: 14, zIndex: 5,

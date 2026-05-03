@@ -56,6 +56,23 @@ export async function POST(request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Free tier: max 1 video
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("plan")
+    .eq("id", user.id)
+    .single();
+  if (profile?.plan !== "pro" && profile?.plan !== "lifetime") {
+    const { count } = await supabase
+      .from("videos")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if ((count ?? 0) >= 1) {
+      console.warn("[register-video] Free tier limit reached for user:", user.id);
+      return Response.json({ error: "free_limit_reached" }, { status: 403 });
+    }
+  }
+
   let streamUid, verificationHash, videoTitle;
   try {
     const body = await request.json();
