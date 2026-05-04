@@ -1081,11 +1081,10 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const [scrollPlaying, setScrollPlaying] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState("medium");
   const scrollContainerRef = useRef(null);
-  const scrollAnimRef = useRef(null);
+  const scrollIntervalRef = useRef(null);
   const scriptTextareaRef = useRef(null);
-  const scrollSpeedRef = useRef(45);
-  const scrollLastTimeRef = useRef(null);
-  const SCROLL_SPEEDS = { slow: 20, medium: 45, fast: 80 };
+  const scrollPxRef = useRef(1.5);
+  const SCROLL_SPEEDS = { slow: 0.5, medium: 1.5, fast: 3 };
   const [videoLimitReached, setVideoLimitReached] = useState(false);
 
   useEffect(() => { if (script) { setEditableScript(script); if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0; } }, [script]);
@@ -1097,7 +1096,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
     ta.style.height = ta.scrollHeight + "px";
   }, [editableScript]);
 
-  useEffect(() => () => { if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current); }, []);
+  useEffect(() => () => { if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current); }, []);
 
   useEffect(() => {
     if (!user || isPaid) return;
@@ -1109,32 +1108,31 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   }, [user, isPaid]);
 
   const startScroll = () => {
-    if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
-    scrollLastTimeRef.current = null;
+    if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
     setScrollPlaying(true);
-    const tick = (ts) => {
+    scrollIntervalRef.current = setInterval(() => {
       const el = scrollContainerRef.current;
       if (!el) return;
-      if (el.scrollTop >= el.scrollHeight - el.clientHeight) { setScrollPlaying(false); scrollAnimRef.current = null; return; }
-      if (scrollLastTimeRef.current !== null) {
-        const dt = (ts - scrollLastTimeRef.current) / 1000;
-        el.scrollTop += scrollSpeedRef.current * dt;
-      }
-      scrollLastTimeRef.current = ts;
-      scrollAnimRef.current = requestAnimationFrame(tick);
-    };
-    scrollAnimRef.current = requestAnimationFrame(tick);
+      el.scrollTop += scrollPxRef.current;
+    }, 50);
   };
 
   const stopScroll = () => {
     setScrollPlaying(false);
-    if (scrollAnimRef.current) { cancelAnimationFrame(scrollAnimRef.current); scrollAnimRef.current = null; }
-    scrollLastTimeRef.current = null;
+    if (scrollIntervalRef.current) { clearInterval(scrollIntervalRef.current); scrollIntervalRef.current = null; }
   };
 
   const handleSpeedChange = (s) => {
     setScrollSpeed(s);
-    scrollSpeedRef.current = SCROLL_SPEEDS[s];
+    scrollPxRef.current = SCROLL_SPEEDS[s];
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = setInterval(() => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        el.scrollTop += scrollPxRef.current;
+      }, 50);
+    }
   };
 
   const uploadToStream = async (blob, verificationHash) => {
@@ -1172,6 +1170,18 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       const { shareLink: realLink } = await regRes.json();
       setShareLink(realLink);
       setUploadStatus("done");
+
+      if (!isPaid && user?.email) {
+        fetch("/api/send-video-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userEmail: user.email,
+            shareLink: realLink,
+            verificationId: verificationHash,
+          }),
+        }).catch(() => {});
+      }
     } catch (err) {
       console.error("Video upload failed:", err);
       setUploadStatus("error");

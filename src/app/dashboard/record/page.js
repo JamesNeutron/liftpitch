@@ -129,38 +129,37 @@ function RecordPageInner() {
   const timer = useTimer(maxDur);
 
   const teleRef = useRef(null);
-  const rafRef = useRef(null);
-  const lastTimeRef = useRef(null);
+  const intervalRef = useRef(null);
+  const scrollPxRef = useRef(1.5);
   const [scrollActive, setScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState("medium");
-  const scrollSpeedRef = useRef(45);
-  const SCROLL_SPEEDS = { slow: 20, medium: 45, fast: 80 };
+  const SCROLL_SPEEDS = { slow: 0.5, medium: 1.5, fast: 3 };
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
   const atVideoLimit = !isPaid && videoCount >= 1;
 
-  const changeSpeed = (speed) => {
-    setScrollSpeed(speed);
-    scrollSpeedRef.current = SCROLL_SPEEDS[speed];
-  };
-
   const startScroll = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    lastTimeRef.current = null;
+    if (intervalRef.current) clearInterval(intervalRef.current);
     setScrollActive(true);
-    const tick = (ts) => {
-      if (lastTimeRef.current === null) lastTimeRef.current = ts;
-      const dt = (ts - lastTimeRef.current) / 1000;
-      lastTimeRef.current = ts;
-      if (teleRef.current) teleRef.current.scrollTop += scrollSpeedRef.current * dt;
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
+    intervalRef.current = setInterval(() => {
+      if (teleRef.current) teleRef.current.scrollTop += scrollPxRef.current;
+    }, 50);
   };
 
   const stopScroll = () => {
     setScrollActive(false);
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+  };
+
+  const changeSpeed = (speed) => {
+    setScrollSpeed(speed);
+    scrollPxRef.current = SCROLL_SPEEDS[speed];
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = setInterval(() => {
+        if (teleRef.current) teleRef.current.scrollTop += scrollPxRef.current;
+      }, 50);
+    }
   };
 
   useEffect(() => {
@@ -211,7 +210,7 @@ function RecordPageInner() {
     }
   }, [authLoading, atVideoLimit]);
 
-  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
   useEffect(() => {
     if (teleRef.current) teleRef.current.scrollTop = 0;
@@ -483,9 +482,9 @@ function RecordPageInner() {
             {scriptExpanded && (
               <div ref={teleRef} style={{
                 padding: "16px 18px", background: B.bg, border: `1px solid ${B.border}`,
-                borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 14.5,
+                borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 16,
                 color: B.text, lineHeight: 1.9, whiteSpace: "pre-wrap",
-                maxHeight: 260, overflowY: "auto", scrollBehavior: "auto",
+                maxHeight: 200, overflowY: "auto", scrollBehavior: "auto",
               }}>{scriptData.script}</div>
             )}
           </div>

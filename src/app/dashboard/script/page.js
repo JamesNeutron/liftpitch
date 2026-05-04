@@ -684,7 +684,7 @@ export default function DashboardScript() {
                         <p style={{
                           fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.text,
                           margin: "0 0 5px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-                        }}>{(item.job_description || "No job description").slice(0, 90)}{(item.job_description?.length || 0) > 90 ? "…" : ""}</p>
+                        }}>{(item.job_description || "No job description").slice(0, 60)}{(item.job_description?.length || 0) > 60 ? "…" : ""}</p>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                           {item.match_score !== null && item.match_score !== undefined && (
                             <span style={{
