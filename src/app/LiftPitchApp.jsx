@@ -1083,8 +1083,12 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const scrollContainerRef = useRef(null);
   const scrollAnimRef = useRef(null);
   const scriptTextareaRef = useRef(null);
+  const scrollSpeedRef = useRef(45);
+  const scrollLastTimeRef = useRef(null);
+  const SCROLL_SPEEDS = { slow: 20, medium: 45, fast: 80 };
+  const [videoLimitReached, setVideoLimitReached] = useState(false);
 
-  useEffect(() => { if (script) setEditableScript(script); }, [script]);
+  useEffect(() => { if (script) { setEditableScript(script); if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0; } }, [script]);
 
   useEffect(() => {
     const ta = scriptTextareaRef.current;
@@ -1093,20 +1097,45 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
     ta.style.height = ta.scrollHeight + "px";
   }, [editableScript]);
 
+  useEffect(() => () => { if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current); }, []);
+
   useEffect(() => {
-    if (!scrollPlaying || !scrollContainerRef.current) return;
-    const speeds = { slow: 0.3, medium: 0.65, fast: 1.4 };
-    const px = speeds[scrollSpeed];
-    const step = () => {
+    if (!user || isPaid) return;
+    supabase
+      .from("videos")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .then(({ count }) => setVideoLimitReached((count ?? 0) >= 1));
+  }, [user, isPaid]);
+
+  const startScroll = () => {
+    if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
+    scrollLastTimeRef.current = null;
+    setScrollPlaying(true);
+    const tick = (ts) => {
       const el = scrollContainerRef.current;
       if (!el) return;
-      if (el.scrollTop >= el.scrollHeight - el.clientHeight) { setScrollPlaying(false); return; }
-      el.scrollTop += px;
-      scrollAnimRef.current = requestAnimationFrame(step);
+      if (el.scrollTop >= el.scrollHeight - el.clientHeight) { setScrollPlaying(false); scrollAnimRef.current = null; return; }
+      if (scrollLastTimeRef.current !== null) {
+        const dt = (ts - scrollLastTimeRef.current) / 1000;
+        el.scrollTop += scrollSpeedRef.current * dt;
+      }
+      scrollLastTimeRef.current = ts;
+      scrollAnimRef.current = requestAnimationFrame(tick);
     };
-    scrollAnimRef.current = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(scrollAnimRef.current);
-  }, [scrollPlaying, scrollSpeed]);
+    scrollAnimRef.current = requestAnimationFrame(tick);
+  };
+
+  const stopScroll = () => {
+    setScrollPlaying(false);
+    if (scrollAnimRef.current) { cancelAnimationFrame(scrollAnimRef.current); scrollAnimRef.current = null; }
+    scrollLastTimeRef.current = null;
+  };
+
+  const handleSpeedChange = (s) => {
+    setScrollSpeed(s);
+    scrollSpeedRef.current = SCROLL_SPEEDS[s];
+  };
 
   const uploadToStream = async (blob, verificationHash) => {
     setUploadStatus("uploading");
@@ -1282,7 +1311,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
           <div style={{ padding: "8px 16px", background: "rgba(255,255,255,0.03)",
             borderTop: "1px solid rgba(255,255,255,0.06)",
             display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <button onClick={() => setScrollPlaying(p => !p)} style={{
+            <button onClick={() => scrollPlaying ? stopScroll() : startScroll()} style={{
               padding: "5px 14px", borderRadius: 6,
               border: `1px solid ${scrollPlaying ? B.accent : "rgba(255,255,255,0.15)"}`,
               background: scrollPlaying ? B.accent : "rgba(255,255,255,0.06)",
@@ -1295,7 +1324,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
               Speed:
             </span>
             {["slow", "medium", "fast"].map(s => (
-              <button key={s} onClick={() => setScrollSpeed(s)} style={{
+              <button key={s} onClick={() => handleSpeedChange(s)} style={{
                 padding: "4px 10px", borderRadius: 6,
                 border: `1px solid ${scrollSpeed === s ? "rgba(55,143,233,0.4)" : "rgba(255,255,255,0.1)"}`,
                 background: scrollSpeed === s ? "rgba(10,102,194,0.25)" : "rgba(255,255,255,0.04)",
@@ -1323,6 +1352,29 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       }}>
         💡 <strong style={{ color: B.text }}>Pro tip:</strong> Find a plain wall or tidy corner — good lighting matters more than a perfect background!
       </div>
+
+      {videoLimitReached && (
+        <div style={{
+          padding: 20, borderRadius: 14, marginBottom: 20,
+          background: "rgba(231,163,62,0.08)", border: "1px solid rgba(231,163,62,0.2)", textAlign: "center",
+        }}>
+          <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🔒</span>
+          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.warning, margin: "0 0 8px" }}>
+            You&apos;ve used your free video
+          </p>
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "0 0 16px", lineHeight: 1.5 }}>
+            Upgrade to record unlimited videos and remove the watermark from your pitches.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
+              Pro Monthly — $8/mo
+            </Btn>
+            <Btn variant="secondary" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
+              Lifetime Pass — $35
+            </Btn>
+          </div>
+        </div>
+      )}
 
       <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: "#000",
         aspectRatio: "16/9", marginBottom: 20,
@@ -1377,7 +1429,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       </div>
 
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        {state === "idle" && <Btn onClick={() => { if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
+        {state === "idle" && !videoLimitReached && <Btn onClick={() => { if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
         {state === "previewing" && <Btn onClick={startCountdown} style={{
           background: "linear-gradient(135deg, #DC3545, #C0392B)", boxShadow: "0 4px 24px rgba(220,53,69,0.2)" }}>⏺ Start Recording</Btn>}
         {state === "recording" && <Btn onClick={stopRec} variant="secondary">⏹ Stop Recording</Btn>}

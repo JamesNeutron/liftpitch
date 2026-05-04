@@ -133,8 +133,8 @@ function RecordPageInner() {
   const lastTimeRef = useRef(null);
   const [scrollActive, setScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState("medium");
-  const scrollSpeedRef = useRef(60);
-  const SCROLL_SPEEDS = { slow: 30, medium: 60, fast: 100 };
+  const scrollSpeedRef = useRef(45);
+  const SCROLL_SPEEDS = { slow: 20, medium: 45, fast: 80 };
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
   const atVideoLimit = !isPaid && videoCount >= 1;
@@ -212,6 +212,11 @@ function RecordPageInner() {
   }, [authLoading, atVideoLimit]);
 
   useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
+
+  useEffect(() => {
+    if (teleRef.current) teleRef.current.scrollTop = 0;
+    if (scrollActive) stopScroll();
+  }, [scriptData]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -486,39 +491,6 @@ function RecordPageInner() {
           </div>
         )}
 
-        {/* Job title input */}
-        <div style={{
-          background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
-          padding: 28, marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-        }}>
-          <label style={{
-            fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700, color: B.textDim,
-            textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 10,
-          }}>What job are you applying for?</label>
-          <input
-            type="text"
-            value={videoTitle}
-            onChange={e => setVideoTitle(e.target.value)}
-            placeholder="e.g. Senior Product Manager at Stripe"
-            disabled={state !== "idle"}
-            style={{
-              width: "100%", padding: "14px 16px", boxSizing: "border-box",
-              border: `1.5px solid ${titleMissing ? B.border : B.accent}`,
-              borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 15,
-              color: B.text, background: state !== "idle" ? B.bg : B.surface,
-              outline: "none", transition: "border-color 0.2s",
-            }}
-            onFocus={e => { if (state === "idle") e.target.style.borderColor = B.accent; }}
-            onBlur={e => { if (!videoTitle.trim()) e.target.style.borderColor = B.border; }}
-          />
-          {titleMissing && (
-            <p style={{
-              fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim,
-              margin: "8px 0 0",
-            }}>Enter a job title to unlock the camera.</p>
-          )}
-        </div>
-
         {/* Recording card */}
         <div style={{
           background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
@@ -593,7 +565,7 @@ function RecordPageInner() {
                 {cameraError
                   ? <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: "#DC3545", textAlign: "center", padding: "0 16px" }}>{cameraError}</span>
                   : <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textDim }}>
-                      {titleMissing ? "Enter a job title above first" : atVideoLimit ? "Upgrade to record more videos" : "Click below to start your camera"}
+                      {titleMissing ? "Enter a job title below first" : atVideoLimit ? "Upgrade to record more videos" : "Click below to start your camera"}
                     </span>
                 }
               </div>
@@ -799,6 +771,39 @@ function RecordPageInner() {
                 </div>
               )}
             </div>
+          )}
+        </div>
+
+        {/* Job title input */}
+        <div style={{
+          background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+          padding: 28, marginTop: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+        }}>
+          <label style={{
+            fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700, color: B.textDim,
+            textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 10,
+          }}>What job are you applying for?</label>
+          <input
+            type="text"
+            value={videoTitle}
+            onChange={e => setVideoTitle(e.target.value)}
+            placeholder="e.g. Senior Product Manager at Stripe"
+            disabled={state !== "idle"}
+            style={{
+              width: "100%", padding: "14px 16px", boxSizing: "border-box",
+              border: `1.5px solid ${titleMissing ? B.border : B.accent}`,
+              borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 15,
+              color: B.text, background: state !== "idle" ? B.bg : B.surface,
+              outline: "none", transition: "border-color 0.2s",
+            }}
+            onFocus={e => { if (state === "idle") e.target.style.borderColor = B.accent; }}
+            onBlur={e => { if (!videoTitle.trim()) e.target.style.borderColor = B.border; }}
+          />
+          {titleMissing && (
+            <p style={{
+              fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim,
+              margin: "8px 0 0",
+            }}>Enter a job title to unlock the camera.</p>
           )}
         </div>
       </main>
