@@ -587,7 +587,7 @@ function Landing({ onStart }) {
 
 // ─── Unified Script Generator ───
 
-function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, script, onScriptGenerated, onNavigate }) {
+function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, script, onScriptGenerated, onNavigate, user }) {
   const [resume, setResume] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [bio, setBio] = useState("");
@@ -637,18 +637,51 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
     setLoading(true); onScriptGenerated(""); setAnalysis(null);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
       const response = await fetch("/api/generate-script", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ resume, jobDesc, bio, duration }),
       });
+
+      if (response.status === 403) {
+        onScriptUsed();
+        setLoading(false);
+        return;
+      }
+
       const data = await response.json();
       const text = data.text || "";
       const m = text.match(/<analysis>\s*([\s\S]*?)\s*<\/analysis>/);
-      if (m) { try { setAnalysis(JSON.parse(m[1])); } catch(e) {} }
+      let parsedAnalysis = null;
+      if (m) { try { parsedAnalysis = JSON.parse(m[1]); setAnalysis(parsedAnalysis); } catch(e) {} }
       const s = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
       onScriptGenerated(s || "Could not generate script. Please try again.");
-      if (!isPaid) onScriptUsed();
+
+      if (!isPaid) {
+        if (user) {
+          supabase.from("scripts").insert({
+            user_id: user.id,
+            script: s || "",
+            job_description: jobDesc,
+            resume_text: resume,
+            about_me: bio,
+            duration,
+            match_score: parsedAnalysis?.matchScore ?? null,
+            strong_matches: parsedAnalysis?.strongMatches ?? null,
+            gaps_to_bridge: parsedAnalysis?.gapsToBridge ?? null,
+            angle_to_play: parsedAnalysis?.angleToPlay ?? null,
+          }).then(() => {});
+        } else {
+          localStorage.setItem("lp_script_used", "1");
+        }
+        onScriptUsed();
+      }
     } catch (err) {
       onScriptGenerated("Something went wrong. Please check your connection and try again.");
     }
@@ -1788,27 +1821,41 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signup");
 
-  const loadPaidStatus = async (userId) => {
+  const loadUserStatus = async (userId) => {
     const { data } = await supabase
       .from("profiles")
       .select("plan")
       .eq("id", userId)
       .single();
-    setIsPaid(data?.plan === "pro" || data?.plan === "lifetime");
+    const plan = data?.plan;
+    const paidPlan = plan === "pro" || plan === "lifetime";
+    setIsPaid(paidPlan);
+    if (!paidPlan) {
+      const { count } = await supabase
+        .from("scripts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", userId);
+      setScriptUsed((count ?? 0) >= 1);
+    }
   };
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user ?? null);
-      if (user) loadPaidStatus(user.id);
+      if (user) {
+        loadUserStatus(user.id);
+      } else {
+        setScriptUsed(!!localStorage.getItem("lp_script_used"));
+      }
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         setShowAuthModal(false);
-        loadPaidStatus(session.user.id);
+        loadUserStatus(session.user.id);
       } else {
         setIsPaid(false);
+        setScriptUsed(!!localStorage.getItem("lp_script_used"));
       }
     });
     return () => subscription.unsubscribe();
@@ -1901,7 +1948,7 @@ export default function App() {
           </div>
 
           <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
-            {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} />}
+            {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} user={user} />}
             {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} isPaid={isPaid} user={user} onNeedAuth={() => openAuth("signup")} />}
             {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
             {tab === "tips" && <TipsAndTricks />}
