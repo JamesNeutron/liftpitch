@@ -93,7 +93,7 @@ export async function POST(request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "LiftPitch <noreply@lift-pitch.co>",
+        from: "LiftPitch <support@lift-pitch.co>",
         to: [userEmail],
         subject: "Your LiftPitch Video is Ready!",
         html,
