@@ -138,7 +138,7 @@ function TermsOfService() {
 
         <div id="t6" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={6} title="Video Recording & Content License" />
-          <P>By recording a video you consent to live capture, processing, and storage of your video, audio, and likeness; represent you are the sole individual appearing; acknowledge anyone with your link can view it; and accept responsibility for all content including incidental third-party material.</P>
+          <P>By recording a video you consent to live capture, processing, and storage of your video, audio, and likeness; represent you are the sole individual appearing; acknowledge anyone with your link can view it; accept responsibility for all content including incidental third-party material; and consent to your IP address being captured at time of recording and your approximate geographic location (city, state, and country) being derived from it and displayed publicly on your video viewer page as "IP Location" visible to anyone with your share link.</P>
           <P>You retain full ownership of your recordings. LiftPitch will not use your video for advertising without explicit written consent.</P>
           <HL><strong>License Grant:</strong> You grant Pangea Square LLC a worldwide, non-exclusive, royalty-free, sublicensable license to host, store, reproduce, transcode, distribute, transmit, display, and perform your video as necessary to provide, operate, and improve the Service — including CDN delivery, thumbnail generation, secure backups, and anonymized aggregate analytics. This license does not permit Pangea Square LLC to sell your content or use it in advertising.</HL>
         </div>
@@ -302,6 +302,7 @@ function PrivacyPolicy() {
             "AI-generated scripts from your inputs",
             "Video view analytics (viewer IP, watch duration, timestamps)",
             "Verification metadata (session ID, recording timestamp, device stream confirmation)",
+            "IP address and approximate geographic location (city, state, and country) captured at time of video recording and displayed publicly on your video viewer page",
           ]} />
           <P><strong>Collected automatically:</strong></P>
           <UL items={[
@@ -330,6 +331,7 @@ function PrivacyPolicy() {
           <SectionTitle number={4} title="Video Data & Biometric Notice" />
           <HL><strong>Sensitive Data Notice:</strong> LiftPitch captures live video and audio through your device camera. Your recording includes your facial image and voice, which may be treated as sensitive personal information or biometric data under laws including California's CPRA.</HL>
           <P>By recording a video you explicitly consent to: live capture of your video and audio; secure cloud storage of your recording; delivery to anyone who accesses your shareable link; and retention for up to <strong>12 months</strong> unless you request earlier deletion.</P>
+          <P><strong>IP Location Display:</strong> At the time of recording, your IP address is captured and your approximate geographic location (city, state, and country) is derived from it using a third-party geolocation service. This location is displayed on your public video viewer page as "IP Location" and is visible to anyone who has access to your share link. If you are using a VPN or proxy, the displayed location may reflect your VPN exit point rather than your physical location.</P>
           <P><strong>What we do NOT do with your video:</strong></P>
           <UL items={[
             "We do not extract, derive, or store separate facial geometry, voiceprints, or biometric templates",
