@@ -1113,12 +1113,11 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
     lastTimeRef.current = null;
     setScrollPlaying(true);
     const loop = (timestamp) => {
-      if (lastTimeRef.current !== null) {
-        const elapsed = (timestamp - lastTimeRef.current) / 1000;
-        const el = scrollContainerRef.current;
-        if (el) el.scrollTop += speedPxRef.current * elapsed;
-      }
+      if (!lastTimeRef.current) lastTimeRef.current = timestamp;
+      const elapsed = Math.min((timestamp - lastTimeRef.current) / 1000, 0.1);
       lastTimeRef.current = timestamp;
+      const el = scrollContainerRef.current;
+      if (el) el.scrollTop += speedPxRef.current * elapsed;
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);

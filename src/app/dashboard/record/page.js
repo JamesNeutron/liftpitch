@@ -142,11 +142,10 @@ function RecordPageInner() {
     lastTimeRef.current = null;
     setScrollActive(true);
     const loop = (timestamp) => {
-      if (lastTimeRef.current !== null) {
-        const elapsed = (timestamp - lastTimeRef.current) / 1000;
-        if (teleRef.current) teleRef.current.scrollTop += speedPxRef.current * elapsed;
-      }
+      if (!lastTimeRef.current) lastTimeRef.current = timestamp;
+      const elapsed = Math.min((timestamp - lastTimeRef.current) / 1000, 0.1);
       lastTimeRef.current = timestamp;
+      if (teleRef.current) teleRef.current.scrollTop += speedPxRef.current * elapsed;
       rafRef.current = requestAnimationFrame(loop);
     };
     rafRef.current = requestAnimationFrame(loop);
