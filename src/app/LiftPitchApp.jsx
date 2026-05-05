@@ -1081,10 +1081,11 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const [scrollPlaying, setScrollPlaying] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState("medium");
   const scrollContainerRef = useRef(null);
-  const scrollIntervalRef = useRef(null);
+  const rafRef = useRef(null);
+  const lastTimeRef = useRef(null);
   const scriptTextareaRef = useRef(null);
-  const scrollPxRef = useRef(1.5);
-  const SCROLL_SPEEDS = { slow: 0.5, medium: 1.5, fast: 3 };
+  const speedPxRef = useRef(35);
+  const SCROLL_SPEEDS = { slow: 15, medium: 35, fast: 65 };
   const [videoLimitReached, setVideoLimitReached] = useState(false);
 
   useEffect(() => { if (script) { setEditableScript(script); if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0; } }, [script]);
@@ -1096,7 +1097,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
     ta.style.height = ta.scrollHeight + "px";
   }, [editableScript]);
 
-  useEffect(() => () => { if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current); }, []);
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
   useEffect(() => {
     if (!user || isPaid) return;
@@ -1108,31 +1109,30 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   }, [user, isPaid]);
 
   const startScroll = () => {
-    if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    lastTimeRef.current = null;
     setScrollPlaying(true);
-    scrollIntervalRef.current = setInterval(() => {
-      const el = scrollContainerRef.current;
-      if (!el) return;
-      el.scrollTop += scrollPxRef.current;
-    }, 50);
+    const loop = (timestamp) => {
+      if (lastTimeRef.current !== null) {
+        const elapsed = (timestamp - lastTimeRef.current) / 1000;
+        const el = scrollContainerRef.current;
+        if (el) el.scrollTop += speedPxRef.current * elapsed;
+      }
+      lastTimeRef.current = timestamp;
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
   };
 
   const stopScroll = () => {
     setScrollPlaying(false);
-    if (scrollIntervalRef.current) { clearInterval(scrollIntervalRef.current); scrollIntervalRef.current = null; }
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    lastTimeRef.current = null;
   };
 
   const handleSpeedChange = (s) => {
     setScrollSpeed(s);
-    scrollPxRef.current = SCROLL_SPEEDS[s];
-    if (scrollIntervalRef.current) {
-      clearInterval(scrollIntervalRef.current);
-      scrollIntervalRef.current = setInterval(() => {
-        const el = scrollContainerRef.current;
-        if (!el) return;
-        el.scrollTop += scrollPxRef.current;
-      }, 50);
-    }
+    speedPxRef.current = SCROLL_SPEEDS[s];
   };
 
   const uploadToStream = async (blob, verificationHash) => {

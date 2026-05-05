@@ -329,6 +329,13 @@ export default function VideoPage({ params }) {
             <span style={{ color: B.textDim }}>Device Stream</span>
             <span style={{ color: B.success }}>✓ Verified from webcam</span>
 
+            {video.ip_location && (
+              <>
+                <span style={{ color: B.textDim }}>IP Location</span>
+                <span style={{ color: B.text }}>{video.ip_location}</span>
+              </>
+            )}
+
             <span style={{ color: B.textDim }}>Live Recording</span>
             <span style={{ color: B.success }}>✓ Recorded in real-time</span>
 

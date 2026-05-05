@@ -26,6 +26,23 @@ async function pollStreamReady(uid, maxWaitMs = 55_000) {
   return null;
 }
 
+async function getIpLocation(request) {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIp = request.headers.get("x-real-ip");
+  const ip = (forwarded ? forwarded.split(",")[0].trim() : null) || realIp || null;
+  if (!ip) return "Location unavailable";
+  try {
+    const res = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country,status`, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return "Location unavailable";
+    const data = await res.json();
+    if (data.status !== "success") return "Location unavailable";
+    const parts = [data.city, data.regionName, data.country].filter(Boolean);
+    return parts.length ? parts.join(", ") : "Location unavailable";
+  } catch {
+    return "Location unavailable";
+  }
+}
+
 export async function POST(request) {
   console.log("[register-video] POST received");
 
@@ -90,6 +107,9 @@ export async function POST(request) {
   }
   console.log("[register-video] streamUid:", streamUid, "| verificationHash:", verificationHash);
 
+  const ipLocation = await getIpLocation(request);
+  console.log("[register-video] ip_location:", ipLocation);
+
   // Insert row immediately so share link can always be returned.
   let videoRecord;
   try {
@@ -100,6 +120,7 @@ export async function POST(request) {
         verification_hash: verificationHash,
         stream_uid: streamUid,
         transcoded: false,
+        ip_location: ipLocation,
         ...(videoTitle ? { video_title: videoTitle } : {}),
       })
       .select()

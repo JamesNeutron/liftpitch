@@ -110,8 +110,6 @@ function RecordPageInner() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [scriptData, setScriptData] = useState(null);
-  const [scriptExpanded, setScriptExpanded] = useState(true);
-
   const [videoTitle, setVideoTitle] = useState("");
   const [maxDur, setMaxDur] = useState(60);
   const [state, setState] = useState("idle");
@@ -129,37 +127,40 @@ function RecordPageInner() {
   const timer = useTimer(maxDur);
 
   const teleRef = useRef(null);
-  const intervalRef = useRef(null);
-  const scrollPxRef = useRef(1.5);
+  const rafRef = useRef(null);
+  const lastTimeRef = useRef(null);
+  const speedPxRef = useRef(35);
   const [scrollActive, setScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState("medium");
-  const SCROLL_SPEEDS = { slow: 0.5, medium: 1.5, fast: 3 };
+  const SCROLL_SPEEDS = { slow: 15, medium: 35, fast: 65 };
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
   const atVideoLimit = !isPaid && videoCount >= 1;
 
   const startScroll = () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    lastTimeRef.current = null;
     setScrollActive(true);
-    intervalRef.current = setInterval(() => {
-      if (teleRef.current) teleRef.current.scrollTop += scrollPxRef.current;
-    }, 50);
+    const loop = (timestamp) => {
+      if (lastTimeRef.current !== null) {
+        const elapsed = (timestamp - lastTimeRef.current) / 1000;
+        if (teleRef.current) teleRef.current.scrollTop += speedPxRef.current * elapsed;
+      }
+      lastTimeRef.current = timestamp;
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
   };
 
   const stopScroll = () => {
     setScrollActive(false);
-    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    lastTimeRef.current = null;
   };
 
   const changeSpeed = (speed) => {
     setScrollSpeed(speed);
-    scrollPxRef.current = SCROLL_SPEEDS[speed];
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = setInterval(() => {
-        if (teleRef.current) teleRef.current.scrollTop += scrollPxRef.current;
-      }, 50);
-    }
+    speedPxRef.current = SCROLL_SPEEDS[speed];
   };
 
   useEffect(() => {
@@ -210,7 +211,7 @@ function RecordPageInner() {
     }
   }, [authLoading, atVideoLimit]);
 
-  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
 
   useEffect(() => {
     if (teleRef.current) teleRef.current.scrollTop = 0;
@@ -420,76 +421,6 @@ function RecordPageInner() {
           </div>
         )}
 
-        {/* Teleprompter panel — shown when coming from a saved script */}
-        {scriptData && (
-          <div style={{
-            background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
-            padding: 24, marginBottom: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-          }}>
-            <div style={{
-              display: "flex", justifyContent: "space-between", alignItems: "center",
-              marginBottom: scriptExpanded ? 14 : 0, flexWrap: "wrap", gap: 8,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 16 }}>📋</span>
-                <span style={{
-                  fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
-                  color: B.accentLight, textTransform: "uppercase", letterSpacing: "0.08em",
-                }}>Your Script</span>
-                {scriptData.match_score !== null && scriptData.match_score !== undefined && (
-                  <span style={{
-                    padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                    fontFamily: "'Sora', sans-serif",
-                    color: scriptData.match_score >= 75 ? B.success : B.warning,
-                    background: scriptData.match_score >= 75
-                      ? "rgba(5,118,66,0.08)" : "rgba(231,163,62,0.08)",
-                    border: `1px solid ${scriptData.match_score >= 75 ? "rgba(5,118,66,0.2)" : "rgba(231,163,62,0.2)"}`,
-                  }}>{scriptData.match_score}% match</span>
-                )}
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                {scriptExpanded && (
-                  <>
-                    {[["slow", "Slow"], ["medium", "Med"], ["fast", "Fast"]].map(([s, label]) => (
-                      <button key={s} onClick={() => changeSpeed(s)} style={{
-                        padding: "4px 10px", borderRadius: 6,
-                        background: scrollSpeed === s ? B.accent : B.bg,
-                        color: scrollSpeed === s ? "#fff" : B.textMuted,
-                        border: `1px solid ${scrollSpeed === s ? B.accent : B.border}`,
-                        fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, cursor: "pointer",
-                      }}>{label}</button>
-                    ))}
-                    <button onClick={scrollActive ? stopScroll : startScroll} style={{
-                      padding: "4px 10px", borderRadius: 6,
-                      background: scrollActive ? "rgba(220,53,69,0.08)" : "rgba(5,118,66,0.08)",
-                      border: `1px solid ${scrollActive ? "rgba(220,53,69,0.25)" : "rgba(5,118,66,0.25)"}`,
-                      color: scrollActive ? "#DC3545" : B.success,
-                      fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, cursor: "pointer",
-                    }}>{scrollActive ? "⏸ Stop" : "▶ Scroll"}</button>
-                  </>
-                )}
-                <button
-                  onClick={() => { setScriptExpanded(v => !v); if (scrollActive) stopScroll(); }}
-                  style={{
-                    padding: "5px 12px", borderRadius: 8,
-                    background: B.bg, border: `1px solid ${B.border}`,
-                    color: B.textMuted, fontFamily: "'Sora', sans-serif",
-                    fontSize: 11, fontWeight: 600, cursor: "pointer",
-                  }}
-                >{scriptExpanded ? "▲ Collapse" : "▼ Expand"}</button>
-              </div>
-            </div>
-            {scriptExpanded && (
-              <div ref={teleRef} style={{
-                padding: "16px 18px", background: B.bg, border: `1px solid ${B.border}`,
-                borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 16,
-                color: B.text, lineHeight: 1.9, whiteSpace: "pre-wrap",
-                maxHeight: 200, overflowY: "auto", scrollBehavior: "auto",
-              }}>{scriptData.script}</div>
-            )}
-          </div>
-        )}
-
         {/* Recording card */}
         <div style={{
           background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
@@ -533,6 +464,71 @@ function RecordPageInner() {
               </div>
             </div>
           )}
+
+          {/* Teleprompter panel — shown when coming from a saved script */}
+          {scriptData && (
+            <div style={{ marginBottom: 20, borderRadius: 14, background: "#111827",
+              border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
+              <div style={{ padding: "10px 16px", background: "rgba(255,255,255,0.04)",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+                display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600,
+                  color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  📜 Teleprompter
+                </span>
+                {scriptData.match_score !== null && scriptData.match_score !== undefined && (
+                  <span style={{
+                    padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                    fontFamily: "'Sora', sans-serif",
+                    color: scriptData.match_score >= 75 ? "#34d399" : "#fbbf24",
+                    background: scriptData.match_score >= 75 ? "rgba(52,211,153,0.1)" : "rgba(251,191,36,0.1)",
+                    border: `1px solid ${scriptData.match_score >= 75 ? "rgba(52,211,153,0.25)" : "rgba(251,191,36,0.25)"}`,
+                  }}>{scriptData.match_score}% match</span>
+                )}
+              </div>
+              <div ref={teleRef} style={{ maxHeight: 180, overflowY: "auto", padding: "16px 20px" }}>
+                <div style={{
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: "rgba(255,255,255,0.85)",
+                  lineHeight: 1.9, whiteSpace: "pre-wrap",
+                }}>{scriptData.script}</div>
+              </div>
+              <div style={{ padding: "8px 16px", background: "rgba(255,255,255,0.03)",
+                borderTop: "1px solid rgba(255,255,255,0.06)",
+                display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <button onClick={scrollActive ? stopScroll : startScroll} style={{
+                  padding: "5px 14px", borderRadius: 6,
+                  border: `1px solid ${scrollActive ? B.accent : "rgba(255,255,255,0.15)"}`,
+                  background: scrollActive ? B.accent : "rgba(255,255,255,0.06)",
+                  color: scrollActive ? "#fff" : "rgba(255,255,255,0.75)",
+                  fontSize: 14, cursor: "pointer", fontFamily: "'Sora', sans-serif",
+                  fontWeight: 600, transition: "all 0.15s", lineHeight: 1,
+                }}>{scrollActive ? "⏸" : "▶"}</button>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 10,
+                  color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Speed:
+                </span>
+                {[["slow", "Slow"], ["medium", "Med"], ["fast", "Fast"]].map(([s, label]) => (
+                  <button key={s} onClick={() => changeSpeed(s)} style={{
+                    padding: "4px 10px", borderRadius: 6,
+                    border: `1px solid ${scrollSpeed === s ? "rgba(55,143,233,0.4)" : "rgba(255,255,255,0.1)"}`,
+                    background: scrollSpeed === s ? "rgba(10,102,194,0.25)" : "rgba(255,255,255,0.04)",
+                    color: scrollSpeed === s ? "#378FE9" : "rgba(255,255,255,0.4)",
+                    fontSize: 11, cursor: "pointer", fontFamily: "'Sora', sans-serif",
+                    fontWeight: scrollSpeed === s ? 600 : 400, transition: "all 0.15s",
+                  }}>{label}</button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Pro tip */}
+          <div style={{
+            marginBottom: 12, padding: "10px 16px", borderRadius: 10,
+            background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.10)",
+            fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textMuted, lineHeight: 1.55,
+          }}>
+            💡 <strong style={{ color: B.text }}>Pro tip:</strong> Find a plain wall or tidy corner — good lighting matters more than a perfect background!
+          </div>
 
           {/* Video viewport */}
           <div style={{
