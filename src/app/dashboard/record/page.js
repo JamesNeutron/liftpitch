@@ -485,9 +485,9 @@ function RecordPageInner() {
                   }}>{scriptData.match_score}% match</span>
                 )}
               </div>
-              <div ref={teleRef} style={{ maxHeight: 180, overflowY: "auto", padding: "16px 20px" }}>
+              <div ref={teleRef} style={{ maxHeight: 120, overflowY: "auto", padding: "16px 20px", width: "60%", margin: "0 auto" }}>
                 <div style={{
-                  fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: "rgba(255,255,255,0.85)",
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 17, color: "rgba(255,255,255,0.85)",
                   lineHeight: 1.9, whiteSpace: "pre-wrap",
                 }}>{scriptData.script}</div>
               </div>

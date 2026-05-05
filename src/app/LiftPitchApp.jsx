@@ -1303,7 +1303,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
               fontSize: 11, cursor: "pointer", fontFamily: "'Sora', sans-serif",
             }}>📋 Copy</button>
           </div>
-          <div ref={scrollContainerRef} style={{ maxHeight: 180, overflowY: "auto", padding: "16px 20px" }}>
+          <div ref={scrollContainerRef} style={{ maxHeight: 120, overflowY: "auto", padding: "16px 20px", width: "60%", margin: "0 auto" }}>
             <textarea
               ref={scriptTextareaRef}
               value={editableScript}
@@ -1312,7 +1312,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
               style={{
                 width: "100%", background: "transparent", resize: "none", overflow: "hidden",
                 border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, outline: "none",
-                fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: "rgba(255,255,255,0.85)",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 17, color: "rgba(255,255,255,0.85)",
                 lineHeight: 1.9, margin: 0, padding: "8px 10px", boxSizing: "border-box",
                 minHeight: 80, caretColor: "#378FE9",
               }}
