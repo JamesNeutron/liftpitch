@@ -127,39 +127,37 @@ function RecordPageInner() {
   const timer = useTimer(maxDur);
 
   const teleRef = useRef(null);
-  const rafRef = useRef(null);
-  const lastTimeRef = useRef(null);
-  const speedPxRef = useRef(35);
+  const scrollIntervalRef = useRef(null);
+  const scrollPxRef = useRef(2);
   const [scrollActive, setScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState("medium");
-  const SCROLL_SPEEDS = { slow: 15, medium: 35, fast: 65 };
+  const SCROLL_SPEEDS = { slow: 1, medium: 2, fast: 4 };
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
   const atVideoLimit = !isPaid && videoCount >= 1;
 
   const startScroll = () => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    lastTimeRef.current = null;
+    if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
     setScrollActive(true);
-    const loop = (timestamp) => {
-      if (!lastTimeRef.current) lastTimeRef.current = timestamp;
-      const elapsed = Math.min((timestamp - lastTimeRef.current) / 1000, 0.1);
-      lastTimeRef.current = timestamp;
-      if (teleRef.current) teleRef.current.scrollTop += speedPxRef.current * elapsed;
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
+    scrollIntervalRef.current = setInterval(() => {
+      if (teleRef.current) teleRef.current.scrollTop += scrollPxRef.current;
+    }, 50);
   };
 
   const stopScroll = () => {
     setScrollActive(false);
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-    lastTimeRef.current = null;
+    if (scrollIntervalRef.current) { clearInterval(scrollIntervalRef.current); scrollIntervalRef.current = null; }
   };
 
   const changeSpeed = (speed) => {
     setScrollSpeed(speed);
-    speedPxRef.current = SCROLL_SPEEDS[speed];
+    scrollPxRef.current = SCROLL_SPEEDS[speed];
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = setInterval(() => {
+        if (teleRef.current) teleRef.current.scrollTop += scrollPxRef.current;
+      }, 50);
+    }
   };
 
   useEffect(() => {
@@ -210,7 +208,7 @@ function RecordPageInner() {
     }
   }, [authLoading, atVideoLimit]);
 
-  useEffect(() => () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); }, []);
+  useEffect(() => () => { if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current); }, []);
 
   useEffect(() => {
     if (teleRef.current) teleRef.current.scrollTop = 0;
