@@ -110,6 +110,11 @@ export default function DashboardScript() {
   const [expandedScript, setExpandedScript] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
+  const [gapAnswers, setGapAnswers] = useState({});
+  const [generatingBullets, setGeneratingBullets] = useState(false);
+  const [bullets, setBullets] = useState(null);
+  const [bulletsCopied, setBulletsCopied] = useState({});
+
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
 
   useEffect(() => {
@@ -212,6 +217,9 @@ export default function DashboardScript() {
     setScript("");
     setAnalysis(null);
     setSavedId(null);
+    setGapAnswers({});
+    setBullets(null);
+    setBulletsCopied({});
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -290,6 +298,39 @@ export default function DashboardScript() {
     setDeletingId(null);
   };
 
+  const generateBullets = async () => {
+    setGeneratingBullets(true);
+    const gapList = (analysis?.gapsToBridge || []).slice(0, 3);
+    const gapExperiences = gapList
+      .filter(gap => gapAnswers[gap]?.hasExp === true && gapAnswers[gap]?.desc?.trim())
+      .map(gap => ({ gap, desc: gapAnswers[gap].desc.trim() }));
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch("/api/strengthen-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ gapExperiences, scriptId: savedId }),
+      });
+      const data = await res.json();
+      if (data.bullets) setBullets(data.bullets);
+    } catch {}
+    setGeneratingBullets(false);
+  };
+
+  const copyAllBullets = () => {
+    if (!bullets) return;
+    navigator.clipboard?.writeText(bullets.join("\n"));
+    setBulletsCopied(prev => ({ ...prev, all: true }));
+    setTimeout(() => setBulletsCopied(prev => ({ ...prev, all: false })), 2500);
+  };
+
+  const copyBullet = (bullet, i) => {
+    navigator.clipboard?.writeText(bullet);
+    setBulletsCopied(prev => ({ ...prev, [i]: true }));
+    setTimeout(() => setBulletsCopied(prev => ({ ...prev, [i]: false })), 2500);
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
@@ -303,6 +344,8 @@ export default function DashboardScript() {
   }
 
   const canGenerate = !generating && resume.trim() && jobDesc.trim() && bio.trim();
+  const gapList = (analysis?.gapsToBridge || []).slice(0, 3);
+  const canGenerateBullets = gapList.some(gap => gapAnswers[gap]?.hasExp === true && gapAnswers[gap]?.desc?.trim());
 
   return (
     <div style={{ minHeight: "100vh", background: B.bg, fontFamily: "'DM Sans', sans-serif" }}>
@@ -644,6 +687,122 @@ export default function DashboardScript() {
                   </div>
                 )}
               </>
+            )}
+          </div>
+        )}
+
+        {/* Strengthen Your Resume — paid users with identified gaps */}
+        {isPaid && gapList.length > 0 && (analysis || script) && (
+          <div style={{
+            background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+            padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: 32,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 22 }}>💪</span>
+              <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 700, color: B.text, margin: 0 }}>Strengthen Your Resume</h2>
+            </div>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textMuted, margin: "0 0 24px", lineHeight: 1.6 }}>
+              Tell us about your experience with each gap — we&apos;ll write polished, ATS-friendly resume bullets you can add before your recording.
+            </p>
+
+            {gapList.map((gap, i) => {
+              const ans = gapAnswers[gap] || {};
+              return (
+                <div key={i} style={{ marginBottom: 16, padding: 16, borderRadius: 14, background: B.bg, border: `1px solid ${B.border}` }}>
+                  <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.text, margin: "0 0 10px", lineHeight: 1.5 }}>
+                    Do you have any experience with <strong>{gap}</strong>?
+                  </p>
+                  <div style={{ display: "flex", gap: 8, marginBottom: ans.hasExp === true ? 12 : 0 }}>
+                    <button
+                      onClick={() => setGapAnswers(prev => ({ ...prev, [gap]: { ...prev[gap], hasExp: true, desc: prev[gap]?.desc || "" } }))}
+                      style={{
+                        padding: "7px 18px", borderRadius: 8, cursor: "pointer",
+                        border: `1px solid ${ans.hasExp === true ? B.accent : B.border}`,
+                        background: ans.hasExp === true ? "rgba(10,102,194,0.08)" : B.surface,
+                        color: ans.hasExp === true ? B.accent : B.textMuted,
+                        fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
+                      }}>Yes</button>
+                    <button
+                      onClick={() => setGapAnswers(prev => ({ ...prev, [gap]: { ...prev[gap], hasExp: false, desc: "" } }))}
+                      style={{
+                        padding: "7px 18px", borderRadius: 8, cursor: "pointer",
+                        border: `1px solid ${ans.hasExp === false ? "rgba(220,53,69,0.3)" : B.border}`,
+                        background: ans.hasExp === false ? "rgba(220,53,69,0.04)" : B.surface,
+                        color: ans.hasExp === false ? "#DC3545" : B.textMuted,
+                        fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
+                      }}>No</button>
+                  </div>
+                  {ans.hasExp === true && (
+                    <textarea
+                      value={ans.desc || ""}
+                      onChange={e => setGapAnswers(prev => ({ ...prev, [gap]: { ...prev[gap], desc: e.target.value } }))}
+                      placeholder="Briefly describe your experience in 1-2 sentences..."
+                      style={{
+                        width: "100%", minHeight: 68, padding: "10px 14px", background: B.surface, color: B.text,
+                        border: `1px solid ${B.border}`, borderRadius: 10,
+                        fontFamily: "'DM Sans', sans-serif", fontSize: 14, resize: "vertical", outline: "none",
+                        lineHeight: 1.6, boxSizing: "border-box",
+                      }}
+                      onFocus={e => e.target.style.borderColor = B.accent}
+                      onBlur={e => e.target.style.borderColor = B.border}
+                    />
+                  )}
+                </div>
+              );
+            })}
+
+            {canGenerateBullets && !bullets && (
+              <button
+                onClick={generateBullets}
+                disabled={generatingBullets}
+                style={{
+                  padding: "12px 28px", borderRadius: 12, border: "none",
+                  background: generatingBullets ? "#C8D0D9" : "linear-gradient(135deg, #057642, #046636)",
+                  color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+                  cursor: generatingBullets ? "not-allowed" : "pointer",
+                  boxShadow: generatingBullets ? "none" : "0 4px 16px rgba(5,118,66,0.2)",
+                }}
+              >{generatingBullets ? "⏳ Generating bullets..." : "✨ Generate Resume Bullets"}</button>
+            )}
+
+            {bullets && (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700, color: B.success, textTransform: "uppercase", letterSpacing: "0.1em" }}>✓ Resume Bullets</span>
+                  <button onClick={copyAllBullets} style={{
+                    padding: "6px 14px", borderRadius: 8, border: `1px solid ${B.border}`,
+                    background: bulletsCopied.all ? "rgba(5,118,66,0.07)" : B.surface,
+                    color: bulletsCopied.all ? B.success : B.textMuted,
+                    fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                  }}>{bulletsCopied.all ? "✓ Copied!" : "📋 Copy All Bullets"}</button>
+                </div>
+                <div style={{ padding: "16px 20px", background: B.bg, border: `1px solid ${B.border}`, borderRadius: 14, display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                  {bullets.map((bullet, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                      <p style={{ flex: 1, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.text, margin: 0, lineHeight: 1.7 }}>{bullet}</p>
+                      <button onClick={() => copyBullet(bullet, i)} style={{
+                        flexShrink: 0, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
+                        border: `1px solid ${B.border}`,
+                        background: bulletsCopied[i] ? "rgba(5,118,66,0.07)" : B.surface,
+                        color: bulletsCopied[i] ? B.success : B.textMuted,
+                        fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600,
+                      }}>{bulletsCopied[i] ? "✓" : "📋"}</button>
+                    </div>
+                  ))}
+                </div>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim, margin: "0 0 12px", lineHeight: 1.5 }}>
+                  Add these to your resume before recording your pitch!
+                </p>
+                {savedId && (
+                  <a href={`/dashboard/record?script_id=${savedId}`} style={{
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    padding: "10px 22px", borderRadius: 10,
+                    background: B.gradient, color: "#fff", textDecoration: "none",
+                    fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+                    boxShadow: `0 4px 16px ${B.accentGlow}`,
+                  }}>🎥 Use These in Your Recording →</a>
+                )}
+              </div>
             )}
           </div>
         )}

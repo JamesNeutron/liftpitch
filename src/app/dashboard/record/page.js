@@ -123,6 +123,7 @@ function RecordPageInner() {
   const videoRef = useRef(null);
   const mrRef = useRef(null);
   const chunksRef = useRef([]);
+  const pendingBlobRef = useRef(null);
   const streamRef = useRef(null);
   const timer = useTimer(maxDur);
 
@@ -273,11 +274,10 @@ function RecordPageInner() {
       const url = URL.createObjectURL(blob);
       const v = genVerify();
       setVerification(v);
-      setShareLink(`https://lift-pitch.co/v/${v.verificationHash.replace("VP-", "").toLowerCase()}`);
-      setState("recorded");
+      pendingBlobRef.current = { blob, url };
+      setState("preview");
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (videoRef.current) { videoRef.current.srcObject = null; videoRef.current.src = url; videoRef.current.muted = false; }
-      uploadToStream(blob, v.verificationHash);
     };
     mr.start();
     mrRef.current = mr;
@@ -291,7 +291,23 @@ function RecordPageInner() {
     if (timer.sec >= maxDur && state === "recording") stopRec();
   }, [timer.sec, maxDur, state]);
 
+  const confirmUpload = () => {
+    if (!pendingBlobRef.current || !verification) return;
+    setShareLink(`https://lift-pitch.co/v/${verification.verificationHash.replace("VP-", "").toLowerCase()}`);
+    setState("recorded");
+    uploadToStream(pendingBlobRef.current.blob, verification.verificationHash);
+    pendingBlobRef.current = null;
+  };
+
+  const redo = () => {
+    if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; }
+    setVerification(null);
+    if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; }
+    startCamera();
+  };
+
   const reset = () => {
+    if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; }
     timer.reset();
     setState("idle");
     setShareLink("");
@@ -299,7 +315,6 @@ function RecordPageInner() {
     setVerification(null);
     setUploadStatus("idle");
     streamRef.current?.getTracks().forEach(t => t.stop());
-    // After recording, re-check limit
     if (atVideoLimit) setShowUpgradeModal(true);
   };
 
@@ -544,10 +559,10 @@ function RecordPageInner() {
               style={{
                 width: "100%", height: "100%", objectFit: "cover",
                 display: state === "idle" ? "none" : "block",
-                transform: state !== "recorded" ? "scaleX(-1)" : "none",
+                transform: state !== "recorded" && state !== "preview" ? "scaleX(-1)" : "none",
               }}
               playsInline
-              controls={state === "recorded"}
+              controls={state === "recorded" || state === "preview"}
             />
 
             {state === "idle" && (
@@ -633,6 +648,11 @@ function RecordPageInner() {
           </div>
 
           {/* Controls */}
+          {state === "preview" && (
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: "0 0 12px", lineHeight: 1.5, textAlign: "center" }}>
+              How did that go? Watch your preview and decide.
+            </p>
+          )}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {state === "idle" && (
               <button onClick={startCamera} disabled={titleMissing || atVideoLimit} style={{
@@ -660,6 +680,21 @@ function RecordPageInner() {
                 background: B.surface, color: B.text,
                 fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, cursor: "pointer",
               }}>⏹ Stop Recording</button>
+            )}
+            {state === "preview" && (
+              <button onClick={redo} style={{
+                padding: "14px 32px", borderRadius: 12, border: `1.5px solid ${B.border}`,
+                background: B.surface, color: B.text,
+                fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, cursor: "pointer",
+              }}>🔄 Re-do</button>
+            )}
+            {state === "preview" && (
+              <button onClick={confirmUpload} style={{
+                padding: "14px 32px", borderRadius: 12, border: "none",
+                background: "linear-gradient(135deg, #057642, #046636)",
+                color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
+                cursor: "pointer", boxShadow: "0 4px 24px rgba(5,118,66,0.25)",
+              }}>✅ Happy with this!</button>
             )}
             {state === "recorded" && (
               <button onClick={reset} style={{

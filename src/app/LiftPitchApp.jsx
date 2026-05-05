@@ -1076,6 +1076,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const [linkRevealed, setLinkRevealed] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("idle"); // idle | uploading | done | error
   const surveyShownRef = useRef(false);
+  const pendingBlobRef = useRef(null);
   const timer = useTimer(maxDur);
   const [editableScript, setEditableScript] = useState(script || "");
   const [scrollPlaying, setScrollPlaying] = useState(false);
@@ -1230,21 +1231,34 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       const url = URL.createObjectURL(blob);
       setRecordedUrl(url);
       const v = genVerify(); setVerification(v);
-      const fallbackId = v.verificationHash.replace("VP-", "").toLowerCase();
-      setShareLink(`https://lift-pitch.co/v/${fallbackId}`);
-      setState("recorded");
+      pendingBlobRef.current = { blob, url };
+      setState("preview");
       streamRef.current?.getTracks().forEach(t => t.stop());
       if (videoRef.current) { videoRef.current.srcObject = null; videoRef.current.src = url; videoRef.current.muted = false; }
-      if (onVideoRecorded) onVideoRecorded(v.verificationHash);
-      if (user) uploadToStream(blob, v.verificationHash);
-      if (!surveyShownRef.current) { surveyShownRef.current = true; setShowSurveyModal(true); } else { setLinkRevealed(true); }
     };
     mr.start(); mrRef.current = mr; timer.start(); setState("recording");
   };
 
   const stopRec = () => { mrRef.current?.stop(); timer.stop(); };
   useEffect(() => { if (timer.sec >= maxDur && state === "recording") stopRec(); }, [timer.sec, maxDur, state]);
-  const reset = () => { timer.reset(); setRecordedUrl(null); setShareLink(""); setCopied(false); setVerification(null); setState("idle"); setLinkRevealed(false); setUploadStatus("idle"); surveyShownRef.current = false; streamRef.current?.getTracks().forEach(t => t.stop()); };
+  const confirmUpload = () => {
+    if (!pendingBlobRef.current || !verification) return;
+    const { blob } = pendingBlobRef.current;
+    const fallbackId = verification.verificationHash.replace("VP-", "").toLowerCase();
+    setShareLink(`https://lift-pitch.co/v/${fallbackId}`);
+    setState("recorded");
+    if (onVideoRecorded) onVideoRecorded(verification.verificationHash);
+    if (user) uploadToStream(blob, verification.verificationHash);
+    if (!surveyShownRef.current) { surveyShownRef.current = true; setShowSurveyModal(true); } else { setLinkRevealed(true); }
+    pendingBlobRef.current = null;
+  };
+  const redo = () => {
+    if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; }
+    setVerification(null); setRecordedUrl(null);
+    if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; }
+    startCamera();
+  };
+  const reset = () => { if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; } timer.reset(); setRecordedUrl(null); setShareLink(""); setCopied(false); setVerification(null); setState("idle"); setLinkRevealed(false); setUploadStatus("idle"); surveyShownRef.current = false; streamRef.current?.getTracks().forEach(t => t.stop()); };
   const copyLink = () => { navigator.clipboard?.writeText(shareLink); setCopied(true); setTimeout(() => setCopied(false), 2500); };
   const fmt = s => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
 
@@ -1393,8 +1407,8 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         border: state === "recording" ? "2px solid #DC3545" : state === "countdown" ? `2px solid ${B.warning}` : `1px solid ${B.border}` }}>
         <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover",
           display: state === "idle" ? "none" : "block",
-          transform: state !== "recorded" ? "scaleX(-1)" : "none",
-        }} playsInline controls={state === "recorded"} />
+          transform: state !== "recorded" && state !== "preview" ? "scaleX(-1)" : "none",
+        }} playsInline controls={state === "recorded" || state === "preview"} />
 
         {state === "idle" && (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column",
@@ -1440,11 +1454,18 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         )}
       </div>
 
+      {state === "preview" && (
+        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: "0 0 12px", lineHeight: 1.5, textAlign: "center" }}>
+          How did that go? Watch your preview and decide.
+        </p>
+      )}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
         {state === "idle" && !videoLimitReached && <Btn onClick={() => { if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
         {state === "previewing" && <Btn onClick={startCountdown} style={{
           background: "linear-gradient(135deg, #DC3545, #C0392B)", boxShadow: "0 4px 24px rgba(220,53,69,0.2)" }}>⏺ Start Recording</Btn>}
         {state === "recording" && <Btn onClick={stopRec} variant="secondary">⏹ Stop Recording</Btn>}
+        {state === "preview" && <Btn onClick={redo} variant="secondary">🔄 Re-do</Btn>}
+        {state === "preview" && <Btn onClick={confirmUpload} style={{ background: "linear-gradient(135deg, #057642, #046636)", boxShadow: "0 4px 24px rgba(5,118,66,0.2)" }}>✅ Happy with this!</Btn>}
         {state === "recorded" && <Btn onClick={reset} variant="secondary">🔄 Record Again</Btn>}
       </div>
 
