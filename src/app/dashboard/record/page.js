@@ -128,11 +128,11 @@ function RecordPageInner() {
 
   const teleRef = useRef(null);
   const scrollIntervalRef = useRef(null);
-  const scrollPxRef = useRef(2);
-  const scrollIntervalMsRef = useRef(50);
+  const scrollPxRef = useRef(1);
+  const scrollIntervalMsRef = useRef(67);
   const [scrollActive, setScrollActive] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState("medium");
-  const SCROLL_CONFIG = { slow: { px: 1, ms: 100 }, medium: { px: 2, ms: 50 }, fast: { px: 4, ms: 50 } };
+  const [scrollSpeed, setScrollSpeed] = useState("slow");
+  const SCROLL_CONFIG = { slow: { px: 1, ms: 67 }, medium: { px: 2, ms: 67 } };
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
   const atVideoLimit = !isPaid && videoCount >= 1;
@@ -506,7 +506,7 @@ function RecordPageInner() {
                   color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                   Speed:
                 </span>
-                {[["slow", "Slow"], ["medium", "Med"], ["fast", "Fast"]].map(([s, label]) => (
+                {[["slow", "Slow"], ["medium", "Med"]].map(([s, label]) => (
                   <button key={s} onClick={() => changeSpeed(s)} style={{
                     padding: "4px 10px", borderRadius: 6,
                     border: `1px solid ${scrollSpeed === s ? "rgba(55,143,233,0.4)" : "rgba(255,255,255,0.1)"}`,

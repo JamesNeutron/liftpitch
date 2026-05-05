@@ -1079,13 +1079,13 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const timer = useTimer(maxDur);
   const [editableScript, setEditableScript] = useState(script || "");
   const [scrollPlaying, setScrollPlaying] = useState(false);
-  const [scrollSpeed, setScrollSpeed] = useState("medium");
+  const [scrollSpeed, setScrollSpeed] = useState("slow");
   const scrollContainerRef = useRef(null);
   const scrollIntervalRef = useRef(null);
   const scriptTextareaRef = useRef(null);
-  const scrollPxRef = useRef(2);
-  const scrollIntervalMsRef = useRef(50);
-  const SCROLL_CONFIG = { slow: { px: 1, ms: 100 }, medium: { px: 2, ms: 50 }, fast: { px: 4, ms: 50 } };
+  const scrollPxRef = useRef(1);
+  const scrollIntervalMsRef = useRef(67);
+  const SCROLL_CONFIG = { slow: { px: 1, ms: 67 }, medium: { px: 2, ms: 67 } };
   const [videoLimitReached, setVideoLimitReached] = useState(false);
 
   useEffect(() => { if (script) { setEditableScript(script); if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0; } }, [script]);
@@ -1335,7 +1335,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
               color: "rgba(255,255,255,0.3)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
               Speed:
             </span>
-            {["slow", "medium", "fast"].map(s => (
+            {["slow", "medium"].map(s => (
               <button key={s} onClick={() => handleSpeedChange(s)} style={{
                 padding: "4px 10px", borderRadius: 6,
                 border: `1px solid ${scrollSpeed === s ? "rgba(55,143,233,0.4)" : "rgba(255,255,255,0.1)"}`,
