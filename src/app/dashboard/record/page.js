@@ -129,9 +129,10 @@ function RecordPageInner() {
   const teleRef = useRef(null);
   const scrollIntervalRef = useRef(null);
   const scrollPxRef = useRef(2);
+  const scrollIntervalMsRef = useRef(50);
   const [scrollActive, setScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState("medium");
-  const SCROLL_SPEEDS = { slow: 1, medium: 2, fast: 4 };
+  const SCROLL_CONFIG = { slow: { px: 1, ms: 100 }, medium: { px: 2, ms: 50 }, fast: { px: 4, ms: 50 } };
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
   const atVideoLimit = !isPaid && videoCount >= 1;
@@ -141,7 +142,7 @@ function RecordPageInner() {
     setScrollActive(true);
     scrollIntervalRef.current = setInterval(() => {
       if (teleRef.current) teleRef.current.scrollTop += scrollPxRef.current;
-    }, 50);
+    }, scrollIntervalMsRef.current);
   };
 
   const stopScroll = () => {
@@ -151,12 +152,13 @@ function RecordPageInner() {
 
   const changeSpeed = (speed) => {
     setScrollSpeed(speed);
-    scrollPxRef.current = SCROLL_SPEEDS[speed];
+    scrollPxRef.current = SCROLL_CONFIG[speed].px;
+    scrollIntervalMsRef.current = SCROLL_CONFIG[speed].ms;
     if (scrollIntervalRef.current) {
       clearInterval(scrollIntervalRef.current);
       scrollIntervalRef.current = setInterval(() => {
         if (teleRef.current) teleRef.current.scrollTop += scrollPxRef.current;
-      }, 50);
+      }, scrollIntervalMsRef.current);
     }
   };
 

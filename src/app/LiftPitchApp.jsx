@@ -1084,7 +1084,8 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const scrollIntervalRef = useRef(null);
   const scriptTextareaRef = useRef(null);
   const scrollPxRef = useRef(2);
-  const SCROLL_SPEEDS = { slow: 1, medium: 2, fast: 4 };
+  const scrollIntervalMsRef = useRef(50);
+  const SCROLL_CONFIG = { slow: { px: 1, ms: 100 }, medium: { px: 2, ms: 50 }, fast: { px: 4, ms: 50 } };
   const [videoLimitReached, setVideoLimitReached] = useState(false);
 
   useEffect(() => { if (script) { setEditableScript(script); if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0; } }, [script]);
@@ -1114,7 +1115,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       const el = scrollContainerRef.current;
       if (!el) return;
       el.scrollTop += scrollPxRef.current;
-    }, 50);
+    }, scrollIntervalMsRef.current);
   };
 
   const stopScroll = () => {
@@ -1124,14 +1125,15 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
 
   const handleSpeedChange = (s) => {
     setScrollSpeed(s);
-    scrollPxRef.current = SCROLL_SPEEDS[s];
+    scrollPxRef.current = SCROLL_CONFIG[s].px;
+    scrollIntervalMsRef.current = SCROLL_CONFIG[s].ms;
     if (scrollIntervalRef.current) {
       clearInterval(scrollIntervalRef.current);
       scrollIntervalRef.current = setInterval(() => {
         const el = scrollContainerRef.current;
         if (!el) return;
         el.scrollTop += scrollPxRef.current;
-      }, 50);
+      }, scrollIntervalMsRef.current);
     }
   };
 
