@@ -136,8 +136,8 @@ const steps = [
   {
     n: "3", emoji: "🎥",
     color: "#057642", colorLight: "rgba(5,118,66,0.08)", colorMid: "rgba(5,118,66,0.16)",
-    t: "Record once, attach to every application",
-    d: "Hit record, read your script on screen while the camera rolls, and you're done. You get a verified shareable link to drop into any application. Recruiters trust it because it's provably live.",
+    t: "Record a unique pitch for each application",
+    d: "Each pitch is tailored to the specific role and company. Recruiters can tell when a video is generic — a personalized pitch shows you actually want THIS job.",
   },
 ];
 
