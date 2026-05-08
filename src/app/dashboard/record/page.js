@@ -261,9 +261,16 @@ function RecordPageInner() {
       streamRef.current = stream;
       console.log("[startCamera] stream obtained, videoRef.current:", videoRef.current);
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
         videoRef.current.muted = true;
-        videoRef.current.play();
+        videoRef.current.srcObject = stream;
+        videoRef.current.play().then(() => {
+          console.log('[camera] playing successfully');
+        }).catch(err => {
+          console.error('[camera] play() failed:', err);
+          setTimeout(() => {
+            videoRef.current?.play().catch(e => console.error('[camera] retry failed:', e));
+          }, 200);
+        });
         setTimeout(() => {
           console.log('[camera check] srcObject:', videoRef.current?.srcObject);
           console.log('[camera check] readyState:', videoRef.current?.readyState);
