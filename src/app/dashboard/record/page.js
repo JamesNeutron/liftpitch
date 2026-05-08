@@ -259,16 +259,13 @@ function RecordPageInner() {
         audio: true,
       });
       streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.muted = true;
+        videoRef.current.play();
+      }
       setState("previewing");
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.muted = true;
-          videoRef.current.play().catch(err => console.error('[camera] play error:', err));
-        }
-      }, 50);
     } catch (err) {
-      console.error('[camera] getUserMedia error:', err);
       setCameraError(`${err.name}: ${err.message}`);
     }
   };
@@ -580,10 +577,10 @@ function RecordPageInner() {
           }}>
             <video
               ref={videoRef}
-              className={state !== "recorded" && state !== "preview" ? "mirror" : ""}
               style={{
                 width: "100%", height: "100%", objectFit: "cover",
                 display: state === "idle" ? "none" : "block",
+                transform: state !== "recorded" && state !== "preview" ? "scaleX(-1)" : "none",
               }}
               playsInline
               controls={state === "recorded" || state === "preview"}
@@ -679,7 +676,7 @@ function RecordPageInner() {
           )}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {state === "idle" && (
-              <button onClick={() => { console.log('[button] Open Camera clicked, titleMissing:', titleMissing, 'atVideoLimit:', atVideoLimit); startCamera(); }} disabled={titleMissing || atVideoLimit} style={{
+              <button onClick={startCamera} disabled={titleMissing || atVideoLimit} style={{
                 padding: "14px 32px", borderRadius: 12, border: "none",
                 background: (titleMissing || atVideoLimit) ? "#C8D0D9" : B.gradient,
                 color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
@@ -862,7 +859,6 @@ function RecordPageInner() {
       </main>
 
       <style>{`
-        .mirror { transform: scaleX(-1); }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)} }
         @keyframes countPulse { 0%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}100%{transform:scale(.8);opacity:.5} }

@@ -1206,16 +1206,10 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
       streamRef.current = stream;
+      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.muted = true; videoRef.current.play(); }
       setState("previewing");
-      setTimeout(() => {
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.muted = true;
-          videoRef.current.play().catch(err => console.error('[camera] play error:', err));
-        }
-      }, 50);
     } catch (err) {
-      console.error('[camera] getUserMedia error:', err);
+      console.error("Camera error:", err);
       setCameraError(`${err.name}: ${err.message}`);
     }
   };
@@ -1416,8 +1410,9 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: "#000",
         aspectRatio: "16/9", marginBottom: 20,
         border: state === "recording" ? "2px solid #DC3545" : state === "countdown" ? `2px solid ${B.warning}` : `1px solid ${B.border}` }}>
-        <video ref={videoRef} className={state !== "recorded" && state !== "preview" ? "mirror" : ""} style={{ width: "100%", height: "100%", objectFit: "cover",
+        <video ref={videoRef} style={{ width: "100%", height: "100%", objectFit: "cover",
           display: state === "idle" ? "none" : "block",
+          transform: state !== "recorded" && state !== "preview" ? "scaleX(-1)" : "none",
         }} playsInline controls={state === "recorded" || state === "preview"} />
 
         {state === "idle" && (
@@ -1470,7 +1465,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         </p>
       )}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        {state === "idle" && !videoLimitReached && <Btn onClick={() => { console.log('[button] Open Camera clicked, user:', !!user, 'videoLimitReached:', videoLimitReached); if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
+        {state === "idle" && !videoLimitReached && <Btn onClick={() => { if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
         {state === "previewing" && <Btn onClick={startCountdown} style={{
           background: "linear-gradient(135deg, #DC3545, #C0392B)", boxShadow: "0 4px 24px rgba(220,53,69,0.2)" }}>⏺ Start Recording</Btn>}
         {state === "recording" && <Btn onClick={stopRec} variant="secondary">⏹ Stop Recording</Btn>}
@@ -1546,7 +1541,6 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         </div>
       )}
       <style>{`
-        .mirror { transform: scaleX(-1); }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)} }
         @keyframes countPulse { 0%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}100%{transform:scale(.8);opacity:.5} }
         @keyframes spin { to { transform: rotate(360deg); } }
