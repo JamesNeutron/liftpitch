@@ -165,40 +165,57 @@ function RecordPageInner() {
 
   useEffect(() => {
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { router.replace("/"); return; }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { router.replace("/"); return; }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("id", session.user.id)
-        .single();
-
-      const plan = profile?.plan || "free";
-      setUserPlan(plan);
-
-      if (plan !== "pro" && plan !== "lifetime") {
-        const { count } = await supabase
-          .from("videos")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", session.user.id);
-        setVideoCount(count ?? 0);
-      }
-
-      setUser(session.user);
-      setAuthLoading(false);
-
-      if (scriptId) {
-        const { data: script } = await supabase
-          .from("scripts")
-          .select("*")
-          .eq("id", scriptId)
-          .eq("user_id", session.user.id)
-          .single();
-        if (script) {
-          setScriptData(script);
-          if (script.duration) setMaxDur(Number(script.duration));
+        let plan = "free";
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("plan")
+            .eq("id", session.user.id)
+            .single();
+          plan = profile?.plan || "free";
+        } catch (e) {
+          console.warn("[record] profiles fetch failed (non-fatal):", e);
         }
+        setUserPlan(plan);
+
+        if (plan !== "pro" && plan !== "lifetime") {
+          try {
+            const { count } = await supabase
+              .from("videos")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", session.user.id);
+            setVideoCount(count ?? 0);
+          } catch (e) {
+            console.warn("[record] video count fetch failed (non-fatal):", e);
+          }
+        }
+
+        setUser(session.user);
+        setAuthLoading(false);
+
+        if (scriptId) {
+          try {
+            const { data: script } = await supabase
+              .from("scripts")
+              .select("*")
+              .eq("id", scriptId)
+              .eq("user_id", session.user.id)
+              .single();
+            if (script) {
+              setScriptData(script);
+              if (script.duration) setMaxDur(Number(script.duration));
+            }
+          } catch (e) {
+            console.warn("[record] script fetch failed (non-fatal):", e);
+          }
+        }
+      } catch (err) {
+        console.error("[record] init failed:", err);
+        setAuthLoading(false);
       }
     }
     init();
@@ -247,6 +264,11 @@ function RecordPageInner() {
         videoRef.current.srcObject = stream;
         videoRef.current.muted = true;
         videoRef.current.play();
+        setTimeout(() => {
+          console.log('[camera check] srcObject:', videoRef.current?.srcObject);
+          console.log('[camera check] readyState:', videoRef.current?.readyState);
+          console.log('[camera check] paused:', videoRef.current?.paused);
+        }, 500);
       }
       setState("previewing");
     } catch (err) {

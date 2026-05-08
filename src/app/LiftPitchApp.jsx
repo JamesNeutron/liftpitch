@@ -1106,7 +1106,8 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       .from("videos")
       .select("*", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .then(({ count }) => setVideoLimitReached((count ?? 0) >= 1));
+      .then(({ count }) => setVideoLimitReached((count ?? 0) >= 1))
+      .catch(err => console.warn("[VideoRecorder] video count fetch failed:", err));
   }, [user, isPaid]);
 
   const startScroll = () => {
@@ -1210,6 +1211,11 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         videoRef.current.srcObject = stream;
         videoRef.current.muted = true;
         videoRef.current.play();
+        setTimeout(() => {
+          console.log('[camera check] srcObject:', videoRef.current?.srcObject);
+          console.log('[camera check] readyState:', videoRef.current?.readyState);
+          console.log('[camera check] paused:', videoRef.current?.paused);
+        }, 500);
       }
       setState("previewing");
     } catch (err) {
@@ -1916,20 +1922,28 @@ export default function App() {
   const [authModalMode, setAuthModalMode] = useState("signup");
 
   const loadUserStatus = async (userId) => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("plan")
-      .eq("id", userId)
-      .single();
-    const plan = data?.plan;
-    const paidPlan = plan === "pro" || plan === "lifetime";
-    setIsPaid(paidPlan);
-    if (!paidPlan) {
-      const { count } = await supabase
-        .from("scripts")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", userId);
-      setScriptUsed((count ?? 0) >= 1);
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("plan")
+        .eq("id", userId)
+        .single();
+      const plan = data?.plan;
+      const paidPlan = plan === "pro" || plan === "lifetime";
+      setIsPaid(paidPlan);
+      if (!paidPlan) {
+        try {
+          const { count } = await supabase
+            .from("scripts")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", userId);
+          setScriptUsed((count ?? 0) >= 1);
+        } catch (e) {
+          console.warn("[loadUserStatus] scripts count failed (non-fatal):", e);
+        }
+      }
+    } catch (err) {
+      console.warn("[loadUserStatus] profiles fetch failed (non-fatal):", err);
     }
   };
 
