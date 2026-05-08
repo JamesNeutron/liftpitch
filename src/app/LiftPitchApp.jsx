@@ -1254,6 +1254,9 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   };
   const redo = () => {
     if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; }
+    timer.reset();
+    chunksRef.current = [];
+    mrRef.current = null;
     setVerification(null); setRecordedUrl(null);
     if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; }
     startCamera();
