@@ -1206,22 +1206,16 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
       streamRef.current = stream;
-      console.log("[startCamera] stream obtained, videoRef.current:", videoRef.current);
-      if (videoRef.current) {
-        videoRef.current.muted = true;
-        videoRef.current.srcObject = stream;
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().catch(err => console.error('[camera] play error:', err));
-          setState("previewing");
-        };
-        setTimeout(() => {
-          console.log('[camera check] srcObject:', videoRef.current?.srcObject);
-          console.log('[camera check] readyState:', videoRef.current?.readyState);
-          console.log('[camera check] paused:', videoRef.current?.paused);
-        }, 500);
-      }
+      setState("previewing");
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.muted = true;
+          videoRef.current.play().catch(err => console.error('[camera] play error:', err));
+        }
+      }, 50);
     } catch (err) {
-      console.error("Camera error:", err);
+      console.error('[camera] getUserMedia error:', err);
       setCameraError(`${err.name}: ${err.message}`);
     }
   };
