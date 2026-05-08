@@ -263,21 +263,16 @@ function RecordPageInner() {
       if (videoRef.current) {
         videoRef.current.muted = true;
         videoRef.current.srcObject = stream;
-        videoRef.current.play().then(() => {
-          console.log('[camera] playing successfully');
-        }).catch(err => {
-          console.error('[camera] play() failed:', err);
-          setTimeout(() => {
-            videoRef.current?.play().catch(e => console.error('[camera] retry failed:', e));
-          }, 200);
-        });
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().catch(err => console.error('[camera] play error:', err));
+          setState("previewing");
+        };
         setTimeout(() => {
           console.log('[camera check] srcObject:', videoRef.current?.srcObject);
           console.log('[camera check] readyState:', videoRef.current?.readyState);
           console.log('[camera check] paused:', videoRef.current?.paused);
         }, 500);
       }
-      setState("previewing");
     } catch (err) {
       setCameraError(`${err.name}: ${err.message}`);
     }
@@ -590,10 +585,10 @@ function RecordPageInner() {
           }}>
             <video
               ref={videoRef}
+              className={state !== "recorded" && state !== "preview" ? "mirror" : ""}
               style={{
                 width: "100%", height: "100%", objectFit: "cover",
                 display: state === "idle" ? "none" : "block",
-                transform: state !== "recorded" && state !== "preview" ? "scaleX(-1)" : "none",
               }}
               playsInline
               controls={state === "recorded" || state === "preview"}
@@ -872,6 +867,7 @@ function RecordPageInner() {
       </main>
 
       <style>{`
+        .mirror { transform: scaleX(-1); }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.85)} }
         @keyframes countPulse { 0%{transform:scale(.8);opacity:.5}50%{transform:scale(1.1);opacity:1}100%{transform:scale(.8);opacity:.5} }
