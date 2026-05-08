@@ -1205,7 +1205,12 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
       streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.muted = true; videoRef.current.play(); }
+      console.log("[startCamera] stream obtained, videoRef.current:", videoRef.current);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.muted = true;
+        videoRef.current.play();
+      }
       setState("previewing");
     } catch (err) {
       console.error("Camera error:", err);
@@ -1254,13 +1259,13 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   };
   const redo = () => {
     if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; }
-    timer.reset();
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     chunksRef.current = [];
     mrRef.current = null;
+    timer.reset();
     setVerification(null); setRecordedUrl(null);
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; }
-    startCamera();
+    setState("idle");
+    setTimeout(() => startCamera(), 200);
   };
   const reset = () => { if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; } timer.reset(); setRecordedUrl(null); setShareLink(""); setCopied(false); setVerification(null); setState("idle"); setLinkRevealed(false); setUploadStatus("idle"); surveyShownRef.current = false; streamRef.current?.getTracks().forEach(t => t.stop()); };
   const copyLink = () => { navigator.clipboard?.writeText(shareLink); setCopied(true); setTimeout(() => setCopied(false), 2500); };

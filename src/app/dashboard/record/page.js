@@ -242,6 +242,7 @@ function RecordPageInner() {
         audio: true,
       });
       streamRef.current = stream;
+      console.log("[startCamera] stream obtained, videoRef.current:", videoRef.current);
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.muted = true;
@@ -301,13 +302,13 @@ function RecordPageInner() {
 
   const redo = () => {
     if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; }
-    timer.reset();
+    if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     chunksRef.current = [];
     mrRef.current = null;
+    timer.reset();
     setVerification(null);
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; }
-    startCamera();
+    setState("idle");
+    setTimeout(() => startCamera(), 200);
   };
 
   const reset = () => {
