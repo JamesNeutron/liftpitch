@@ -1202,10 +1202,16 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const startCamera = async () => {
     setCameraError(null);
     try {
+      if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+      if (videoRef.current) videoRef.current.srcObject = null;
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 720 } }, audio: true });
       streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.muted = true; videoRef.current.play(); }
+      if (videoRef.current) {
+        videoRef.current.muted = true;
+        videoRef.current.onloadedmetadata = () => { videoRef.current.play(); };
+        videoRef.current.srcObject = stream;
+      }
       setState("previewing");
     } catch (err) {
       console.error("Camera error:", err);
