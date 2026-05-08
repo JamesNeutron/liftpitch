@@ -679,7 +679,7 @@ function RecordPageInner() {
           )}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {state === "idle" && (
-              <button onClick={startCamera} disabled={titleMissing || atVideoLimit} style={{
+              <button onClick={() => { console.log('[button] Open Camera clicked, titleMissing:', titleMissing, 'atVideoLimit:', atVideoLimit); startCamera(); }} disabled={titleMissing || atVideoLimit} style={{
                 padding: "14px 32px", borderRadius: 12, border: "none",
                 background: (titleMissing || atVideoLimit) ? "#C8D0D9" : B.gradient,
                 color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,

@@ -1470,7 +1470,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         </p>
       )}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        {state === "idle" && !videoLimitReached && <Btn onClick={() => { if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
+        {state === "idle" && !videoLimitReached && <Btn onClick={() => { console.log('[button] Open Camera clicked, user:', !!user, 'videoLimitReached:', videoLimitReached); if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
         {state === "previewing" && <Btn onClick={startCountdown} style={{
           background: "linear-gradient(135deg, #DC3545, #C0392B)", boxShadow: "0 4px 24px rgba(220,53,69,0.2)" }}>⏺ Start Recording</Btn>}
         {state === "recording" && <Btn onClick={stopRec} variant="secondary">⏹ Stop Recording</Btn>}
