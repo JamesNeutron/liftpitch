@@ -306,7 +306,7 @@ function RecordPageInner() {
     mrRef.current = null;
     setVerification(null);
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; videoRef.current.load(); }
+    if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; }
     startCamera();
   };
 

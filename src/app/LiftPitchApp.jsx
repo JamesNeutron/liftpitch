@@ -1259,7 +1259,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
     mrRef.current = null;
     setVerification(null); setRecordedUrl(null);
     if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; videoRef.current.load(); }
+    if (videoRef.current) { videoRef.current.src = ""; videoRef.current.srcObject = null; }
     startCamera();
   };
   const reset = () => { if (pendingBlobRef.current) { URL.revokeObjectURL(pendingBlobRef.current.url); pendingBlobRef.current = null; } timer.reset(); setRecordedUrl(null); setShareLink(""); setCopied(false); setVerification(null); setState("idle"); setLinkRevealed(false); setUploadStatus("idle"); surveyShownRef.current = false; streamRef.current?.getTracks().forEach(t => t.stop()); };
