@@ -346,7 +346,7 @@ function PrivacyPolicy() {
           <SectionTitle number={5} title="How We Share Your Information" />
           <P>We do not sell or rent your personal information. We share only in these limited circumstances:</P>
           <UL items={[
-            <><strong>Service Providers:</strong> Cloudflare R2 (video storage), Supabase (database/auth), Lemon Squeezy (payments), Resend (email) — each contractually limited to processing data per our instructions only</>,
+            <><strong>Service Providers:</strong> Cloudflare Stream (video storage and delivery), Supabase (database/auth), Lemon Squeezy (payments), Resend (email) — each contractually limited to processing data per our instructions only</>,
             <><strong>AI Providers:</strong> Resume, job description, and About Me text sent to generate your script. See Section 6.</>,
             <><strong>Your Shareable Link:</strong> Anyone with your link can view your video. You control distribution.</>,
             <><strong>Legal Requirements:</strong> Disclosure required by law, court order, or government authority</>,
