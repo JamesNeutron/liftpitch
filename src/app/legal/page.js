@@ -122,7 +122,7 @@ function TermsOfService() {
 
         <div id="t4" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={4} title="Account Registration" />
-          <P>To access certain features you must create an account. You agree to provide accurate information, keep your password secure, notify us of unauthorized access at <A href="mailto:support@liftpitch.co">support@liftpitch.co</A>, and not share credentials. LiftPitch may terminate accounts with false information.</P>
+          <P>To access certain features you must create an account. You agree to provide accurate information, keep your password secure, notify us of unauthorized access at <A href="mailto:support@lift-pitch.co">support@lift-pitch.co</A>, and not share credentials. LiftPitch may terminate accounts with false information.</P>
         </div>
 
         <div id="t5" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -132,7 +132,7 @@ function TermsOfService() {
             <><strong>Pro Monthly — $8.00/mo:</strong> Unlimited scripts, recordings, analytics, no watermark</>,
             <><strong>Lifetime Pass — $35.00:</strong> All Pro features, no recurring billing</>,
           ]} />
-          <HL><strong>Refund Policy:</strong> Monthly plans cancel anytime; access continues through end of billing period. Lifetime passes are non-refundable after 14 days. Technical issues? Contact <A href="mailto:support@liftpitch.co">support@liftpitch.co</A> within 14 days for resolution or discretionary refund.</HL>
+          <HL><strong>Refund Policy:</strong> Monthly plans cancel anytime; access continues through end of billing period. Lifetime passes are non-refundable after 14 days. Technical issues? Contact <A href="mailto:support@lift-pitch.co">support@lift-pitch.co</A> within 14 days for resolution or discretionary refund.</HL>
           <P>Pricing may change with 30 days' written notice to active subscribers.</P>
         </div>
 
@@ -145,7 +145,7 @@ function TermsOfService() {
 
         <div id="t7" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={7} title="Video Deletion & Link Expiration" />
-          <P>Videos are retained for up to <strong>12 months</strong> from recording date unless you request earlier deletion at <A href="mailto:support@liftpitch.co">support@liftpitch.co</A>. Deletion is honored within 30 days. Upon deletion your shareable link is disabled and the file removed from active storage. Secure backup copies may persist up to 30 days before purge.</P>
+          <P>Videos are retained for up to <strong>12 months</strong> from recording date unless you request earlier deletion at <A href="mailto:support@lift-pitch.co">support@lift-pitch.co</A>. Deletion is honored within 30 days. Upon deletion your shareable link is disabled and the file removed from active storage. Secure backup copies may persist up to 30 days before purge.</P>
           <P><strong>Important:</strong> LiftPitch cannot retrieve or delete copies that third parties (recruiters, employers) may have saved before deletion. You acknowledge this limitation when sharing your link.</P>
         </div>
 
@@ -168,7 +168,7 @@ function TermsOfService() {
 
         <div id="t10" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={10} title="DMCA & Copyright" />
-          <P>LiftPitch complies with the Digital Millennium Copyright Act. To report infringing content, send a written notice to our designated agent at <A href="mailto:legal@liftpitch.co">legal@liftpitch.co</A> (Subject: "DMCA Takedown Request") including: description of the copyrighted work; URL of infringing content; your contact info; good-faith belief statement; accuracy statement under penalty of perjury; and your signature. Repeat infringers may have accounts terminated.</P>
+          <P>LiftPitch complies with the Digital Millennium Copyright Act. To report infringing content, send a written notice to our designated agent at <A href="mailto:legal@lift-pitch.co">legal@lift-pitch.co</A> (Subject: "DMCA Takedown Request") including: description of the copyrighted work; URL of infringing content; your contact info; good-faith belief statement; accuracy statement under penalty of perjury; and your signature. Repeat infringers may have accounts terminated.</P>
         </div>
 
         <div id="t11" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -198,12 +198,12 @@ function TermsOfService() {
 
         <div id="t16" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={16} title="Dispute Resolution & Arbitration" />
-          <P>Disputes shall first be addressed informally by contacting <A href="mailto:legal@liftpitch.co">legal@liftpitch.co</A> (30-day resolution period). If unresolved, disputes shall be settled by binding individual arbitration — not in court. <strong>You waive any right to jury trial and class action participation.</strong> Emergency injunctive relief remains available in court pending arbitration.</P>
+          <P>Disputes shall first be addressed informally by contacting <A href="mailto:legal@lift-pitch.co">legal@lift-pitch.co</A> (30-day resolution period). If unresolved, disputes shall be settled by binding individual arbitration — not in court. <strong>You waive any right to jury trial and class action participation.</strong> Emergency injunctive relief remains available in court pending arbitration.</P>
         </div>
 
         <div id="t17" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={17} title="Termination" />
-          <P>You may close your account at any time by contacting <A href="mailto:support@liftpitch.co">support@liftpitch.co</A>. Upon termination, your access ends immediately and videos are scheduled for deletion per Section 7. LiftPitch may terminate accounts for Terms violations or at our discretion with reasonable notice.</P>
+          <P>You may close your account at any time by contacting <A href="mailto:support@lift-pitch.co">support@lift-pitch.co</A>. Upon termination, your access ends immediately and videos are scheduled for deletion per Section 7. LiftPitch may terminate accounts for Terms violations or at our discretion with reasonable notice.</P>
         </div>
 
         <div id="t18" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -231,8 +231,8 @@ function TermsOfService() {
           <SectionTitle number={21} title="Contact" />
           <ContactBox lines={[
             <><strong>Pangea Square LLC</strong></>,
-            <>📧 General: <A href="mailto:support@liftpitch.co">support@liftpitch.co</A></>,
-            <>📧 Legal / DMCA: <A href="mailto:legal@liftpitch.co">legal@liftpitch.co</A></>,
+            <>📧 General: <A href="mailto:support@lift-pitch.co">support@lift-pitch.co</A></>,
+            <>📧 Legal / DMCA: <A href="mailto:legal@lift-pitch.co">legal@lift-pitch.co</A></>,
             <>🌐 <A href="https://lift-pitch.co">lift-pitch.co</A></>,
             <>📍 Michigan, United States</>,
           ]} />
@@ -339,7 +339,7 @@ function PrivacyPolicy() {
             "Your video is stored as a raw recording used only for delivery and Service operation",
             "We do not sell your video or use it in advertising without explicit written consent",
           ]} />
-          <P>Request deletion at any time: <A href="mailto:privacy@liftpitch.co">privacy@liftpitch.co</A>. Honored within 30 days.</P>
+          <P>Request deletion at any time: <A href="mailto:privacy@lift-pitch.co">privacy@lift-pitch.co</A>. Honored within 30 days.</P>
         </div>
 
         <div id="p5" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -386,7 +386,7 @@ function PrivacyPolicy() {
               ))}
             </tbody>
           </table>
-          <P>Request full account and data deletion: <A href="mailto:privacy@liftpitch.co">privacy@liftpitch.co</A>. Completed within 30 days except where law requires retention.</P>
+          <P>Request full account and data deletion: <A href="mailto:privacy@lift-pitch.co">privacy@lift-pitch.co</A>. Completed within 30 days except where law requires retention.</P>
         </div>
 
         <div id="p8" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -400,7 +400,7 @@ function PrivacyPolicy() {
             <><strong>Withdraw Consent:</strong> Withdraw video storage consent by requesting deletion</>,
             <><strong>Limit Sensitive Data Use:</strong> Request that use of your video and sensitive personal information be limited strictly to Service delivery</>,
           ]} />
-          <P>Contact <A href="mailto:privacy@liftpitch.co">privacy@liftpitch.co</A>. We respond within 30 days.</P>
+          <P>Contact <A href="mailto:privacy@lift-pitch.co">privacy@lift-pitch.co</A>. We respond within 30 days.</P>
         </div>
 
         <div id="p9" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -415,7 +415,7 @@ function PrivacyPolicy() {
 
         <div id="p11" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={11} title="Children's Privacy" />
-          <P>LiftPitch is not directed at individuals under 18 and does not knowingly collect personal information from minors, in compliance with COPPA. If we learn a minor has used our Service, we will delete their data promptly. Contact <A href="mailto:privacy@liftpitch.co">privacy@liftpitch.co</A> with concerns.</P>
+          <P>LiftPitch is not directed at individuals under 18 and does not knowingly collect personal information from minors, in compliance with COPPA. If we learn a minor has used our Service, we will delete their data promptly. Contact <A href="mailto:privacy@lift-pitch.co">privacy@lift-pitch.co</A> with concerns.</P>
         </div>
 
         <div id="p12" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -455,7 +455,7 @@ function PrivacyPolicy() {
             "Right to limit use of sensitive personal information to what is necessary for Service delivery",
             "Right to non-discrimination for exercising these rights",
           ]} />
-          <P>To exercise California rights: <A href="mailto:privacy@liftpitch.co">privacy@liftpitch.co</A> — Subject: "CCPA Request." We respond within 45 days as required by law.</P>
+          <P>To exercise California rights: <A href="mailto:privacy@lift-pitch.co">privacy@lift-pitch.co</A> — Subject: "CCPA Request." We respond within 45 days as required by law.</P>
         </div>
 
         <div id="p13" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -467,9 +467,9 @@ function PrivacyPolicy() {
           <SectionTitle number={14} title="Contact Us" />
           <ContactBox lines={[
             <><strong>Pangea Square LLC — Privacy Team</strong></>,
-            <>📧 Privacy requests: <A href="mailto:privacy@liftpitch.co">privacy@liftpitch.co</A></>,
-            <>📧 General support: <A href="mailto:support@liftpitch.co">support@liftpitch.co</A></>,
-            <>📧 Legal / DMCA: <A href="mailto:legal@liftpitch.co">legal@liftpitch.co</A></>,
+            <>📧 Privacy requests: <A href="mailto:privacy@lift-pitch.co">privacy@lift-pitch.co</A></>,
+            <>📧 General support: <A href="mailto:support@lift-pitch.co">support@lift-pitch.co</A></>,
+            <>📧 Legal / DMCA: <A href="mailto:legal@lift-pitch.co">legal@lift-pitch.co</A></>,
             <>🌐 <A href="https://lift-pitch.co">lift-pitch.co</A></>,
             <>📍 Michigan, United States</>,
           ]} />
