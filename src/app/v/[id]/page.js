@@ -344,28 +344,47 @@ export default function VideoPage({ params }) {
           </div>
         </div>
 
-        {/* CTA */}
+        {/* Recruiter CTA */}
         <div style={{
           marginTop: 24, padding: "32px 28px", textAlign: "center",
-          background: B.gradient, borderRadius: 18,
-          boxShadow: "0 8px 32px rgba(10,102,194,0.25)",
+          background: B.surface, borderRadius: 18,
+          border: `1px solid ${B.border}`,
+          boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
         }}>
           <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 700,
-            color: "#fff", margin: "0 0 8px" }}>
-            Want to stand out the same way?
+            color: B.text, margin: "0 0 8px" }}>
+            Know a great candidate who could stand out like this?
           </p>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14,
-            color: "rgba(255,255,255,0.85)", margin: "0 0 22px", lineHeight: 1.6 }}>
-            Create your own verified video pitch — free, no account needed to start.
+            color: B.textMuted, margin: "0 0 24px", lineHeight: 1.6 }}>
+            Share LiftPitch with candidates you&apos;d love to see again — even if the timing wasn&apos;t right.
           </p>
-          <a href="/" style={{
-            display: "inline-block", padding: "13px 36px", borderRadius: 12,
-            background: "#fff", color: B.accent, textDecoration: "none",
-            fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 700,
-            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-          }}>
-            Create My Pitch →
-          </a>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            <a
+              href={`mailto:?subject=${encodeURIComponent("You should check out LiftPitch")}&body=${encodeURIComponent("I recently came across a great tool that helps candidates stand out with live-verified video pitches. Check it out at lift-pitch.co")}`}
+              style={{
+                display: "inline-block", padding: "13px 28px", borderRadius: 12,
+                background: B.gradient, color: "#fff", textDecoration: "none",
+                fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+                boxShadow: "0 4px 16px rgba(10,102,194,0.2)",
+              }}
+            >
+              📧 Share with a Candidate
+            </a>
+            <a
+              href="https://lift-pitch.co"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-block", padding: "13px 28px", borderRadius: 12,
+                background: B.surface, color: B.accent, textDecoration: "none",
+                border: `1.5px solid ${B.accent}`,
+                fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+              }}
+            >
+              🌐 Learn More
+            </a>
+          </div>
         </div>
       </div>
 

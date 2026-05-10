@@ -6,11 +6,13 @@ import { supabase } from "../../../lib/supabase";
 import UpgradeModal from "../../../components/UpgradeModal";
 
 const B = {
-  bg: "#F5F7FA", surface: "#FFFFFF", border: "#E2E8F0",
+  bg: "#0D1B2A", surface: "#1A2D42", border: "#2A4060",
   accent: "#0A66C2", accentLight: "#378FE9", accentGlow: "rgba(10,102,194,0.2)",
+  coral: "#C8442A",
   success: "#057642",
   warning: "#E7A33E",
-  text: "#1A1A2E", textMuted: "#56687A", textDim: "#8FA4B8",
+  text: "#F0F4F8", textMuted: "#8FA4B8", textDim: "#8FA4B8",
+  input: "#152233",
   gradient: "linear-gradient(135deg, #0A66C2 0%, #378FE9 50%, #70B5F9 100%)",
 };
 
@@ -19,7 +21,7 @@ function DashboardHeader({ email, onSignOut }) {
     <header style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
       padding: "16px 24px", borderBottom: `1px solid ${B.border}`,
-      background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
+      background: "#0A1628", backdropFilter: "blur(12px)",
       position: "sticky", top: 0, zIndex: 100,
     }}>
       <a href="/dashboard" style={{
@@ -40,7 +42,7 @@ function DashboardHeader({ email, onSignOut }) {
             fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
             color: B.textMuted, textDecoration: "none", transition: "all 0.15s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = B.bg; e.currentTarget.style.color = B.text; }}
+            onMouseEnter={e => { e.currentTarget.style.background = B.surface; e.currentTarget.style.color = B.text; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = B.textMuted; }}
           >{label}</a>
         ))}
@@ -55,7 +57,7 @@ function DashboardHeader({ email, onSignOut }) {
             }}>{email}</span>
             <button onClick={onSignOut} style={{
               padding: "8px 18px", borderRadius: 10, border: `1.5px solid ${B.border}`,
-              background: B.surface, color: B.textMuted,
+              background: "transparent", color: B.textMuted,
               fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
               transition: "all 0.2s",
             }}
@@ -66,7 +68,7 @@ function DashboardHeader({ email, onSignOut }) {
         ) : (
           <a href="/" style={{
             padding: "8px 18px", borderRadius: 10, border: `1.5px solid ${B.accent}`,
-            background: B.surface, color: B.accent,
+            background: "transparent", color: B.accent,
             fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
             textDecoration: "none",
           }}>Sign In</a>
@@ -477,7 +479,7 @@ export default function DashboardScript() {
               onChange={e => { setResume(e.target.value); setUploadStatus(""); setUploadName(""); }}
               placeholder="Upload your resume above, or paste it here..."
               style={{
-                width: "100%", minHeight: 120, padding: 16, background: B.surface, color: B.text,
+                width: "100%", minHeight: 120, padding: 16, background: B.input, color: B.text,
                 border: `1px solid ${B.border}`, borderRadius: 12,
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14, resize: "vertical", outline: "none",
                 lineHeight: 1.6, boxSizing: "border-box",
@@ -498,7 +500,7 @@ export default function DashboardScript() {
               onChange={e => setJobDesc(e.target.value)}
               placeholder="Copy and paste the text of the job posting you're applying to."
               style={{
-                width: "100%", minHeight: 120, padding: 16, background: B.surface, color: B.text,
+                width: "100%", minHeight: 120, padding: 16, background: B.input, color: B.text,
                 border: `1px solid ${B.border}`, borderRadius: 12,
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14, resize: "vertical", outline: "none",
                 lineHeight: 1.6, boxSizing: "border-box",
@@ -519,7 +521,7 @@ export default function DashboardScript() {
               onChange={e => setBio(e.target.value)}
               placeholder="Write a short paragraph about yourself — your personality, what drives you, what makes you unique..."
               style={{
-                width: "100%", minHeight: 80, padding: 16, background: B.surface, color: B.text,
+                width: "100%", minHeight: 80, padding: 16, background: B.input, color: B.text,
                 border: `1px solid ${B.border}`, borderRadius: 12,
                 fontFamily: "'DM Sans', sans-serif", fontSize: 14, resize: "vertical", outline: "none",
                 lineHeight: 1.6, boxSizing: "border-box",
@@ -535,7 +537,7 @@ export default function DashboardScript() {
             style={{
               padding: "14px 32px", borderRadius: 12, border: "none",
               background: canGenerate
-                ? "linear-gradient(135deg, #0A66C2 0%, #E06847 100%)"
+                ? "linear-gradient(135deg, #0A66C2 0%, #C8442A 100%)"
                 : "#C8D0D9",
               color: "#fff",
               fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
@@ -738,7 +740,7 @@ export default function DashboardScript() {
                       onChange={e => setGapAnswers(prev => ({ ...prev, [gap]: { ...prev[gap], desc: e.target.value } }))}
                       placeholder="Briefly describe your experience in 1-2 sentences..."
                       style={{
-                        width: "100%", minHeight: 68, padding: "10px 14px", background: B.surface, color: B.text,
+                        width: "100%", minHeight: 68, padding: "10px 14px", background: B.input, color: B.text,
                         border: `1px solid ${B.border}`, borderRadius: 10,
                         fontFamily: "'DM Sans', sans-serif", fontSize: 14, resize: "vertical", outline: "none",
                         lineHeight: 1.6, boxSizing: "border-box",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
 // Fonts loaded via layout.js
@@ -1911,6 +1912,8 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signup");
 
+  const router = useRouter();
+
   const loadUserStatus = async (userId) => {
     try {
       const { data } = await supabase
@@ -1932,25 +1935,31 @@ export default function App() {
           console.warn("[loadUserStatus] scripts count failed (non-fatal):", e);
         }
       }
+      return paidPlan;
     } catch (err) {
       console.warn("[loadUserStatus] profiles fetch failed (non-fatal):", err);
+      return false;
     }
   };
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser();
       setUser(user ?? null);
       if (user) {
-        loadUserStatus(user.id);
+        const paid = await loadUserStatus(user.id);
+        if (paid) { router.replace("/dashboard"); return; }
       } else {
         setScriptUsed(!!localStorage.getItem("lp_script_used"));
       }
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    }
+    init();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         setShowAuthModal(false);
-        loadUserStatus(session.user.id);
+        const paid = await loadUserStatus(session.user.id);
+        if (paid) { router.replace("/dashboard"); return; }
       } else {
         setIsPaid(false);
         setScriptUsed(!!localStorage.getItem("lp_script_used"));

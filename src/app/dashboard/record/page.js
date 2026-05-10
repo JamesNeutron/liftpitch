@@ -6,11 +6,13 @@ import { supabase } from "../../../lib/supabase";
 import UpgradeModal from "../../../components/UpgradeModal";
 
 const B = {
-  bg: "#F5F7FA", surface: "#FFFFFF", border: "#E2E8F0",
+  bg: "#0D1B2A", surface: "#1A2D42", border: "#2A4060",
   accent: "#0A66C2", accentLight: "#378FE9", accentGlow: "rgba(10,102,194,0.2)",
+  coral: "#C8442A",
   success: "#057642", successGlow: "rgba(5,118,66,0.15)",
   warning: "#E7A33E",
-  text: "#1A1A2E", textMuted: "#56687A", textDim: "#8FA4B8",
+  text: "#F0F4F8", textMuted: "#8FA4B8", textDim: "#8FA4B8",
+  input: "#152233",
   gradient: "linear-gradient(135deg, #0A66C2 0%, #378FE9 50%, #70B5F9 100%)",
 };
 
@@ -42,7 +44,7 @@ function DashboardHeader({ email, onSignOut }) {
     <header style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
       padding: "16px 24px", borderBottom: `1px solid ${B.border}`,
-      background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
+      background: "#0A1628", backdropFilter: "blur(12px)",
       position: "sticky", top: 0, zIndex: 100,
     }}>
       <a href="/dashboard" style={{
@@ -62,7 +64,7 @@ function DashboardHeader({ email, onSignOut }) {
             fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
             color: B.textMuted, textDecoration: "none", transition: "all 0.15s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = B.bg; e.currentTarget.style.color = B.text; }}
+            onMouseEnter={e => { e.currentTarget.style.background = B.surface; e.currentTarget.style.color = B.text; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = B.textMuted; }}
           >{label}</a>
         ))}
@@ -75,7 +77,7 @@ function DashboardHeader({ email, onSignOut }) {
         }}>{email}</span>
         <button onClick={onSignOut} style={{
           padding: "8px 18px", borderRadius: 10, border: `1.5px solid ${B.border}`,
-          background: B.surface, color: B.textMuted,
+          background: "transparent", color: B.textMuted,
           fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
           transition: "all 0.2s",
         }}
@@ -134,6 +136,11 @@ function RecordPageInner() {
   const [scrollActive, setScrollActive] = useState(false);
   const [scrollSpeed, setScrollSpeed] = useState("slow");
   const SCROLL_CONFIG = { slow: { px: 1, ms: 67 }, medium: { px: 2, ms: 67 } };
+
+  const [scriptText, setScriptText] = useState("");
+  const [scriptSaveStatus, setScriptSaveStatus] = useState("idle");
+  const scriptSaveTimerRef = useRef(null);
+  const [scriptPanelDismissed, setScriptPanelDismissed] = useState(false);
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
   const atVideoLimit = !isPaid && videoCount >= 1;
@@ -233,7 +240,25 @@ function RecordPageInner() {
   useEffect(() => {
     if (teleRef.current) teleRef.current.scrollTop = 0;
     if (scrollActive) stopScroll();
+    if (scriptData?.script) setScriptText(scriptData.script);
   }, [scriptData]);
+
+  const handleScriptChange = (newText) => {
+    setScriptText(newText);
+    setScriptSaveStatus("idle");
+    if (scriptSaveTimerRef.current) clearTimeout(scriptSaveTimerRef.current);
+    if (!scriptId) return;
+    scriptSaveTimerRef.current = setTimeout(async () => {
+      setScriptSaveStatus("saving");
+      try {
+        await supabase.from("scripts").update({ script: newText }).eq("id", scriptId);
+        setScriptSaveStatus("saved");
+        setTimeout(() => setScriptSaveStatus("idle"), 2000);
+      } catch {
+        setScriptSaveStatus("idle");
+      }
+    }, 1000);
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -500,33 +525,75 @@ function RecordPageInner() {
             </div>
           )}
 
-          {/* Teleprompter panel — shown when coming from a saved script */}
+          {/* Dismissible tip message */}
           {scriptData && (
-            <div style={{ marginBottom: 20, borderRadius: 14, background: "#111827",
+            <div style={{
+              marginBottom: 12, padding: "12px 16px", borderRadius: 12,
+              background: "rgba(10,102,194,0.1)", border: "1px solid rgba(10,102,194,0.2)",
+              display: "flex", alignItems: "flex-start", gap: 10,
+            }}>
+              <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>💡</span>
+              <p style={{
+                flex: 1, fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textMuted,
+                lineHeight: 1.55, margin: 0,
+              }}>
+                No script? No problem! Your authentic pitch might be your best one. Feel free to close this and speak from the heart.
+              </p>
+              <button
+                onClick={() => setScriptPanelDismissed(v => !v)}
+                style={{
+                  flexShrink: 0, background: "none", border: "none", padding: "2px 6px",
+                  color: B.textDim, cursor: "pointer", fontSize: 13, fontFamily: "'Sora', sans-serif",
+                  fontWeight: 700, borderRadius: 6, lineHeight: 1,
+                }}
+              >{scriptPanelDismissed ? "Show Script" : "✕"}</button>
+            </div>
+          )}
+
+          {/* Teleprompter panel — shown when coming from a saved script */}
+          {scriptData && !scriptPanelDismissed && (
+            <div style={{ marginBottom: 20, borderRadius: 14, background: "#0D1825",
               border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
               <div style={{ padding: "10px 16px", background: "rgba(255,255,255,0.04)",
                 borderBottom: "1px solid rgba(255,255,255,0.06)",
                 display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600,
                   color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                  📜 Teleprompter
+                  📜 Teleprompter — click to edit
                 </span>
-                {scriptData.match_score !== null && scriptData.match_score !== undefined && (
-                  <span style={{
-                    padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                    fontFamily: "'Sora', sans-serif",
-                    color: scriptData.match_score >= 75 ? "#34d399" : "#fbbf24",
-                    background: scriptData.match_score >= 75 ? "rgba(52,211,153,0.1)" : "rgba(251,191,36,0.1)",
-                    border: `1px solid ${scriptData.match_score >= 75 ? "rgba(52,211,153,0.25)" : "rgba(251,191,36,0.25)"}`,
-                  }}>{scriptData.match_score}% match</span>
-                )}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {scriptSaveStatus === "saved" && (
+                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11,
+                      color: "#34d399", opacity: 0.85 }}>✓ Saved</span>
+                  )}
+                  {scriptSaveStatus === "saving" && (
+                    <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11,
+                      color: "rgba(255,255,255,0.3)" }}>Saving…</span>
+                  )}
+                  {scriptData.match_score !== null && scriptData.match_score !== undefined && (
+                    <span style={{
+                      padding: "3px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700,
+                      fontFamily: "'Sora', sans-serif",
+                      color: scriptData.match_score >= 75 ? "#34d399" : "#fbbf24",
+                      background: scriptData.match_score >= 75 ? "rgba(52,211,153,0.1)" : "rgba(251,191,36,0.1)",
+                      border: `1px solid ${scriptData.match_score >= 75 ? "rgba(52,211,153,0.25)" : "rgba(251,191,36,0.25)"}`,
+                    }}>{scriptData.match_score}% match</span>
+                  )}
+                </div>
               </div>
-              <div ref={teleRef} style={{ maxHeight: 120, overflowY: "auto", padding: "16px 20px", width: "60%", margin: "0 auto" }}>
-                <div style={{
+              <textarea
+                ref={teleRef}
+                value={scriptText}
+                onChange={e => handleScriptChange(e.target.value)}
+                style={{
+                  display: "block", width: "60%", margin: "0 auto",
+                  maxHeight: 120, overflowY: "auto", padding: "16px 20px",
                   fontFamily: "'DM Sans', sans-serif", fontSize: 17, color: "rgba(255,255,255,0.85)",
                   lineHeight: 1.9, whiteSpace: "pre-wrap",
-                }}>{scriptData.script}</div>
-              </div>
+                  background: "transparent", border: "none", outline: "none",
+                  resize: "none", boxSizing: "border-box",
+                }}
+              />
               <div style={{ padding: "8px 16px", background: "rgba(255,255,255,0.03)",
                 borderTop: "1px solid rgba(255,255,255,0.06)",
                 display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -559,7 +626,7 @@ function RecordPageInner() {
           {/* Pro tip */}
           <div style={{
             marginBottom: 12, padding: "10px 16px", borderRadius: 10,
-            background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.10)",
+            background: "rgba(10,102,194,0.12)", border: "1px solid rgba(10,102,194,0.22)",
             fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textMuted, lineHeight: 1.55,
           }}>
             💡 <strong style={{ color: B.text }}>Pro tip:</strong> Find a plain wall or tidy corner — good lighting matters more than a perfect background!
@@ -690,9 +757,9 @@ function RecordPageInner() {
             {state === "previewing" && (
               <button onClick={startCountdown} style={{
                 padding: "14px 32px", borderRadius: 12, border: "none",
-                background: "linear-gradient(135deg, #DC3545, #C0392B)",
+                background: "linear-gradient(135deg, #C8442A, #A83922)",
                 color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
-                cursor: "pointer", boxShadow: "0 4px 24px rgba(220,53,69,0.25)",
+                cursor: "pointer", boxShadow: "0 4px 24px rgba(200,68,42,0.3)",
               }}>⏺ Start Recording</button>
             )}
             {state === "recording" && (
@@ -843,7 +910,7 @@ function RecordPageInner() {
               width: "100%", padding: "14px 16px", boxSizing: "border-box",
               border: `1.5px solid ${titleMissing ? B.border : B.accent}`,
               borderRadius: 12, fontFamily: "'DM Sans', sans-serif", fontSize: 15,
-              color: B.text, background: state !== "idle" ? B.bg : B.surface,
+              color: B.text, background: B.input,
               outline: "none", transition: "border-color 0.2s",
             }}
             onFocus={e => { if (state === "idle") e.target.style.borderColor = B.accent; }}

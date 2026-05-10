@@ -5,11 +5,13 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 
 const B = {
-  bg: "#F5F7FA", surface: "#FFFFFF", border: "#E2E8F0",
+  bg: "#0D1B2A", surface: "#1A2D42", border: "#2A4060",
   accent: "#0A66C2", accentLight: "#378FE9", accentGlow: "rgba(10,102,194,0.2)",
+  coral: "#C8442A",
   success: "#057642",
   warning: "#E7A33E",
-  text: "#1A1A2E", textMuted: "#56687A", textDim: "#8FA4B8",
+  text: "#F0F4F8", textMuted: "#8FA4B8", textDim: "#8FA4B8",
+  input: "#152233",
   gradient: "linear-gradient(135deg, #0A66C2 0%, #378FE9 50%, #70B5F9 100%)",
 };
 
@@ -74,7 +76,7 @@ function DashboardHeader({ email, onSignOut }) {
     <header style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
       padding: "16px 24px", borderBottom: `1px solid ${B.border}`,
-      background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
+      background: "#0A1628", backdropFilter: "blur(12px)",
       position: "sticky", top: 0, zIndex: 100,
     }}>
       <a href="/dashboard" style={{
@@ -94,7 +96,7 @@ function DashboardHeader({ email, onSignOut }) {
             fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
             color: B.textMuted, textDecoration: "none", transition: "all 0.15s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = B.bg; e.currentTarget.style.color = B.text; }}
+            onMouseEnter={e => { e.currentTarget.style.background = B.surface; e.currentTarget.style.color = B.text; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = B.textMuted; }}
           >{label}</a>
         ))}
@@ -107,7 +109,7 @@ function DashboardHeader({ email, onSignOut }) {
         }}>{email}</span>
         <button onClick={onSignOut} style={{
           padding: "8px 18px", borderRadius: 10, border: `1.5px solid ${B.border}`,
-          background: B.surface, color: B.textMuted,
+          background: "transparent", color: B.textMuted,
           fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
           transition: "all 0.2s",
         }}
@@ -411,7 +413,7 @@ export default function MyVideos() {
                           padding: "8px 12px", borderRadius: 9,
                           border: `1.5px solid ${titleError ? "#DC3545" : B.accent}`,
                           fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 600,
-                          color: B.text, background: B.bg, outline: "none",
+                          color: B.text, background: B.input, outline: "none",
                         }}
                       />
                       {titleError && (

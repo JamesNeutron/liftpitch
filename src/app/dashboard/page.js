@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 const B = {
-  bg: "#F5F7FA", surface: "#FFFFFF", border: "#E2E8F0",
+  bg: "#0D1B2A", surface: "#1A2D42", border: "#2A4060",
   accent: "#0A66C2", accentLight: "#378FE9", accentGlow: "rgba(10,102,194,0.2)",
+  coral: "#C8442A",
   success: "#057642",
-  text: "#1A1A2E", textMuted: "#56687A", textDim: "#8FA4B8",
+  text: "#F0F4F8", textMuted: "#8FA4B8", textDim: "#8FA4B8",
+  input: "#152233",
   gradient: "linear-gradient(135deg, #0A66C2 0%, #378FE9 50%, #70B5F9 100%)",
 };
 
@@ -57,7 +59,7 @@ function DashboardHeader({ email, onSignOut }) {
     <header style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
       padding: "16px 24px", borderBottom: `1px solid ${B.border}`,
-      background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
+      background: "#0A1628", backdropFilter: "blur(12px)",
       position: "sticky", top: 0, zIndex: 100,
     }}>
       <a href="/dashboard" style={{
@@ -73,7 +75,7 @@ function DashboardHeader({ email, onSignOut }) {
             fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
             color: B.textMuted, textDecoration: "none", transition: "all 0.15s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = B.bg; e.currentTarget.style.color = B.text; }}
+            onMouseEnter={e => { e.currentTarget.style.background = B.surface; e.currentTarget.style.color = B.text; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = B.textMuted; }}
           >{label}</a>
         ))}
@@ -86,7 +88,7 @@ function DashboardHeader({ email, onSignOut }) {
         }}>{email}</span>
         <button onClick={onSignOut} style={{
           padding: "8px 18px", borderRadius: 10, border: `1.5px solid ${B.border}`,
-          background: B.surface, color: B.textMuted,
+          background: "transparent", color: B.textMuted,
           fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600, cursor: "pointer",
           transition: "all 0.2s",
         }}
@@ -208,10 +210,10 @@ export default function DashboardHome() {
             <div key={t.title} style={{
               background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
               padding: "28px 24px", display: "flex", flexDirection: "column",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.05)", transition: "box-shadow 0.2s, transform 0.2s",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.3)", transition: "box-shadow 0.2s, transform 0.2s",
             }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.09)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.05)"; e.currentTarget.style.transform = "translateY(0)"; }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.5)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)"; e.currentTarget.style.transform = "translateY(0)"; }}
             >
               <div style={{ fontSize: 32, marginBottom: 12 }}>{t.icon}</div>
               <h3 style={{
