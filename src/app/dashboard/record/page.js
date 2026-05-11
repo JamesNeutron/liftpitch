@@ -483,8 +483,8 @@ function RecordPageInner() {
 
         {/* Recording card */}
         <div style={{
-          background: B.surface, border: '1px solid rgba(200, 68, 42, 0.3)', borderRadius: 20,
-          padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)",
+          background: B.surface, border: '1px solid rgba(200, 68, 42, 0.6)', borderRadius: 20,
+          padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 16px rgba(200, 68, 42, 0.15)",
         }}>
           {/* Live-only notice */}
           <div style={{
@@ -893,8 +893,8 @@ function RecordPageInner() {
 
         {/* Job title input */}
         <div style={{
-          background: B.surface, border: '1px solid rgba(200, 68, 42, 0.3)', borderRadius: 20,
-          padding: 28, marginTop: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)",
+          background: B.surface, border: '1px solid rgba(200, 68, 42, 0.6)', borderRadius: 20,
+          padding: 28, marginTop: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 16px rgba(200, 68, 42, 0.15)",
         }}>
           <label style={{
             fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700, color: B.textDim,

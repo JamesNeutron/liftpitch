@@ -1900,7 +1900,11 @@ export default function App() {
   const [page, setPage] = useState("landing");
   const [tab, setTab] = useState("script");
   const [fadeIn, setFadeIn] = useState(false);
-  const [isPaid, setIsPaid] = useState(false);
+  const [isPaid, setIsPaid] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const cached = localStorage.getItem('lp_user_plan');
+    return cached === 'pro' || cached === 'lifetime';
+  });
   const [scriptUsed, setScriptUsed] = useState(false);
   const [script, setScript] = useState("");
   const [videos, setVideos] = useState([]);
@@ -1920,6 +1924,7 @@ export default function App() {
       const plan = data?.plan;
       const paidPlan = plan === "pro" || plan === "lifetime";
       setIsPaid(paidPlan);
+      localStorage.setItem('lp_user_plan', plan || 'free');
       if (!paidPlan) {
         try {
           const { count } = await supabase
@@ -1940,7 +1945,7 @@ export default function App() {
 
   useEffect(() => {
     let redirectCancelled = false;
-    const timeoutId = setTimeout(() => { redirectCancelled = true; }, 2000);
+    const timeoutId = setTimeout(() => { redirectCancelled = true; }, 5000);
 
     async function init() {
       try {
@@ -1967,6 +1972,7 @@ export default function App() {
         const paid = await loadUserStatus(session.user.id);
         if (paid) { router.replace("/dashboard"); return; }
       } else {
+        localStorage.removeItem('lp_user_plan');
         setIsPaid(false);
         setScriptUsed(!!localStorage.getItem("lp_script_used"));
       }
@@ -1980,6 +1986,7 @@ export default function App() {
 
   const handleLogOut = async () => {
     await supabase.auth.signOut();
+    localStorage.removeItem('lp_user_plan');
     setUser(null);
     setPage("landing");
     setFadeIn(false);

@@ -428,8 +428,8 @@ export default function DashboardScript() {
 
         {/* Generator card */}
         <div style={{
-          background: B.surface, border: '1px solid rgba(200, 68, 42, 0.3)', borderRadius: 20,
-          padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)", marginBottom: 32,
+          background: B.surface, border: '1px solid rgba(200, 68, 42, 0.6)', borderRadius: 20,
+          padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 16px rgba(200, 68, 42, 0.15)", marginBottom: 32,
         }}>
           {/* Duration */}
           <div style={{ marginBottom: 20 }}>
@@ -553,8 +553,8 @@ export default function DashboardScript() {
         {/* Analysis + Script result */}
         {(analysis || script) && (
           <div style={{
-            background: B.surface, border: '1px solid rgba(200, 68, 42, 0.3)', borderRadius: 20,
-            padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)", marginBottom: 32,
+            background: B.surface, border: '1px solid rgba(200, 68, 42, 0.6)', borderRadius: 20,
+            padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 16px rgba(200, 68, 42, 0.15)", marginBottom: 32,
           }}>
             {analysis && (
               <div style={{ marginBottom: 24 }}>
@@ -696,8 +696,8 @@ export default function DashboardScript() {
         {/* Strengthen Your Resume — paid users with identified gaps */}
         {isPaid && gapList.length > 0 && (analysis || script) && (
           <div style={{
-            background: B.surface, border: '1px solid rgba(200, 68, 42, 0.3)', borderRadius: 20,
-            padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)", marginBottom: 32,
+            background: B.surface, border: '1px solid rgba(200, 68, 42, 0.6)', borderRadius: 20,
+            padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 16px rgba(200, 68, 42, 0.15)", marginBottom: 32,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
               <span style={{ fontSize: 22 }}>💪</span>
@@ -825,8 +825,8 @@ export default function DashboardScript() {
             ) : history.length === 0 ? (
               <div style={{
                 padding: "40px 24px", textAlign: "center", background: B.surface,
-                border: '1px solid rgba(200, 68, 42, 0.3)', borderRadius: 16,
-                boxShadow: '0 0 12px rgba(200, 68, 42, 0.08)',
+                border: '1px solid rgba(200, 68, 42, 0.6)', borderRadius: 16,
+                boxShadow: '0 0 16px rgba(200, 68, 42, 0.15)',
               }}>
                 <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.4 }}>🎯</div>
                 <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: 0 }}>
@@ -837,8 +837,8 @@ export default function DashboardScript() {
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {history.map(item => (
                   <div key={item.id} style={{
-                    background: B.surface, border: '1px solid rgba(200, 68, 42, 0.3)', borderRadius: 16,
-                    padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 0 12px rgba(200, 68, 42, 0.08)",
+                    background: B.surface, border: '1px solid rgba(200, 68, 42, 0.6)', borderRadius: 16,
+                    padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 0 16px rgba(200, 68, 42, 0.15)",
                     opacity: deletingId === item.id ? 0.5 : 1, transition: "opacity 0.2s",
                   }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
