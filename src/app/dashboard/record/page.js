@@ -49,7 +49,7 @@ function DashboardHeader({ email, onSignOut }) {
     }}>
       <a href="/dashboard" style={{
         fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800,
-        background: B.gradient, WebkitBackgroundClip: "text",
+        background: 'linear-gradient(135deg, #0A66C2 0%, #C8442A 100%)', WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent", textDecoration: "none",
       }}>LiftPitch</a>
 
@@ -483,7 +483,7 @@ function RecordPageInner() {
 
         {/* Recording card */}
         <div style={{
-          background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+          background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
           padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
         }}>
           {/* Live-only notice */}
@@ -893,7 +893,7 @@ function RecordPageInner() {
 
         {/* Job title input */}
         <div style={{
-          background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+          background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
           padding: 28, marginTop: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
         }}>
           <label style={{

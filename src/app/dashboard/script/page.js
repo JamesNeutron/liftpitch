@@ -26,7 +26,7 @@ function DashboardHeader({ email, onSignOut }) {
     }}>
       <a href="/dashboard" style={{
         fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800,
-        background: B.gradient, WebkitBackgroundClip: "text",
+        background: 'linear-gradient(135deg, #0A66C2 0%, #C8442A 100%)', WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent", textDecoration: "none",
       }}>LiftPitch</a>
 
@@ -428,7 +428,7 @@ export default function DashboardScript() {
 
         {/* Generator card */}
         <div style={{
-          background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+          background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
           padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: 32,
         }}>
           {/* Duration */}
@@ -553,7 +553,7 @@ export default function DashboardScript() {
         {/* Analysis + Script result */}
         {(analysis || script) && (
           <div style={{
-            background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+            background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
             padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: 32,
           }}>
             {analysis && (
@@ -696,7 +696,7 @@ export default function DashboardScript() {
         {/* Strengthen Your Resume — paid users with identified gaps */}
         {isPaid && gapList.length > 0 && (analysis || script) && (
           <div style={{
-            background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+            background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
             padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05)", marginBottom: 32,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
@@ -825,7 +825,7 @@ export default function DashboardScript() {
             ) : history.length === 0 ? (
               <div style={{
                 padding: "40px 24px", textAlign: "center", background: B.surface,
-                border: `1px solid ${B.border}`, borderRadius: 16,
+                border: `1.5px solid ${B.coral}`, borderRadius: 16,
               }}>
                 <div style={{ fontSize: 36, marginBottom: 10, opacity: 0.4 }}>🎯</div>
                 <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: 0 }}>
@@ -836,7 +836,7 @@ export default function DashboardScript() {
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {history.map(item => (
                   <div key={item.id} style={{
-                    background: B.surface, border: `1px solid ${B.border}`, borderRadius: 16,
+                    background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 16,
                     padding: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                     opacity: deletingId === item.id ? 0.5 : 1, transition: "opacity 0.2s",
                   }}>

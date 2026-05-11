@@ -64,7 +64,7 @@ function DashboardHeader({ email, onSignOut }) {
     }}>
       <a href="/dashboard" style={{
         fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800,
-        background: B.gradient, WebkitBackgroundClip: "text",
+        background: 'linear-gradient(135deg, #0A66C2 0%, #C8442A 100%)', WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent", textDecoration: "none",
       }}>LiftPitch</a>
 
@@ -180,7 +180,7 @@ export default function DashboardHome() {
           ].map(s => (
             <div key={s.label} style={{
               flex: "1 1 160px", padding: "24px 28px", borderRadius: 18,
-              background: B.surface, border: `1px solid ${B.border}`,
+              background: B.surface, border: `1.5px solid ${B.coral}`,
               boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
             }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>{s.icon}</div>
@@ -208,7 +208,7 @@ export default function DashboardHome() {
         }}>
           {tools.map(t => (
             <div key={t.title} style={{
-              background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+              background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
               padding: "28px 24px", display: "flex", flexDirection: "column",
               boxShadow: "0 1px 4px rgba(0,0,0,0.3)", transition: "box-shadow 0.2s, transform 0.2s",
             }}

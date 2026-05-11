@@ -113,7 +113,7 @@ function DashboardHeader({ email, onSignOut }) {
     }}>
       <a href="/dashboard" style={{
         fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 800,
-        background: B.gradient, WebkitBackgroundClip: "text",
+        background: 'linear-gradient(135deg, #0A66C2 0%, #C8442A 100%)', WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent", textDecoration: "none",
       }}>LiftPitch</a>
 
@@ -238,7 +238,7 @@ export default function Analytics() {
           ].map(s => (
             <div key={s.label} style={{
               flex: "1 1 160px", padding: "24px 28px", borderRadius: 18,
-              background: B.surface, border: `1px solid ${B.border}`,
+              background: B.surface, border: `1.5px solid ${B.coral}`,
               boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
             }}>
               <div style={{ fontSize: 22, marginBottom: 8 }}>{s.icon}</div>
@@ -256,7 +256,7 @@ export default function Analytics() {
         {totalVideos === 0 ? (
           <div style={{
             textAlign: "center", padding: "80px 20px",
-            background: B.surface, borderRadius: 20, border: `1px solid ${B.border}`,
+            background: B.surface, borderRadius: 20, border: `1.5px solid ${B.coral}`,
           }}>
             <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.4 }}>📊</div>
             <h2 style={{
@@ -276,7 +276,7 @@ export default function Analytics() {
           <>
             {/* 30-day combined chart */}
             <div style={{
-              background: B.surface, border: `1px solid ${B.border}`, borderRadius: 20,
+              background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
               padding: 28, marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
             }}>
               <h2 style={{
@@ -306,7 +306,7 @@ export default function Analytics() {
                 const title = video.video_title || "Untitled Pitch";
                 return (
                   <div key={video.id} style={{
-                    background: B.surface, border: `1px solid ${B.border}`, borderRadius: 16,
+                    background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 16,
                     padding: "20px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                   }}>
                     <div style={{
