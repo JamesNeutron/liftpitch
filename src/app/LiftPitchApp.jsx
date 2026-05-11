@@ -1917,30 +1917,22 @@ export default function App() {
   const loadUserStatus = async (userId) => {
     console.log('[loadUserStatus] called with userId:', userId);
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("id", userId)
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Query timeout')), 3000)
+      );
+      const queryPromise = supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', userId)
         .single();
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
       console.log('[loadUserStatus] query result:', data, error);
-      const plan = data?.plan;
-      const paidPlan = plan === "pro" || plan === "lifetime";
-      setIsPaid(paidPlan);
-      localStorage.setItem('lp_user_plan', plan || 'free');
-      if (!paidPlan) {
-        try {
-          const { count } = await supabase
-            .from("scripts")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", userId);
-          setScriptUsed((count ?? 0) >= 1);
-        } catch (e) {
-          console.warn("[loadUserStatus] scripts count failed (non-fatal):", e);
-        }
-      }
-      return paidPlan;
-    } catch (err) {
-      console.warn("[loadUserStatus] profiles fetch failed (non-fatal):", err);
+      if (error || !data) return false;
+      const paid = data.plan === 'pro' || data.plan === 'lifetime';
+      localStorage.setItem('lp_user_plan', data.plan);
+      return paid;
+    } catch (e) {
+      console.log('[loadUserStatus] caught error:', e.message);
       return false;
     }
   };
