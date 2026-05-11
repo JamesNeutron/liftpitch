@@ -1911,7 +1911,6 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signup");
-  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const router = useRouter();
 
@@ -1944,17 +1943,25 @@ export default function App() {
   };
 
   useEffect(() => {
+    let redirectCancelled = false;
+    const timeoutId = setTimeout(() => { redirectCancelled = true; }, 2000);
+
     async function init() {
-      const { data: { session } } = await supabase.auth.getSession();
-      const sessionUser = session?.user ?? null;
-      setUser(sessionUser);
-      if (sessionUser) {
-        const paid = await loadUserStatus(sessionUser.id);
-        if (paid) { router.replace("/dashboard"); return; }
-      } else {
-        setScriptUsed(!!localStorage.getItem("lp_script_used"));
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const sessionUser = session?.user ?? null;
+        setUser(sessionUser);
+        if (sessionUser) {
+          const paid = await loadUserStatus(sessionUser.id);
+          if (paid && !redirectCancelled) { router.replace("/dashboard"); return; }
+        } else {
+          setScriptUsed(!!localStorage.getItem("lp_script_used"));
+        }
+      } catch (e) {
+        console.warn("[init] auth check failed:", e);
+      } finally {
+        clearTimeout(timeoutId);
       }
-      setCheckingAuth(false);
     }
     init();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -1968,7 +1975,11 @@ export default function App() {
         setScriptUsed(!!localStorage.getItem("lp_script_used"));
       }
     });
-    return () => subscription.unsubscribe();
+    return () => {
+      redirectCancelled = true;
+      clearTimeout(timeoutId);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogOut = async () => {
@@ -1988,8 +1999,6 @@ export default function App() {
     { id: "analytics", label: "📊 Analytics" },
     { id: "tips", label: "💡 Tips" },
   ];
-
-  if (checkingAuth) return <div style={{ minHeight: "100vh", background: B.bg }} />;
 
   return (
     <div style={{ minHeight: "100vh", background: B.bg, color: B.text, fontFamily: "'DM Sans', sans-serif" }}>
