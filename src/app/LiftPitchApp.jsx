@@ -1916,11 +1916,12 @@ export default function App() {
 
   const loadUserStatus = async (userId) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("plan")
         .eq("id", userId)
         .single();
+      console.log('[loadUserStatus] response:', data, error);
       const plan = data?.plan;
       const paidPlan = plan === "pro" || plan === "lifetime";
       setIsPaid(paidPlan);
@@ -1948,13 +1949,16 @@ export default function App() {
     const timeoutId = setTimeout(() => { redirectCancelled = true; }, 5000);
 
     async function init() {
+      console.log('[init] starting');
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const sessionUser = session?.user ?? null;
+        console.log('[init] session user:', sessionUser?.email);
         setUser(sessionUser);
         if (sessionUser) {
           const paid = await loadUserStatus(sessionUser.id);
-          if (paid && !redirectCancelled) { router.replace("/dashboard"); return; }
+          console.log('[init] paid status:', paid);
+          if (paid && !redirectCancelled) { console.log('[init] redirecting to dashboard'); router.replace("/dashboard"); return; }
         } else {
           setScriptUsed(!!localStorage.getItem("lp_script_used"));
         }
@@ -1965,7 +1969,8 @@ export default function App() {
       }
     }
     init();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[authChange] event:', event, session?.user?.email);
       setUser(session?.user ?? null);
       if (session?.user) {
         setShowAuthModal(false);
