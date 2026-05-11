@@ -180,8 +180,8 @@ export default function DashboardHome() {
           ].map(s => (
             <div key={s.label} style={{
               flex: "1 1 160px", padding: "24px 28px", borderRadius: 18,
-              background: B.surface, border: `1.5px solid ${B.coral}`,
-              boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+              background: B.surface, border: '1.5px solid rgba(200, 68, 42, 0.3)',
+              boxShadow: "0 1px 6px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)",
             }}>
               <div style={{ fontSize: 24, marginBottom: 8 }}>{s.icon}</div>
               <div style={{
@@ -208,9 +208,9 @@ export default function DashboardHome() {
         }}>
           {tools.map(t => (
             <div key={t.title} style={{
-              background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
+              background: B.surface, border: '1.5px solid rgba(200, 68, 42, 0.3)', borderRadius: 20,
               padding: "28px 24px", display: "flex", flexDirection: "column",
-              boxShadow: "0 1px 4px rgba(0,0,0,0.3)", transition: "box-shadow 0.2s, transform 0.2s",
+              boxShadow: "0 1px 4px rgba(0,0,0,0.3), 0 0 12px rgba(200, 68, 42, 0.08)", transition: "box-shadow 0.2s, transform 0.2s",
             }}
               onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.5)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
               onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)"; e.currentTarget.style.transform = "translateY(0)"; }}

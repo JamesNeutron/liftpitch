@@ -361,7 +361,8 @@ export default function MyVideos() {
         {videos.length === 0 ? (
           <div style={{
             textAlign: "center", padding: "80px 20px",
-            background: B.surface, borderRadius: 20, border: `1.5px solid ${B.coral}`,
+            background: B.surface, borderRadius: 20, border: '1.5px solid rgba(200, 68, 42, 0.3)',
+            boxShadow: '0 0 12px rgba(200, 68, 42, 0.08)',
           }}>
             <div style={{ fontSize: 52, marginBottom: 16, opacity: 0.4 }}>🎥</div>
             <h2 style={{
@@ -394,9 +395,9 @@ export default function MyVideos() {
 
               return (
                 <div key={video.id} style={{
-                  background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
+                  background: B.surface, border: '1.5px solid rgba(200, 68, 42, 0.3)', borderRadius: 20,
                   padding: 24, display: "flex", flexDirection: "column",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)",
                   opacity: isDeleting ? 0.5 : 1, transition: "opacity 0.2s",
                 }}>
                   {/* Title */}

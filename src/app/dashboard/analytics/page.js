@@ -238,8 +238,8 @@ export default function Analytics() {
           ].map(s => (
             <div key={s.label} style={{
               flex: "1 1 160px", padding: "24px 28px", borderRadius: 18,
-              background: B.surface, border: `1.5px solid ${B.coral}`,
-              boxShadow: "0 1px 6px rgba(0,0,0,0.05)",
+              background: B.surface, border: '1.5px solid rgba(200, 68, 42, 0.3)',
+              boxShadow: "0 1px 6px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)",
             }}>
               <div style={{ fontSize: 22, marginBottom: 8 }}>{s.icon}</div>
               <div style={{
@@ -256,7 +256,8 @@ export default function Analytics() {
         {totalVideos === 0 ? (
           <div style={{
             textAlign: "center", padding: "80px 20px",
-            background: B.surface, borderRadius: 20, border: `1.5px solid ${B.coral}`,
+            background: B.surface, borderRadius: 20, border: '1.5px solid rgba(200, 68, 42, 0.3)',
+            boxShadow: '0 0 12px rgba(200, 68, 42, 0.08)',
           }}>
             <div style={{ fontSize: 48, marginBottom: 16, opacity: 0.4 }}>📊</div>
             <h2 style={{
@@ -276,8 +277,8 @@ export default function Analytics() {
           <>
             {/* 30-day combined chart */}
             <div style={{
-              background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 20,
-              padding: 28, marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+              background: B.surface, border: '1.5px solid rgba(200, 68, 42, 0.3)', borderRadius: 20,
+              padding: 28, marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 12px rgba(200, 68, 42, 0.08)",
             }}>
               <h2 style={{
                 fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 700,
@@ -306,8 +307,8 @@ export default function Analytics() {
                 const title = video.video_title || "Untitled Pitch";
                 return (
                   <div key={video.id} style={{
-                    background: B.surface, border: `1.5px solid ${B.coral}`, borderRadius: 16,
-                    padding: "20px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                    background: B.surface, border: '1.5px solid rgba(200, 68, 42, 0.3)', borderRadius: 16,
+                    padding: "20px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.04), 0 0 12px rgba(200, 68, 42, 0.08)",
                   }}>
                     <div style={{
                       display: "flex", justifyContent: "space-between",
