@@ -1915,13 +1915,14 @@ export default function App() {
   const router = useRouter();
 
   const loadUserStatus = async (userId) => {
+    console.log('[loadUserStatus] called with userId:', userId);
     try {
       const { data, error } = await supabase
         .from("profiles")
         .select("plan")
         .eq("id", userId)
         .single();
-      console.log('[loadUserStatus] data:', data, 'error:', error);
+      console.log('[loadUserStatus] query result:', data, error);
       const plan = data?.plan;
       const paidPlan = plan === "pro" || plan === "lifetime";
       setIsPaid(paidPlan);
