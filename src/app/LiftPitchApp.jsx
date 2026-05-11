@@ -1921,7 +1921,7 @@ export default function App() {
         .select("plan")
         .eq("id", userId)
         .single();
-      console.log('[loadUserStatus] response:', data, error);
+      console.log('[loadUserStatus] data:', data, 'error:', error);
       const plan = data?.plan;
       const paidPlan = plan === "pro" || plan === "lifetime";
       setIsPaid(paidPlan);
@@ -1945,9 +1945,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    let redirectCancelled = false;
-    const timeoutId = setTimeout(() => { redirectCancelled = true; }, 5000);
-
     async function init() {
       console.log('[init] starting');
       try {
@@ -1955,38 +1952,33 @@ export default function App() {
         const sessionUser = session?.user ?? null;
         console.log('[init] session user:', sessionUser?.email);
         setUser(sessionUser);
-        if (sessionUser) {
-          const paid = await loadUserStatus(sessionUser.id);
-          console.log('[init] paid status:', paid);
-          if (paid && !redirectCancelled) { console.log('[init] redirecting to dashboard'); router.replace("/dashboard"); return; }
-        } else {
+        if (!sessionUser) {
           setScriptUsed(!!localStorage.getItem("lp_script_used"));
         }
       } catch (e) {
         console.warn("[init] auth check failed:", e);
-      } finally {
-        clearTimeout(timeoutId);
       }
     }
     init();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[authChange] event:', event, session?.user?.email);
-      setUser(session?.user ?? null);
       if (session?.user) {
+        setUser(session.user);
         setShowAuthModal(false);
         const paid = await loadUserStatus(session.user.id);
-        if (paid) { router.replace("/dashboard"); return; }
+        console.log('[authChange] paid:', paid, 'event:', event);
+        setIsPaid(paid);
+        if (paid && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+          router.replace('/dashboard');
+        }
       } else {
-        localStorage.removeItem('lp_user_plan');
+        setUser(null);
         setIsPaid(false);
+        localStorage.removeItem('lp_user_plan');
         setScriptUsed(!!localStorage.getItem("lp_script_used"));
       }
     });
-    return () => {
-      redirectCancelled = true;
-      clearTimeout(timeoutId);
-      subscription.unsubscribe();
-    };
+    return () => { subscription.unsubscribe(); };
   }, []);
 
   const handleLogOut = async () => {
