@@ -143,16 +143,12 @@ const steps = [
 ];
 
 function Landing({ onStart }) {
-  const [vis, setVis] = useState(false);
-  useEffect(() => { setTimeout(() => setVis(true), 100); }, []);
-
   return (
     <div style={{
       minHeight: "100vh",
       background: "#F5F7FA",
       display: "flex", flexDirection: "column", alignItems: "center",
       padding: "0 20px", position: "relative", overflow: "hidden",
-      opacity: vis ? 1 : 0, transition: "opacity 0.9s",
     }}>
       {/* Warm ambient blobs */}
       <div style={{ position: "absolute", top: "-8%", left: "-8%", width: 800, height: 800,

@@ -212,8 +212,8 @@ export default function DashboardHome() {
               padding: "28px 24px", display: "flex", flexDirection: "column",
               boxShadow: "0 1px 4px rgba(0,0,0,0.3), 0 0 12px rgba(200, 68, 42, 0.08)", transition: "box-shadow 0.2s, transform 0.2s",
             }}
-              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.5)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3)"; e.currentTarget.style.transform = "translateY(0)"; }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.5), 0 0 18px rgba(200, 68, 42, 0.15)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 4px rgba(0,0,0,0.3), 0 0 12px rgba(200, 68, 42, 0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
             >
               <div style={{ fontSize: 32, marginBottom: 12 }}>{t.icon}</div>
               <h3 style={{
