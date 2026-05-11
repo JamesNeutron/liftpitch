@@ -1961,8 +1961,12 @@ export default function App() {
     }
     init();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[authChange] event:', event, session?.user?.email);
+      console.log('[authChange] event:', event);
+      console.log('[authChange] session:', session);
+      console.log('[authChange] session.user:', session?.user);
+      console.log('[authChange] email:', session?.user?.email);
       if (session?.user) {
+        console.log('[authChange] entering if block');
         setUser(session.user);
         setShowAuthModal(false);
         const paid = await loadUserStatus(session.user.id);
@@ -1972,6 +1976,7 @@ export default function App() {
           router.replace('/dashboard');
         }
       } else {
+        console.log('[authChange] entering else block');
         setUser(null);
         setIsPaid(false);
         localStorage.removeItem('lp_user_plan');
