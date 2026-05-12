@@ -6,13 +6,13 @@ import { supabase } from "../../../lib/supabase";
 import UpgradeModal from "../../../components/UpgradeModal";
 
 const B = {
-  bg: "#0D1B2A", surface: "#1A2D42", border: "#2A4060",
+  bg: "#EBF4FF", surface: "#FFFFFF", border: "#2A5080",
   accent: "#0A66C2", accentLight: "#378FE9", accentGlow: "rgba(10,102,194,0.2)",
   coral: "#C8442A",
   success: "#057642", successGlow: "rgba(5,118,66,0.15)",
   warning: "#E7A33E",
-  text: "#F0F4F8", textMuted: "#8FA4B8", textDim: "#8FA4B8",
-  input: "#152233",
+  text: "#1A1A2E", textMuted: "#56687A", textDim: "#56687A",
+  input: "#F0F7FF",
   gradient: "linear-gradient(135deg, #0A66C2 0%, #378FE9 50%, #70B5F9 100%)",
 };
 
@@ -43,8 +43,8 @@ function DashboardHeader({ email, onSignOut }) {
   return (
     <header style={{
       display: "flex", justifyContent: "space-between", alignItems: "center",
-      padding: "16px 24px", borderBottom: `1px solid ${B.border}`,
-      background: "#0A1628", backdropFilter: "blur(12px)",
+      padding: "16px 24px", borderBottom: "1px solid #BFDBFE",
+      background: "#FFFFFF", backdropFilter: "blur(12px)",
       position: "sticky", top: 0, zIndex: 100,
     }}>
       <a href="/dashboard" style={{
@@ -64,7 +64,7 @@ function DashboardHeader({ email, onSignOut }) {
             fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
             color: B.textMuted, textDecoration: "none", transition: "all 0.15s",
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = B.surface; e.currentTarget.style.color = B.text; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#EBF4FF"; e.currentTarget.style.color = B.text; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = B.textMuted; }}
           >{label}</a>
         ))}
@@ -483,9 +483,12 @@ function RecordPageInner() {
 
         {/* Recording card */}
         <div style={{
-          background: B.surface, border: '1px solid rgba(200, 68, 42, 0.7)', borderRadius: 20,
-          padding: 28, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 16px rgba(200, 68, 42, 0.2)",
-        }}>
+          background: B.surface, border: "1px solid #2A5080", borderRadius: 20,
+          padding: 28, boxShadow: "0 2px 12px rgba(42, 80, 128, 0.08)", transition: "box-shadow 0.2s, transform 0.2s",
+        }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(42, 80, 128, 0.15)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(42, 80, 128, 0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
+        >
           {/* Live-only notice */}
           <div style={{
             display: "flex", alignItems: "flex-start", gap: 10, padding: 14, borderRadius: 12,
@@ -893,9 +896,12 @@ function RecordPageInner() {
 
         {/* Job title input */}
         <div style={{
-          background: B.surface, border: '1px solid rgba(200, 68, 42, 0.7)', borderRadius: 20,
-          padding: 28, marginTop: 20, boxShadow: "0 1px 4px rgba(0,0,0,0.05), 0 0 16px rgba(200, 68, 42, 0.2)",
-        }}>
+          background: B.surface, border: "1px solid #2A5080", borderRadius: 20,
+          padding: 28, marginTop: 20, boxShadow: "0 2px 12px rgba(42, 80, 128, 0.08)", transition: "box-shadow 0.2s, transform 0.2s",
+        }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(42, 80, 128, 0.15)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(42, 80, 128, 0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}
+        >
           <label style={{
             fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700, color: B.textDim,
             textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 10,
