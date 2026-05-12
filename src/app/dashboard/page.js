@@ -176,7 +176,7 @@ export default function DashboardHome() {
         <div style={{ display: "flex", gap: 16, marginBottom: 48, flexWrap: "wrap" }}>
           {[
             { icon: "🎥", label: "Videos Recorded", value: stats.videoCount, color: B.accentLight },
-            { icon: "👁️", label: "Total Views", value: stats.totalViews, color: B.success },
+            { icon: "👀", label: "Total Views", value: stats.totalViews, color: B.success },
           ].map(s => (
             <div key={s.label} style={{
               flex: "1 1 160px", padding: "24px 28px", borderRadius: 18,
