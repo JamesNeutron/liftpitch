@@ -1915,10 +1915,9 @@ export default function App() {
   const router = useRouter();
 
   const loadUserStatus = async (userId) => {
-    console.log('[loadUserStatus] called with userId:', userId);
     try {
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Query timeout')), 3000)
+        setTimeout(() => reject(new Error('Query timeout')), 8000)
       );
       const queryPromise = supabase
         .from('profiles')
@@ -1926,24 +1925,20 @@ export default function App() {
         .eq('id', userId)
         .single();
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
-      console.log('[loadUserStatus] query result:', data, error);
       if (error || !data) return false;
       const paid = data.plan === 'pro' || data.plan === 'lifetime';
       localStorage.setItem('lp_user_plan', data.plan);
       return paid;
     } catch (e) {
-      console.log('[loadUserStatus] caught error:', e.message);
       return false;
     }
   };
 
   useEffect(() => {
     async function init() {
-      console.log('[init] starting');
       try {
         const { data: { session } } = await supabase.auth.getSession();
         const sessionUser = session?.user ?? null;
-        console.log('[init] session user:', sessionUser?.email);
         setUser(sessionUser);
         if (!sessionUser) {
           setScriptUsed(!!localStorage.getItem("lp_script_used"));
@@ -1954,22 +1949,15 @@ export default function App() {
     }
     init();
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[authChange] event:', event);
-      console.log('[authChange] session:', session);
-      console.log('[authChange] session.user:', session?.user);
-      console.log('[authChange] email:', session?.user?.email);
       if (session?.user) {
-        console.log('[authChange] entering if block');
         setUser(session.user);
         setShowAuthModal(false);
         const paid = await loadUserStatus(session.user.id);
-        console.log('[authChange] paid:', paid, 'event:', event);
         setIsPaid(paid);
         if (paid && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
           router.replace('/dashboard');
         }
       } else {
-        console.log('[authChange] entering else block');
         setUser(null);
         setIsPaid(false);
         localStorage.removeItem('lp_user_plan');
