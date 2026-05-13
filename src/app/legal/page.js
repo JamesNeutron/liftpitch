@@ -254,7 +254,9 @@ function PrivacyPolicy() {
     [5, "How We Share Your Information"], [6, "Third-Party AI Providers"],
     [7, "Data Retention"], [8, "Your Rights & Choices"], [9, "Data Security"],
     [10, "Cookies & Tracking"], [11, "Children's Privacy"],
-    [12, "California Residents (CCPA/CPRA)"], [13, "Changes to This Policy"], [14, "Contact Us"],
+    [12, "California Residents (CCPA/CPRA)"], [13, "Changes to This Policy"],
+    [14, "Governing Law & General Provisions"], [15, "Third-Party Links & Advertising"],
+    [16, "Contact Us"],
   ];
 
   const tableStyle = { width: "100%", borderCollapse: "collapse", margin: "16px 0", fontSize: 13 };
@@ -284,6 +286,7 @@ function PrivacyPolicy() {
         <div id="p1" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
           <SectionTitle number={1} title="Who We Are & Relationship to Terms of Service" />
           <P>Pangea Square LLC ("Pangea Square," "we," "our," or "us") is a Michigan limited liability company and the legal entity behind LiftPitch, the product and platform operating at <A href="https://lift-pitch.co">lift-pitch.co</A>. References to "LiftPitch" throughout this Policy refer to the product and Service; references to "Pangea Square LLC" refer to the legal entity responsible for your data. This Privacy Policy is incorporated into and subject to our <A href="#tos">Terms of Service</A>. Together they govern your use of the Service. Users must affirmatively accept both documents during account creation.</P>
+          <P>Your use of the Service is also governed by our Terms of Service, which form a legally binding agreement between you and Pangea Square LLC. You must affirmatively accept both documents during account creation via a checkbox acknowledgment. Continued use of the Service after any modifications to either document constitutes acceptance of the revised terms.</P>
         </div>
 
         <div id="p2" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
@@ -463,8 +466,26 @@ function PrivacyPolicy() {
           <P>Material changes will be communicated via email or platform notice at least 14 days before taking effect, consistent with our Terms of Service. The Effective Date above reflects the most recent update.</P>
         </div>
 
-        <div id="p14" style={{ marginBottom: 0, scrollMarginTop: 80 }}>
-          <SectionTitle number={14} title="Contact Us" />
+        <div id="p14" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
+          <SectionTitle number={14} title="Governing Law & General Provisions" />
+          <P>This Privacy Policy is governed by the laws of the State of Michigan. Any disputes arising under this Policy shall be brought exclusively in Macomb County, Michigan courts, consistent with our Terms of Service.</P>
+          <UL items={[
+            <><strong>Entire Agreement:</strong> This Privacy Policy and our Terms of Service constitute the entire agreement between you and LiftPitch regarding your data and privacy.</>,
+            <><strong>Severability:</strong> If any provision of this Policy is found invalid or unenforceable, the remaining provisions continue in full effect.</>,
+            <><strong>No Waiver:</strong> Failure to enforce any provision of this Policy is not a waiver of that right.</>,
+            <><strong>Assignment:</strong> You may not assign your rights under this Policy without written consent. LiftPitch may assign freely.</>,
+            <><strong>Force Majeure:</strong> LiftPitch is not liable for failures to comply with this Policy caused by circumstances beyond our reasonable control.</>,
+          ]} />
+        </div>
+
+        <div id="p15" style={{ marginBottom: 40, scrollMarginTop: 80 }}>
+          <SectionTitle number={15} title="Third-Party Links & Advertising" />
+          <P>The Service may contain links to third-party websites, services, or advertisements. LiftPitch has no control over and assumes no responsibility for the content, privacy policies, or practices of any third-party sites or services. We do not warrant or make any representations regarding third-party sites.</P>
+          <P>Clicking on third-party links or advertisements is done entirely at your own risk. We encourage you to review the privacy policies of any third-party sites you visit. LiftPitch does not currently display third-party advertising but reserves the right to do so in the future. If and when third-party advertising is introduced, this Policy will be updated accordingly and users will be notified as required under Section 13.</P>
+        </div>
+
+        <div id="p16" style={{ marginBottom: 0, scrollMarginTop: 80 }}>
+          <SectionTitle number={16} title="Contact Us" />
           <ContactBox lines={[
             <><strong>Pangea Square LLC — Privacy Team</strong></>,
             <>📧 Privacy requests: <A href="mailto:privacy@lift-pitch.co">privacy@lift-pitch.co</A></>,
