@@ -167,13 +167,13 @@ function Landing({ onStart }) {
         role="img"
         aria-label="LiftPitch — candidate records their pitch while recruiter watches live."
         style={{
-          maxWidth: 800, width: "100%",
-          marginTop: "clamp(72px, 11vw, 130px)",
-          borderRadius: 20,
+          maxWidth: 720, width: "100%",
+          margin: `clamp(72px, 11vw, 130px) auto 0`,
+          borderRadius: 16,
           overflow: "hidden",
-          boxShadow: "0 12px 48px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06)",
+          boxShadow: "0 8px 40px rgba(0,0,0,0.15)",
           position: "relative",
-          paddingTop: "56.25%",
+          paddingTop: "37.5%",
         }}
       >
         <iframe
