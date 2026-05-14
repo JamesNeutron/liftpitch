@@ -204,24 +204,6 @@ function Landing({ onStart }) {
           LiftPitch lets you record a verified 60-second video pitch and share it right from your resume. Let them meet you before the interview.
         </p>
 
-        {/* Feature pills */}
-        <div className="feature-pills" style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 32 }}>
-          {[
-            { icon: "🛡️", label: "Live verified — no fakes" },
-            { icon: "🎯", label: "Job-matched AI script" },
-            { icon: "🔗", label: "Shareable link for any app" },
-            { icon: "📊", label: "See who watched" },
-          ].map(f => (
-            <div key={f.label} style={{
-              display: "flex", alignItems: "center", gap: 8, padding: "10px 20px",
-              borderRadius: 100, background: "rgba(255,255,255,0.9)",
-              border: "1px solid rgba(0,0,0,0.07)",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
-              fontSize: 13.5, color: B.textMuted, fontFamily: "'DM Sans', sans-serif",
-            }}><span>{f.icon}</span> {f.label}</div>
-          ))}
-        </div>
-
         <Btn onClick={onStart} style={{ padding: "18px 56px", fontSize: 17, borderRadius: 16,
           boxShadow: "0 6px 28px rgba(10,102,194,0.2)" }}>
           Create My Free Pitch →
@@ -230,6 +212,50 @@ function Landing({ onStart }) {
         <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textDim, marginTop: 16 }}>
           No account needed · Takes under 5 minutes · 100% free to start
         </p>
+      </div>
+
+      {/* Feature pills */}
+      <div className="feature-pills" style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 32 }}>
+        {[
+          { icon: "🛡️", label: "Live verified — no fakes" },
+          { icon: "🎯", label: "Job-matched AI script" },
+          { icon: "🔗", label: "Shareable link for any app" },
+          { icon: "📊", label: "See who watched" },
+        ].map(f => (
+          <div key={f.label} style={{
+            display: "flex", alignItems: "center", gap: 8, padding: "10px 20px",
+            borderRadius: 100, background: "rgba(255,255,255,0.9)",
+            border: "1px solid rgba(0,0,0,0.07)",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
+            fontSize: 13.5, color: B.textMuted, fontFamily: "'DM Sans', sans-serif",
+          }}><span>{f.icon}</span> {f.label}</div>
+        ))}
+      </div>
+
+      {/* ── See LiftPitch in Action ── */}
+      <div style={{ maxWidth: 800, width: "100%", marginTop: "clamp(72px, 9vw, 112px)", textAlign: "center" }}>
+        <h2 style={{
+          fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800,
+          margin: "0 auto 32px", lineHeight: 1.22,
+          background: B.gradientHot, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        }}>See LiftPitch in Action</h2>
+        <div style={{
+          position: "relative", width: "100%", paddingTop: "56.25%",
+          borderRadius: 20, overflow: "hidden",
+          background: "linear-gradient(160deg, #1A1F2E 0%, #0D1117 100%)",
+          boxShadow: "0 12px 48px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06)",
+        }}>
+          <div style={{
+            position: "absolute", inset: 0,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12,
+          }}>
+            <span style={{ fontSize: 40 }}>🎬</span>
+            <span style={{
+              fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 700,
+              color: "rgba(255,255,255,0.7)", letterSpacing: "0.02em",
+            }}>How-To Video Coming Soon</span>
+          </div>
+        </div>
       </div>
 
       {/* ── How It Works ── */}
