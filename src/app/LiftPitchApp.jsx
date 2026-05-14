@@ -169,12 +169,23 @@ function Landing({ onStart }) {
         style={{
           maxWidth: 1100, width: "100%",
           marginTop: "clamp(72px, 11vw, 130px)",
-          aspectRatio: "16/9",
           borderRadius: 20,
-          background: "#E2E8F0",
+          overflow: "hidden",
           boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+          position: "relative",
+          paddingTop: "56.25%",
         }}
-      />
+      >
+        <iframe
+          src={`https://customer-${process.env.NEXT_PUBLIC_CLOUDFLARE_STREAM_CUSTOMER_CODE}.cloudflarestream.com/0fb6a1bf38404deb0f37d631422c72f0/iframe`}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          style={{
+            position: "absolute", top: 0, left: 0,
+            width: "100%", height: "100%", border: "none",
+          }}
+        />
+      </div>
 
       {/* ── Hero ── */}
       <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: 48, paddingBottom: 24 }}>
@@ -219,31 +230,6 @@ function Landing({ onStart }) {
         <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textDim, marginTop: 16 }}>
           No account needed · Takes under 5 minutes · 100% free to start
         </p>
-      </div>
-
-      {/* ── Demo Video ── */}
-      <div style={{ maxWidth: 800, width: "100%", marginTop: "clamp(72px, 9vw, 112px)", textAlign: "center" }}>
-        <h2 style={{
-          fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800,
-          margin: "0 auto 32px", lineHeight: 1.22,
-          background: B.gradientHot, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-        }}>See LiftPitch in Action</h2>
-
-        <div style={{
-          position: "relative", width: "100%", paddingTop: "56.25%",
-          borderRadius: 16, overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.15)",
-        }}>
-          <iframe
-            src={`https://customer-${process.env.NEXT_PUBLIC_CLOUDFLARE_STREAM_CUSTOMER_CODE}.cloudflarestream.com/0fb6a1bf38404deb0f37d631422c72f0/iframe`}
-            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            style={{
-              position: "absolute", top: 0, left: 0,
-              width: "100%", height: "100%", border: "none",
-            }}
-          />
-        </div>
       </div>
 
       {/* ── How It Works ── */}
