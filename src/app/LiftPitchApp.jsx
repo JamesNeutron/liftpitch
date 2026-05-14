@@ -167,11 +167,11 @@ function Landing({ onStart }) {
         role="img"
         aria-label="LiftPitch — candidate records their pitch while recruiter watches live."
         style={{
-          maxWidth: 1100, width: "100%",
+          maxWidth: 800, width: "100%",
           marginTop: "clamp(72px, 11vw, 130px)",
           borderRadius: 20,
           overflow: "hidden",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+          boxShadow: "0 12px 48px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06)",
           position: "relative",
           paddingTop: "56.25%",
         }}
