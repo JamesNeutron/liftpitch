@@ -113,6 +113,8 @@ export default function DashboardScript() {
   const [deletingId, setDeletingId] = useState(null);
 
   const [gapAnswers, setGapAnswers] = useState({});
+  const [rephrasedQuestions, setRephrasedQuestions] = useState({});
+  const [rephrasingGaps, setRephrasingGaps] = useState(false);
   const [generatingBullets, setGeneratingBullets] = useState(false);
   const [bullets, setBullets] = useState(null);
   const [bulletsCopied, setBulletsCopied] = useState({});
@@ -161,6 +163,56 @@ export default function DashboardScript() {
     }
     init();
   }, [router]);
+
+  useEffect(() => {
+    const gaps = (analysis?.gapsToBridge || []).slice(0, 3);
+    if (!gaps.length) {
+      setRephrasedQuestions({});
+      return;
+    }
+
+    let cancelled = false;
+    setRephrasingGaps(true);
+
+    const fallback = () => {
+      if (cancelled) return;
+      const map = {};
+      gaps.forEach(gap => {
+        const cleaned = gap.replace(/^No\s+/i, "");
+        map[gap] = `Do you have experience with ${cleaned}?`;
+      });
+      setRephrasedQuestions(map);
+      setRephrasingGaps(false);
+    };
+
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const res = await fetch("/api/rephrase-gaps", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ gaps }),
+        });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.questions) && data.questions.length === gaps.length) {
+            const map = {};
+            gaps.forEach((gap, i) => { map[gap] = data.questions[i]; });
+            setRephrasedQuestions(map);
+            setRephrasingGaps(false);
+            return;
+          }
+        }
+      } catch {}
+      fallback();
+    })();
+
+    return () => { cancelled = true; };
+  }, [analysis]);
 
   const loadHistory = async (userId) => {
     setHistoryLoading(true);
@@ -220,6 +272,8 @@ export default function DashboardScript() {
     setAnalysis(null);
     setSavedId(null);
     setGapAnswers({});
+    setRephrasedQuestions({});
+    setRephrasingGaps(false);
     setBullets(null);
     setBulletsCopied({});
 
@@ -721,7 +775,9 @@ export default function DashboardScript() {
               return (
                 <div key={i} style={{ marginBottom: 16, padding: 16, borderRadius: 14, background: B.bg, border: `1px solid ${B.border}` }}>
                   <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.text, margin: "0 0 10px", lineHeight: 1.5 }}>
-                    Do you have any experience with <strong>{gap}</strong>?
+                    {rephrasingGaps
+                      ? <span style={{ color: B.textDim, fontStyle: "italic" }}>Loading question...</span>
+                      : (rephrasedQuestions[gap] || `Do you have experience with ${gap.replace(/^No\s+/i, "")}?`)}
                   </p>
                   <div style={{ display: "flex", gap: 8, marginBottom: ans.hasExp === true ? 12 : 0 }}>
                     <button
