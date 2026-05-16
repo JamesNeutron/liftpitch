@@ -57,10 +57,11 @@ export async function POST(request) {
 
 For each gap below, write 1-2 strong resume bullet points that:
 - Start with a powerful action verb
-- Are specific, with context (scale, tools, outcomes, measurable impact where possible)
 - Include relevant keywords from the gap for ATS
 - Are concise (under 2 lines each)
 - Format each bullet exactly as: "• [Action verb] [specific achievement with context and impact]"
+
+IMPORTANT — do NOT invent specific numbers, percentages, revenue figures, team sizes, or geographic details. Where a metric or specific detail would strengthen the bullet, use a bracketed placeholder instead, for example: [X%], [X users], [X team members], [region], [$X], [X months]. The job seeker will replace placeholders with their real figures before adding to their resume.
 
 ${experienceText}
 

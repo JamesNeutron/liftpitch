@@ -869,6 +869,13 @@ export default function DashboardScript() {
 
             {bullets && (
               <div>
+                <div style={{
+                  padding: "10px 14px", borderRadius: 10, marginBottom: 14,
+                  background: "rgba(231,163,62,0.07)", border: "1px solid rgba(231,163,62,0.2)",
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, color: B.textMuted, lineHeight: 1.5,
+                }}>
+                  ⚠️ <strong style={{ color: B.text }}>These are examples.</strong> Replace any bracketed placeholders like <code style={{ fontFamily: "monospace", fontSize: 12, background: "rgba(0,0,0,0.05)", padding: "1px 4px", borderRadius: 4 }}>[X%]</code> or <code style={{ fontFamily: "monospace", fontSize: 12, background: "rgba(0,0,0,0.05)", padding: "1px 4px", borderRadius: 4 }}>[region]</code> with your real numbers and details before adding to your resume.
+                </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                   <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700, color: B.success, textTransform: "uppercase", letterSpacing: "0.1em" }}>✓ Resume Bullets</span>
                   <button onClick={copyAllBullets} style={{
