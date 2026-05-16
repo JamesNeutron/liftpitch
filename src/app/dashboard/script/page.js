@@ -458,25 +458,25 @@ export default function DashboardScript() {
         {!isPaid && scriptLimitReached && (
           <div style={{
             padding: "16px 20px", borderRadius: 14, marginBottom: 24,
-            background: "rgba(220,53,69,0.05)", border: "1px solid rgba(220,53,69,0.2)",
+            background: "rgba(10,102,194,0.04)", border: "1px solid rgba(10,102,194,0.15)",
             display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
             flexWrap: "wrap",
           }}>
             <div>
               <span style={{
-                fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: "#DC3545",
-              }}>Free script used</span>
+                fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent,
+              }}>You&apos;ve built your first LiftPitch application package!</span>
               <p style={{
                 fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted,
                 margin: "4px 0 0",
-              }}>Upgrade to generate unlimited AI scripts.</p>
+              }}>Upgrade to Pro to create a unique pitch for every job you apply to — plus see exactly who watched your video.</p>
             </div>
             <a href="/pricing" style={{
               padding: "10px 20px", borderRadius: 10,
               background: B.gradient, color: "#fff", textDecoration: "none",
               fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
               whiteSpace: "nowrap",
-            }}>Upgrade →</a>
+            }}>Upgrade to Pro →</a>
           </div>
         )}
 
@@ -753,8 +753,8 @@ export default function DashboardScript() {
           </div>
         )}
 
-        {/* Strengthen Your Resume — paid users with identified gaps */}
-        {isPaid && gapList.length > 0 && (analysis || script) && (
+        {/* Strengthen Your Resume — available on free one-time use and all paid plans */}
+        {gapList.length > 0 && (analysis || script) && (
           <div style={{
             background: B.surface, border: "1px solid #2A5080", borderRadius: 20,
             padding: 28, boxShadow: "0 2px 12px rgba(42, 80, 128, 0.08)", marginBottom: 32, transition: "box-shadow 0.2s, transform 0.2s",

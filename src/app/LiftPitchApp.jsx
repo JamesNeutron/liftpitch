@@ -347,8 +347,8 @@ function Landing({ onStart }) {
             >Get Started Free</button>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
               {[
-                "1 AI script with match analysis",
-                "1 live-verified video pitch",
+                "1 complete application package",
+                "Script + resume bullets + video",
                 "1 shareable link",
                 "LiftPitch watermark on video",
               ].map(f => (
@@ -401,11 +401,10 @@ function Landing({ onStart }) {
             >Start Pro — $8/mo</button>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
               {[
-                "Unlimited unique video pitches",
-                "Unlimited role-specific scripts",
+                "Unlimited application packages",
                 "No watermark",
                 "Full view analytics",
-                "See who watched and for how long",
+                "See exactly who watched and for how long",
                 "Custom link page",
               ].map(f => (
                 <div key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
@@ -448,7 +447,7 @@ function Landing({ onStart }) {
             >Get Lifetime Access</button>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, flex: 1 }}>
               {[
-                "Everything in Pro",
+                "Everything in Pro, no recurring billing",
                 "Never pay again",
                 "Priority support",
                 "All future features included",
@@ -641,14 +640,13 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
       {!canGenerate && (
         <div style={{
           padding: 20, borderRadius: 14, marginBottom: 20,
-          background: "rgba(231,163,62,0.08)", border: "1px solid rgba(231,163,62,0.2)", textAlign: "center",
+          background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.15)", textAlign: "center",
         }}>
-          <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🔒</span>
-          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.warning, margin: "0 0 8px" }}>
-            Free script used
+          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.accent, margin: "0 0 8px" }}>
+            You&apos;ve used your free script
           </p>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "0 0 16px", lineHeight: 1.5 }}>
-            Upgrade to generate unlimited scripts for every job you apply to.
+            Upgrade to Pro to generate a unique script for every job you apply to.
           </p>
           <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
             Upgrade — $8/mo or $35 lifetime
@@ -1323,14 +1321,14 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
       {videoLimitReached && (
         <div style={{
           padding: 20, borderRadius: 14, marginBottom: 20,
-          background: "rgba(231,163,62,0.08)", border: "1px solid rgba(231,163,62,0.2)", textAlign: "center",
+          background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.15)", textAlign: "center",
         }}>
-          <span style={{ fontSize: 28, display: "block", marginBottom: 8 }}>🔒</span>
-          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.warning, margin: "0 0 8px" }}>
-            You&apos;ve used your free video
+          <span style={{ fontSize: 32, display: "block", marginBottom: 8 }}>🎉</span>
+          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.accent, margin: "0 0 8px" }}>
+            You&apos;ve built your first LiftPitch application package!
           </p>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "0 0 16px", lineHeight: 1.5 }}>
-            Upgrade to record unlimited videos and remove the watermark from your pitches.
+            Upgrade to Pro to create a unique pitch for every job you apply to — plus see exactly who watched your video.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
