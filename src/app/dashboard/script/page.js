@@ -584,7 +584,7 @@ export default function DashboardScript() {
             <textarea
               value={resume}
               onChange={e => { setResume(e.target.value); setUploadStatus(""); setUploadName(""); }}
-              placeholder="Upload your resume above, or paste it here..."
+              placeholder="Upload your resume above, or paste it here. Note: copying and pasting from a PDF may distort formatting and wording — for best results, use the upload button above or paste from a Word document or plain text."
               style={{
                 width: "100%", minHeight: 120, padding: 16, background: B.input, color: B.text,
                 border: `1px solid ${B.border}`, borderRadius: 12,

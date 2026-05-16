@@ -704,7 +704,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
                 )}
               </div>
               <TextArea value={resume} onChange={e => { setResume(e.target.value); setUploadStatus(""); setUploadName(""); }}
-                placeholder="Upload your resume above, or paste it here..." minHeight={120} />
+                placeholder="Upload your resume above, or paste it here. Note: copying and pasting from a PDF may distort formatting and wording — for best results, use the upload button above or paste from a Word document or plain text." minHeight={120} />
             </div>
             <div>
               <FieldLabel icon="💼">Job Description</FieldLabel>
