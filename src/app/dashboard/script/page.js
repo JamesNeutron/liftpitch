@@ -120,6 +120,7 @@ export default function DashboardScript() {
   const [bulletsCopied, setBulletsCopied] = useState({});
   const [bulletsLimitReached, setBulletsLimitReached] = useState(false);
   const [regeneratingWithBullets, setRegeneratingWithBullets] = useState(false);
+  const [isRegenerated, setIsRegenerated] = useState(false);
   const scriptOutputRef = useRef(null);
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
@@ -282,6 +283,7 @@ export default function DashboardScript() {
     setRephrasingGaps(false);
     setBullets(null);
     setBulletsCopied({});
+    setIsRegenerated(false);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -416,6 +418,7 @@ export default function DashboardScript() {
         const scriptText = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
         setAnalysis(parsedAnalysis);
         setScript(scriptText || "Could not generate script. Please try again.");
+        setIsRegenerated(true);
         setTimeout(() => {
           scriptOutputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 100);
@@ -812,8 +815,27 @@ export default function DashboardScript() {
           </div>
         )}
 
+        {/* Post-regeneration CTA — replaces Strengthen section once script is re-written */}
+        {isRegenerated && script && (
+          <div style={{
+            background: B.surface, border: "1px solid #2A5080", borderRadius: 20,
+            padding: 28, boxShadow: "0 2px 12px rgba(42, 80, 128, 0.08)", marginBottom: 32,
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+          }}>
+            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: B.text, margin: 0, lineHeight: 1.6 }}>
+              🎥 Your script is ready — head to Record to capture your pitch!
+            </p>
+            <a href="/dashboard/record" style={{
+              padding: "12px 28px", borderRadius: 12, whiteSpace: "nowrap",
+              background: B.gradient, color: "#fff", textDecoration: "none",
+              fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+              boxShadow: `0 4px 16px ${B.accentGlow}`,
+            }}>Go to Record →</a>
+          </div>
+        )}
+
         {/* Strengthen Your Resume — available on free one-time use and all paid plans */}
-        {gapList.length > 0 && (analysis || script) && (
+        {!isRegenerated && gapList.length > 0 && (analysis || script) && (
           <div style={{
             background: B.surface, border: "1px solid #2A5080", borderRadius: 20,
             padding: 28, boxShadow: "0 2px 12px rgba(42, 80, 128, 0.08)", marginBottom: 32, transition: "box-shadow 0.2s, transform 0.2s",
