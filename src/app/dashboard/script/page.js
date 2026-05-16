@@ -119,6 +119,8 @@ export default function DashboardScript() {
   const [bullets, setBullets] = useState(null);
   const [bulletsCopied, setBulletsCopied] = useState({});
   const [bulletsLimitReached, setBulletsLimitReached] = useState(false);
+  const [regeneratingWithBullets, setRegeneratingWithBullets] = useState(false);
+  const scriptOutputRef = useRef(null);
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
 
@@ -383,6 +385,45 @@ export default function DashboardScript() {
     setGeneratingBullets(false);
   };
 
+  const regenerateWithBullets = async () => {
+    if (!bullets?.length || !resume.trim() || !jobDesc.trim() || !bio.trim()) return;
+    setRegeneratingWithBullets(true);
+    setScript("");
+    setAnalysis(null);
+    setSavedId(null);
+
+    const bulletSection = "\n\n---\nAdditional experience highlights to incorporate into the pitch:\n" + bullets.join("\n");
+    const augmentedResume = resume.trim() + bulletSection;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const response = await fetch("/api/generate-script", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ resume: augmentedResume, jobDesc, bio, duration }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.text || "";
+        const m = text.match(/<analysis>\s*([\s\S]*?)\s*<\/analysis>/);
+        let parsedAnalysis = null;
+        if (m) { try { parsedAnalysis = JSON.parse(m[1]); } catch (e) {} }
+        const scriptText = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
+        setAnalysis(parsedAnalysis);
+        setScript(scriptText || "Could not generate script. Please try again.");
+        setTimeout(() => {
+          scriptOutputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    } catch {}
+    setRegeneratingWithBullets(false);
+  };
+
   const copyAllBullets = () => {
     if (!bullets) return;
     navigator.clipboard?.writeText(bullets.join("\n"));
@@ -617,8 +658,8 @@ export default function DashboardScript() {
         </div>
 
         {/* Analysis + Script result */}
-        {(analysis || script) && (
-          <div style={{
+        {(analysis || script || regeneratingWithBullets) && (
+          <div ref={scriptOutputRef} style={{
             background: B.surface, border: "1px solid #2A5080", borderRadius: 20,
             padding: 28, boxShadow: "0 2px 12px rgba(42, 80, 128, 0.08)", marginBottom: 32, transition: "box-shadow 0.2s, transform 0.2s",
           }}
@@ -697,6 +738,15 @@ export default function DashboardScript() {
                     }}>{analysis.angleToPlay}</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {regeneratingWithBullets && !script && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "20px 0", color: B.textMuted,
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
+                <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid transparent",
+                  borderTopColor: B.accent, animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
+                Re-writing your script with the resume bullets…
               </div>
             )}
 
@@ -899,19 +949,37 @@ export default function DashboardScript() {
                     </div>
                   ))}
                 </div>
-                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, color: B.textDim, margin: "0 0 12px", lineHeight: 1.6 }}>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, color: B.textDim, margin: "0 0 16px", lineHeight: 1.6 }}>
                   Add these to your resume before recording your pitch!<br />
                   💡 These are suggestions based on what you shared. Tweak the wording so it&apos;s accurate and true to your own experience before adding it to your resume.
                 </p>
-                {savedId && (
-                  <a href={`/dashboard/record?script_id=${savedId}`} style={{
-                    display: "inline-flex", alignItems: "center", gap: 6,
-                    padding: "10px 22px", borderRadius: 10,
-                    background: B.gradient, color: "#fff", textDecoration: "none",
-                    fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
-                    boxShadow: `0 4px 16px ${B.accentGlow}`,
-                  }}>🎥 Use These in Your Recording →</a>
-                )}
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  <button
+                    onClick={regenerateWithBullets}
+                    disabled={regeneratingWithBullets}
+                    style={{
+                      padding: "10px 22px", borderRadius: 10, border: "none",
+                      background: regeneratingWithBullets ? "#C8D0D9" : "linear-gradient(135deg, #0A66C2 0%, #C8442A 100%)",
+                      color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+                      cursor: regeneratingWithBullets ? "not-allowed" : "pointer",
+                      boxShadow: regeneratingWithBullets ? "none" : "0 4px 16px rgba(10,102,194,0.2)",
+                      display: "flex", alignItems: "center", gap: 8,
+                    }}
+                  >
+                    {regeneratingWithBullets
+                      ? <><span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Re-writing…</>
+                      : "✨ Re-generate Script With These Additions"}
+                  </button>
+                  {savedId && (
+                    <a href={`/dashboard/record?script_id=${savedId}`} style={{
+                      display: "inline-flex", alignItems: "center", gap: 6,
+                      padding: "10px 22px", borderRadius: 10,
+                      background: B.gradient, color: "#fff", textDecoration: "none",
+                      fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+                      boxShadow: `0 4px 16px ${B.accentGlow}`,
+                    }}>🎥 Use These in Your Recording →</a>
+                  )}
+                </div>
               </div>
             )}
           </div>
