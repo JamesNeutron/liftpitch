@@ -1,5 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
-
 export async function POST(request) {
   let body;
   try {
@@ -13,24 +11,11 @@ export async function POST(request) {
     return Response.json({ error: "Missing gaps" }, { status: 400 });
   }
 
-  const authHeader = request.headers.get("Authorization");
-  const token = authHeader?.replace("Bearer ", "").trim();
-  if (!token) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    { global: { headers: { Authorization: `Bearer ${token}` } } }
-  );
-
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-
   if (!process.env.ANTHROPIC_API_KEY) {
     return Response.json({ error: "Server misconfiguration" }, { status: 500 });
   }
 
-  const prompt = `Convert these resume gap descriptions into clear, friendly yes/no questions for a job seeker. Return ONLY a JSON array of strings, one question per gap, in the same order. Do not include any other text.
+  const prompt = `Convert these resume gap descriptions into clear, friendly yes/no questions for a job seeker. Return ONLY a JSON array of strings, one question per gap, in the same order. No markdown, no code fences, no other text — just the raw JSON array.
 Gaps: ${JSON.stringify(gaps)}`;
 
   let anthropicResponse;
@@ -58,7 +43,9 @@ Gaps: ${JSON.stringify(gaps)}`;
   }
 
   const data = await anthropicResponse.json();
-  const text = data.content?.map(b => b.text || "").join("") || "";
+  const rawText = data.content?.map(b => b.text || "").join("") || "";
+  // Strip markdown code fences the model may wrap around the JSON
+  const text = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
 
   let questions;
   try {

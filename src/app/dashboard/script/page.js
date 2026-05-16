@@ -118,6 +118,7 @@ export default function DashboardScript() {
   const [generatingBullets, setGeneratingBullets] = useState(false);
   const [bullets, setBullets] = useState(null);
   const [bulletsCopied, setBulletsCopied] = useState({});
+  const [bulletsLimitReached, setBulletsLimitReached] = useState(false);
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
 
@@ -178,8 +179,11 @@ export default function DashboardScript() {
       if (cancelled) return;
       const map = {};
       gaps.forEach(gap => {
-        const cleaned = gap.replace(/^No\s+/i, "");
-        map[gap] = `Do you have experience with ${cleaned}?`;
+        const cleaned = gap
+          .replace(/^(No|Lacks?|Limited|Minimal|Missing|Without)\s+/i, "")
+          .trim();
+        const q = cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
+        map[gap] = `Do you have experience with ${q}?`;
       });
       setRephrasedQuestions(map);
       setRephrasingGaps(false);
@@ -368,6 +372,11 @@ export default function DashboardScript() {
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ gapExperiences, scriptId: savedId }),
       });
+      if (res.status === 403) {
+        setBulletsLimitReached(true);
+        setGeneratingBullets(false);
+        return;
+      }
       const data = await res.json();
       if (data.bullets) setBullets(data.bullets);
     } catch {}
@@ -819,17 +828,43 @@ export default function DashboardScript() {
             })}
 
             {canGenerateBullets && !bullets && (
-              <button
-                onClick={generateBullets}
-                disabled={generatingBullets}
-                style={{
-                  padding: "12px 28px", borderRadius: 12, border: "none",
-                  background: generatingBullets ? "#C8D0D9" : "linear-gradient(135deg, #057642, #046636)",
-                  color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
-                  cursor: generatingBullets ? "not-allowed" : "pointer",
-                  boxShadow: generatingBullets ? "none" : "0 4px 16px rgba(5,118,66,0.2)",
-                }}
-              >{generatingBullets ? "⏳ Generating bullets..." : "✨ Generate Resume Bullets"}</button>
+              bulletsLimitReached ? (
+                <div style={{
+                  padding: "16px 20px", borderRadius: 14,
+                  background: "rgba(10,102,194,0.04)", border: "1px solid rgba(10,102,194,0.15)",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+                }}>
+                  <div>
+                    <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent }}>
+                      Resume bullets already generated
+                    </span>
+                    <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "4px 0 0" }}>
+                      Upgrade to Pro to strengthen your resume for every application.
+                    </p>
+                  </div>
+                  <a href="/pricing" style={{
+                    padding: "10px 20px", borderRadius: 10,
+                    background: B.gradient, color: "#fff", textDecoration: "none",
+                    fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
+                  }}>Upgrade to Pro →</a>
+                </div>
+              ) : !isPaid && !savedId ? (
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: 0 }}>
+                  💾 Save your script first to generate resume bullets.
+                </p>
+              ) : (
+                <button
+                  onClick={generateBullets}
+                  disabled={generatingBullets}
+                  style={{
+                    padding: "12px 28px", borderRadius: 12, border: "none",
+                    background: generatingBullets ? "#C8D0D9" : "linear-gradient(135deg, #057642, #046636)",
+                    color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+                    cursor: generatingBullets ? "not-allowed" : "pointer",
+                    boxShadow: generatingBullets ? "none" : "0 4px 16px rgba(5,118,66,0.2)",
+                  }}
+                >{generatingBullets ? "⏳ Generating bullets..." : "✨ Generate Resume Bullets"}</button>
+              )
             )}
 
             {bullets && (

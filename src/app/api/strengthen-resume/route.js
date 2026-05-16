@@ -32,8 +32,17 @@ export async function POST(request) {
     .eq("id", user.id)
     .single();
 
-  if (profile?.plan !== "pro" && profile?.plan !== "lifetime") {
-    return Response.json({ error: "Pro feature" }, { status: 403 });
+  const isPaid = profile?.plan === "pro" || profile?.plan === "lifetime";
+  if (!isPaid) {
+    // Free users get one use — tracked by checking for any saved resume_bullets
+    const { count } = await supabase
+      .from("scripts")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .not("resume_bullets", "is", null);
+    if ((count ?? 0) >= 1) {
+      return Response.json({ error: "Free resume strengthening already used. Upgrade to Pro for unlimited access." }, { status: 403 });
+    }
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
