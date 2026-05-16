@@ -53,19 +53,24 @@ export async function POST(request) {
     .map(({ gap, desc }) => `Gap: ${gap}\nExperience: ${desc}`)
     .join("\n\n");
 
-  const prompt = `You are an expert resume writer and ATS optimization specialist. A job seeker has identified skill gaps for a role they're applying to. They have relevant experience for these gaps and need polished, ATS-friendly resume bullet points.
+  const gapCount = gapExperiences.length;
 
-For each gap below, write 1-2 strong resume bullet points that:
+  const prompt = `You are an expert resume writer and ATS optimization specialist. A job seeker has identified skill gaps for a role they're applying to and described their relevant experience for each one. Write exactly one resume bullet point per gap — no more, no less.
+
+There are ${gapCount} gap(s) below. You must return exactly ${gapCount} bullet point(s) in total.
+
+Each bullet must:
 - Start with a powerful action verb
+- Be grounded in the experience the user described — do not add claims they didn't mention
 - Include relevant keywords from the gap for ATS
-- Are concise (under 2 lines each)
-- Format each bullet exactly as: "• [Action verb] [specific achievement with context and impact]"
+- Be concise (one line, two at most)
+- Format exactly as: "• [Action verb] [specific achievement with context and impact]"
 
 IMPORTANT — do NOT invent specific numbers, percentages, revenue figures, team sizes, or geographic details. Where a metric or specific detail would strengthen the bullet, use a bracketed placeholder instead, for example: [X%], [X users], [X team members], [region], [$X], [X months]. The job seeker will replace placeholders with their real figures before adding to their resume.
 
 ${experienceText}
 
-Output ONLY the bullet points, one per line, with the • character prefix. No headers, no labels, no explanations.`;
+Output ONLY the ${gapCount} bullet point(s), one per line, with the • character prefix. No headers, no labels, no explanations.`;
 
   let anthropicResponse;
   try {

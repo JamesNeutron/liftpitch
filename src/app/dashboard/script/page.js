@@ -899,8 +899,9 @@ export default function DashboardScript() {
                     </div>
                   ))}
                 </div>
-                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim, margin: "0 0 12px", lineHeight: 1.5 }}>
-                  Add these to your resume before recording your pitch!
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, color: B.textDim, margin: "0 0 12px", lineHeight: 1.6 }}>
+                  Add these to your resume before recording your pitch!<br />
+                  💡 These are suggestions based on what you shared. Tweak the wording so it&apos;s accurate and true to your own experience before adding it to your resume.
                 </p>
                 {savedId && (
                   <a href={`/dashboard/record?script_id=${savedId}`} style={{
