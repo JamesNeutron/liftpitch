@@ -147,6 +147,8 @@ export default function DashboardScript() {
       setUserPlan(plan);
       setUser(session.user);
 
+      console.log("[Strengthen DEBUG] user plan:", plan);
+
       if (plan === "pro" || plan === "lifetime") {
         setScriptLimitReached(false);
         setLoading(false);
@@ -160,17 +162,20 @@ export default function DashboardScript() {
         .select("*", { count: "exact", head: true })
         .eq("user_id", session.user.id);
       const n = count ?? 0;
+      console.log("[Strengthen DEBUG] free user — saved script count:", n);
       setScriptCount(n);
       setScriptLimitReached(n >= 1);
       setLoading(false);
       if (n > 0) {
         const history = await loadHistory(session.user.id);
+        console.log("[Strengthen DEBUG] history rows:", history.length, "| first row gaps_to_bridge:", history[0]?.gaps_to_bridge);
         // Returning free users can't re-generate, so analysis is null on load.
         // Pre-populate from history so the analysis card and Strengthen section
         // appear. Prefer a script that has gap data; fall back to the most recent
         // script so the section always renders when any history exists.
         const withGaps = history.find(s => s.gaps_to_bridge?.length > 0);
         const latest = withGaps || history[0];
+        console.log("[Strengthen DEBUG] using script for pre-population:", latest?.id, "| gaps_to_bridge:", latest?.gaps_to_bridge);
         if (latest) {
           setSavedId(latest.id);
           setScript(latest.script || "");
@@ -180,10 +185,13 @@ export default function DashboardScript() {
             gapsToBridge: latest.gaps_to_bridge || [],
             angleToPlay: latest.angle_to_play || "",
           });
+          console.log("[Strengthen DEBUG] setAnalysis called — gapsToBridge will be:", latest.gaps_to_bridge || []);
           if (latest.resume_bullets?.length > 0) {
             setBullets(latest.resume_bullets);
           }
         }
+      } else {
+        console.log("[Strengthen DEBUG] no saved scripts — user must generate first");
       }
     }
     init();
@@ -331,7 +339,14 @@ export default function DashboardScript() {
       const text = data.text || "";
       const m = text.match(/<analysis>\s*([\s\S]*?)\s*<\/analysis>/);
       let parsedAnalysis = null;
-      if (m) { try { parsedAnalysis = JSON.parse(m[1]); } catch (e) {} }
+      if (m) {
+        try { parsedAnalysis = JSON.parse(m[1]); }
+        catch (e) { console.log("[Strengthen DEBUG] generate — analysis JSON parse FAILED:", e.message, "| raw:", m[1]?.slice(0, 200)); }
+      } else {
+        console.log("[Strengthen DEBUG] generate — no <analysis> block found in response");
+      }
+      console.log("[Strengthen DEBUG] generate — parsedAnalysis:", parsedAnalysis);
+      console.log("[Strengthen DEBUG] generate — gapsToBridge:", parsedAnalysis?.gapsToBridge);
       const scriptText = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
       setAnalysis(parsedAnalysis);
       setScript(scriptText || "Could not generate script. Please try again.");
@@ -394,28 +409,37 @@ export default function DashboardScript() {
       .filter(gap => gapAnswers[gap]?.hasExp === true && gapAnswers[gap]?.desc?.trim())
       .map(gap => ({ gap, desc: gapAnswers[gap].desc.trim() }));
 
+    console.log("[Strengthen DEBUG] generateBullets — gapExperiences being sent:", gapExperiences);
+
     // Auto-save the script first so the API has a scriptId to track free-tier usage
     let scriptId = savedId;
     if (!scriptId && user && script) {
+      console.log("[Strengthen DEBUG] generateBullets — no savedId, auto-saving script first");
       scriptId = await saveScript();
+      console.log("[Strengthen DEBUG] generateBullets — auto-save result scriptId:", scriptId);
     }
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
+      console.log("[Strengthen DEBUG] generateBullets — calling API | scriptId:", scriptId, "| has token:", !!token);
       const res = await fetch("/api/strengthen-resume", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ gapExperiences, scriptId }),
       });
+      console.log("[Strengthen DEBUG] generateBullets — API status:", res.status);
       if (res.status === 403) {
         setBulletsLimitReached(true);
         setGeneratingBullets(false);
         return;
       }
       const data = await res.json();
+      console.log("[Strengthen DEBUG] generateBullets — API response:", data);
       if (data.bullets) setBullets(data.bullets);
-    } catch {}
+    } catch (err) {
+      console.log("[Strengthen DEBUG] generateBullets — fetch error:", err);
+    }
     setGeneratingBullets(false);
   };
 
@@ -487,6 +511,10 @@ export default function DashboardScript() {
   const canGenerate = !generating && resume.trim() && jobDesc.trim() && bio.trim();
   const gapList = (analysis?.gapsToBridge || []).slice(0, 3);
   const canGenerateBullets = gapList.some(gap => gapAnswers[gap]?.hasExp === true && gapAnswers[gap]?.desc?.trim());
+
+  // Render-time gate diagnostic — remove after debugging
+  console.log("[Strengthen DEBUG] render — analysis:", analysis, "| gapList:", gapList, "| isRegenerated:", isRegenerated, "| script length:", script.length);
+  console.log("[Strengthen DEBUG] render — section WILL render:", !isRegenerated && gapList.length > 0 && !!(analysis || script));
 
   return (
     <div style={{ minHeight: "100vh", background: B.bg, fontFamily: "'DM Sans', sans-serif" }}>
