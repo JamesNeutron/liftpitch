@@ -163,7 +163,26 @@ export default function DashboardScript() {
       setScriptCount(n);
       setScriptLimitReached(n >= 1);
       setLoading(false);
-      if (n > 0) loadHistory(session.user.id);
+      if (n > 0) {
+        const history = await loadHistory(session.user.id);
+        // Pre-populate the Strengthen section from the most recent script that
+        // has gap data. Without this, returning free users (who can't re-generate)
+        // would land with analysis=null and never see the Strengthen card.
+        const latest = history.find(s => s.gaps_to_bridge?.length > 0);
+        if (latest) {
+          setSavedId(latest.id);
+          setScript(latest.script || "");
+          setAnalysis({
+            matchScore: latest.match_score,
+            strongMatches: latest.strong_matches,
+            gapsToBridge: latest.gaps_to_bridge,
+            angleToPlay: latest.angle_to_play,
+          });
+          if (latest.resume_bullets?.length > 0) {
+            setBullets(latest.resume_bullets);
+          }
+        }
+      }
     }
     init();
   }, [router]);
@@ -230,6 +249,7 @@ export default function DashboardScript() {
       .order("created_at", { ascending: false });
     setHistory(data || []);
     setHistoryLoading(false);
+    return data || [];
   };
 
   const handleSignOut = async () => {
