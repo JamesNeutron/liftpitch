@@ -326,7 +326,7 @@ export default function DashboardScript() {
   };
 
   const saveScript = async () => {
-    if (!script || !user) return;
+    if (!script || !user) return null;
     setSaving(true);
     const { data, error } = await supabase.from("scripts").insert({
       user_id: user.id,
@@ -350,8 +350,11 @@ export default function DashboardScript() {
         setScriptCount(newCount);
         setScriptLimitReached(newCount >= 1);
       }
+      setSaving(false);
+      return data.id;
     }
     setSaving(false);
+    return null;
   };
 
   const deleteScript = async (id) => {
@@ -368,13 +371,20 @@ export default function DashboardScript() {
     const gapExperiences = gapList
       .filter(gap => gapAnswers[gap]?.hasExp === true && gapAnswers[gap]?.desc?.trim())
       .map(gap => ({ gap, desc: gapAnswers[gap].desc.trim() }));
+
+    // Auto-save the script first so the API has a scriptId to track free-tier usage
+    let scriptId = savedId;
+    if (!scriptId && user && script) {
+      scriptId = await saveScript();
+    }
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
       const res = await fetch("/api/strengthen-resume", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ gapExperiences, scriptId: savedId }),
+        body: JSON.stringify({ gapExperiences, scriptId }),
       });
       if (res.status === 403) {
         setBulletsLimitReached(true);
@@ -920,10 +930,20 @@ export default function DashboardScript() {
                     fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
                   }}>Upgrade to Pro →</a>
                 </div>
-              ) : !isPaid && !savedId ? (
-                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: 0 }}>
-                  💾 Save your script first to generate resume bullets.
-                </p>
+              ) : !user ? (
+                <div style={{
+                  padding: "16px 20px", borderRadius: 12,
+                  background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.15)",
+                }}>
+                  <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: "0 0 12px" }}>
+                    Create a free account to generate resume bullets.
+                  </p>
+                  <a href="/" style={{
+                    padding: "10px 22px", borderRadius: 10,
+                    background: B.gradient, color: "#fff", textDecoration: "none",
+                    fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+                  }}>Sign Up Free →</a>
+                </div>
               ) : (
                 <button
                   onClick={generateBullets}
