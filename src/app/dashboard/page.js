@@ -117,7 +117,7 @@ export default function DashboardHome() {
         .eq("id", session.user.id)
         .single();
 
-      if (profile?.plan !== "pro" && profile?.plan !== "lifetime") { router.replace("/"); return; }
+      if (profile?.plan !== "pro" && profile?.plan !== "lifetime") { router.replace("/dashboard/script"); return; }
 
       setUser(session.user);
 
