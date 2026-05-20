@@ -534,7 +534,70 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
   const [uploadName, setUploadName] = useState("");
   const fileRef = useRef(null);
 
+  const [savedId, setSavedId] = useState(null);
+  const [gapAnswers, setGapAnswers] = useState({});
+  const [rephrasedQuestions, setRephrasedQuestions] = useState({});
+  const [rephrasingGaps, setRephrasingGaps] = useState(false);
+  const [generatingBullets, setGeneratingBullets] = useState(false);
+  const [bullets, setBullets] = useState(null);
+  const [bulletsCopied, setBulletsCopied] = useState({});
+  const [bulletsLimitReached, setBulletsLimitReached] = useState(false);
+  const [regeneratingWithBullets, setRegeneratingWithBullets] = useState(false);
+  const [isRegenerated, setIsRegenerated] = useState(false);
+  const scriptOutputRef = useRef(null);
+
   const canGenerate = isPaid || !scriptUsed;
+
+  useEffect(() => {
+    const gaps = (analysis?.gapsToBridge || []).slice(0, 3);
+    if (!gaps.length) {
+      setRephrasedQuestions({});
+      return;
+    }
+
+    let cancelled = false;
+    setRephrasingGaps(true);
+
+    const fallback = () => {
+      if (cancelled) return;
+      const map = {};
+      gaps.forEach(gap => {
+        const cleaned = gap.replace(/^(No|Lacks?|Limited|Minimal|Missing|Without)\s+/i, "").trim();
+        const q = cleaned.charAt(0).toLowerCase() + cleaned.slice(1);
+        map[gap] = `Do you have experience with ${q}?`;
+      });
+      setRephrasedQuestions(map);
+      setRephrasingGaps(false);
+    };
+
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const res = await fetch("/api/rephrase-gaps", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ gaps }),
+        });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.questions) && data.questions.length === gaps.length) {
+            const map = {};
+            gaps.forEach((gap, i) => { map[gap] = data.questions[i]; });
+            setRephrasedQuestions(map);
+            setRephrasingGaps(false);
+            return;
+          }
+        }
+      } catch {}
+      fallback();
+    })();
+
+    return () => { cancelled = true; };
+  }, [analysis]);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -572,6 +635,13 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
     if (!user) { onNeedAuth(); return; }
     if (!resume.trim() || !jobDesc.trim() || !bio.trim()) return;
     setLoading(true); onScriptGenerated(""); setAnalysis(null);
+    setSavedId(null);
+    setGapAnswers({});
+    setRephrasedQuestions({});
+    setBullets(null);
+    setBulletsCopied({});
+    setBulletsLimitReached(false);
+    setIsRegenerated(false);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -600,30 +670,111 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
       const s = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
       onScriptGenerated(s || "Could not generate script. Please try again.");
 
-      if (!isPaid) {
-        if (user) {
-          supabase.from("scripts").insert({
-            user_id: user.id,
-            script: s || "",
-            job_description: jobDesc,
-            resume_text: resume,
-            about_me: bio,
-            duration,
-            match_score: parsedAnalysis?.matchScore ?? null,
-            strong_matches: parsedAnalysis?.strongMatches ?? null,
-            gaps_to_bridge: parsedAnalysis?.gapsToBridge ?? null,
-            angle_to_play: parsedAnalysis?.angleToPlay ?? null,
-          }).then(() => {});
-        } else {
-          localStorage.setItem("lp_script_used", "1");
-        }
-        onScriptUsed();
+      if (user) {
+        const { data: inserted } = await supabase.from("scripts").insert({
+          user_id: user.id,
+          script: s || "",
+          job_description: jobDesc,
+          resume_text: resume,
+          about_me: bio,
+          duration,
+          match_score: parsedAnalysis?.matchScore ?? null,
+          strong_matches: parsedAnalysis?.strongMatches ?? null,
+          gaps_to_bridge: parsedAnalysis?.gapsToBridge ?? null,
+          angle_to_play: parsedAnalysis?.angleToPlay ?? null,
+        }).select().single();
+        if (inserted?.id) setSavedId(inserted.id);
+      } else {
+        localStorage.setItem("lp_script_used", "1");
       }
+      if (!isPaid) onScriptUsed();
     } catch (err) {
       onScriptGenerated("Something went wrong. Please check your connection and try again.");
     }
     setLoading(false);
   };
+
+  const generateBullets = async () => {
+    setGeneratingBullets(true);
+    const gaps = (analysis?.gapsToBridge || []).slice(0, 3);
+    const gapExperiences = gaps
+      .filter(gap => gapAnswers[gap]?.hasExp === true && gapAnswers[gap]?.desc?.trim())
+      .map(gap => ({ gap, desc: gapAnswers[gap].desc.trim() }));
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch("/api/strengthen-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ gapExperiences, scriptId: savedId }),
+      });
+      if (res.status === 403) {
+        setBulletsLimitReached(true);
+        setGeneratingBullets(false);
+        return;
+      }
+      const data = await res.json();
+      if (data.bullets) setBullets(data.bullets);
+    } catch {}
+    setGeneratingBullets(false);
+  };
+
+  const regenerateWithBullets = async () => {
+    if (!bullets?.length || !resume.trim() || !jobDesc.trim() || !bio.trim()) return;
+    setRegeneratingWithBullets(true);
+    onScriptGenerated("");
+    setAnalysis(null);
+    setSavedId(null);
+
+    const bulletSection = "\n\n---\nAdditional experience highlights to incorporate into the pitch:\n" + bullets.join("\n");
+    const augmentedResume = resume.trim() + bulletSection;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const response = await fetch("/api/generate-script", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ resume: augmentedResume, jobDesc, bio, duration }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.text || "";
+        const m = text.match(/<analysis>\s*([\s\S]*?)\s*<\/analysis>/);
+        let parsedAnalysis = null;
+        if (m) { try { parsedAnalysis = JSON.parse(m[1]); } catch (e) {} }
+        const scriptText = text.replace(/<analysis>[\s\S]*?<\/analysis>/, "").trim();
+        setAnalysis(parsedAnalysis);
+        onScriptGenerated(scriptText || "Could not generate script. Please try again.");
+        setIsRegenerated(true);
+        setTimeout(() => {
+          scriptOutputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    } catch {}
+    setRegeneratingWithBullets(false);
+  };
+
+  const copyAllBullets = () => {
+    if (!bullets) return;
+    navigator.clipboard?.writeText(bullets.join("\n"));
+    setBulletsCopied(prev => ({ ...prev, all: true }));
+    setTimeout(() => setBulletsCopied(prev => ({ ...prev, all: false })), 2500);
+  };
+
+  const copyBullet = (bullet, i) => {
+    navigator.clipboard?.writeText(bullet);
+    setBulletsCopied(prev => ({ ...prev, [i]: true }));
+    setTimeout(() => setBulletsCopied(prev => ({ ...prev, [i]: false })), 2500);
+  };
+
+  const gapList = (analysis?.gapsToBridge || []).slice(0, 3);
+  const canGenerateBullets = gapList.some(gap => gapAnswers[gap]?.hasExp === true && gapAnswers[gap]?.desc?.trim());
 
   return (
     <Card>
@@ -794,8 +945,186 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
         </div>
       )}
 
-      {script && (
+      {/* Strengthen Your Resume — free 1 use, paid unlimited; only for authenticated users */}
+      {user && !isRegenerated && gapList.length > 0 && (analysis || script) && (
         <div style={{
+          marginTop: 24, background: B.surface, border: "1px solid #2A5080", borderRadius: 20,
+          padding: 28, boxShadow: "0 2px 12px rgba(42, 80, 128, 0.08)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 22 }}>💪</span>
+            <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 700, color: B.text, margin: 0 }}>Strengthen Your Resume</h2>
+          </div>
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textMuted, margin: "0 0 24px", lineHeight: 1.6 }}>
+            Tell us about your experience with each gap — we&apos;ll write polished, ATS-friendly resume bullets you can add before your recording.
+          </p>
+
+          {gapList.map((gap, i) => {
+            const ans = gapAnswers[gap] || {};
+            return (
+              <div key={i} style={{ marginBottom: 16, padding: 16, borderRadius: 14, background: B.bg, border: `1px solid ${B.border}` }}>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.text, margin: "0 0 10px", lineHeight: 1.5 }}>
+                  {rephrasingGaps
+                    ? <span style={{ color: B.textDim, fontStyle: "italic" }}>Loading question...</span>
+                    : (rephrasedQuestions[gap] || `Do you have experience with ${gap.replace(/^No\s+/i, "")}?`)}
+                </p>
+                <div style={{ display: "flex", gap: 8, marginBottom: ans.hasExp === true ? 12 : 0 }}>
+                  <button
+                    onClick={() => setGapAnswers(prev => ({ ...prev, [gap]: { ...prev[gap], hasExp: true, desc: prev[gap]?.desc || "" } }))}
+                    style={{
+                      padding: "7px 18px", borderRadius: 8, cursor: "pointer",
+                      border: `1px solid ${ans.hasExp === true ? B.accent : B.border}`,
+                      background: ans.hasExp === true ? "rgba(10,102,194,0.08)" : B.surface,
+                      color: ans.hasExp === true ? B.accent : B.textMuted,
+                      fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
+                    }}>Yes</button>
+                  <button
+                    onClick={() => setGapAnswers(prev => ({ ...prev, [gap]: { ...prev[gap], hasExp: false, desc: "" } }))}
+                    style={{
+                      padding: "7px 18px", borderRadius: 8, cursor: "pointer",
+                      border: `1px solid ${ans.hasExp === false ? "rgba(220,53,69,0.3)" : B.border}`,
+                      background: ans.hasExp === false ? "rgba(220,53,69,0.04)" : B.surface,
+                      color: ans.hasExp === false ? "#DC3545" : B.textMuted,
+                      fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
+                    }}>No</button>
+                </div>
+                {ans.hasExp === true && (
+                  <textarea
+                    value={ans.desc || ""}
+                    onChange={e => setGapAnswers(prev => ({ ...prev, [gap]: { ...prev[gap], desc: e.target.value } }))}
+                    placeholder="Briefly describe your experience in 1-2 sentences..."
+                    style={{
+                      width: "100%", minHeight: 68, padding: "10px 14px", background: B.surface, color: B.text,
+                      border: `1px solid ${B.border}`, borderRadius: 10,
+                      fontFamily: "'DM Sans', sans-serif", fontSize: 14, resize: "vertical", outline: "none",
+                      lineHeight: 1.6, boxSizing: "border-box",
+                    }}
+                    onFocus={e => e.target.style.borderColor = B.accent}
+                    onBlur={e => e.target.style.borderColor = B.border}
+                  />
+                )}
+              </div>
+            );
+          })}
+
+          {canGenerateBullets && !bullets && (
+            bulletsLimitReached ? (
+              <div style={{
+                padding: "16px 20px", borderRadius: 14,
+                background: "rgba(10,102,194,0.04)", border: "1px solid rgba(10,102,194,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+              }}>
+                <div>
+                  <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent }}>
+                    Resume bullets already generated
+                  </span>
+                  <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "4px 0 0" }}>
+                    Upgrade to Pro to strengthen your resume for every application.
+                  </p>
+                </div>
+                <a href="/pricing" style={{
+                  padding: "10px 20px", borderRadius: 10,
+                  background: B.gradient, color: "#fff", textDecoration: "none",
+                  fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
+                }}>Upgrade to Pro →</a>
+              </div>
+            ) : (
+              <button
+                onClick={generateBullets}
+                disabled={generatingBullets}
+                style={{
+                  padding: "12px 28px", borderRadius: 12, border: "none",
+                  background: generatingBullets ? "#C8D0D9" : "linear-gradient(135deg, #057642, #046636)",
+                  color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+                  cursor: generatingBullets ? "not-allowed" : "pointer",
+                  boxShadow: generatingBullets ? "none" : "0 4px 16px rgba(5,118,66,0.2)",
+                }}
+              >{generatingBullets ? "⏳ Generating bullets..." : "✨ Generate Resume Bullets"}</button>
+            )
+          )}
+
+          {bullets && (
+            <div>
+              <div style={{
+                padding: "10px 14px", borderRadius: 10, marginBottom: 14,
+                background: "rgba(231,163,62,0.07)", border: "1px solid rgba(231,163,62,0.2)",
+                fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, color: B.textMuted, lineHeight: 1.5,
+              }}>
+                ⚠️ <strong style={{ color: B.text }}>These are examples.</strong> Replace any bracketed placeholders like <code style={{ fontFamily: "monospace", fontSize: 12, background: "rgba(0,0,0,0.05)", padding: "1px 4px", borderRadius: 4 }}>[X%]</code> or <code style={{ fontFamily: "monospace", fontSize: 12, background: "rgba(0,0,0,0.05)", padding: "1px 4px", borderRadius: 4 }}>[region]</code> with your real numbers and details before adding to your resume.
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700, color: B.success, textTransform: "uppercase", letterSpacing: "0.1em" }}>✓ Resume Bullets</span>
+                <button onClick={copyAllBullets} style={{
+                  padding: "6px 14px", borderRadius: 8, border: `1px solid ${B.border}`,
+                  background: bulletsCopied.all ? "rgba(5,118,66,0.07)" : B.surface,
+                  color: bulletsCopied.all ? B.success : B.textMuted,
+                  fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600, cursor: "pointer",
+                }}>{bulletsCopied.all ? "✓ Copied!" : "📋 Copy All Bullets"}</button>
+              </div>
+              <div style={{ padding: "16px 20px", background: B.bg, border: `1px solid ${B.border}`, borderRadius: 14, display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                {bullets.map((bullet, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <p style={{ flex: 1, fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.text, margin: 0, lineHeight: 1.7 }}>{bullet}</p>
+                    <button onClick={() => copyBullet(bullet, i)} style={{
+                      flexShrink: 0, padding: "4px 10px", borderRadius: 6, cursor: "pointer",
+                      border: `1px solid ${B.border}`,
+                      background: bulletsCopied[i] ? "rgba(5,118,66,0.07)" : B.surface,
+                      color: bulletsCopied[i] ? B.success : B.textMuted,
+                      fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 600,
+                    }}>{bulletsCopied[i] ? "✓" : "📋"}</button>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12.5, color: B.textDim, margin: "0 0 16px", lineHeight: 1.6 }}>
+                Add these to your resume before recording your pitch!<br />
+                💡 These are suggestions based on what you shared. Tweak the wording so it&apos;s accurate and true to your own experience before adding it to your resume.
+              </p>
+              {isPaid && (
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                  <button
+                    onClick={regenerateWithBullets}
+                    disabled={regeneratingWithBullets}
+                    style={{
+                      padding: "10px 22px", borderRadius: 10, border: "none",
+                      background: regeneratingWithBullets ? "#C8D0D9" : "linear-gradient(135deg, #0A66C2 0%, #C8442A 100%)",
+                      color: "#fff", fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+                      cursor: regeneratingWithBullets ? "not-allowed" : "pointer",
+                      boxShadow: regeneratingWithBullets ? "none" : "0 4px 16px rgba(10,102,194,0.2)",
+                      display: "flex", alignItems: "center", gap: 8,
+                    }}
+                  >
+                    {regeneratingWithBullets
+                      ? <><span style={{ width: 14, height: 14, borderRadius: "50%", border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", animation: "spin 0.8s linear infinite", display: "inline-block" }} /> Re-writing…</>
+                      : "✨ Re-generate Script With These Additions"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Post-regeneration CTA — appears after Re-generate With Additions */}
+      {user && isRegenerated && script && (
+        <div style={{
+          marginTop: 24, background: B.surface, border: "1px solid #2A5080", borderRadius: 20,
+          padding: 28, boxShadow: "0 2px 12px rgba(42, 80, 128, 0.08)",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+        }}>
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 15, color: B.text, margin: 0, lineHeight: 1.6 }}>
+            🎥 Your script is ready — head to Record to capture your pitch!
+          </p>
+          <button onClick={() => onNavigate("record")} style={{
+            padding: "12px 28px", borderRadius: 12, whiteSpace: "nowrap", border: "none",
+            background: B.gradient, color: "#fff", cursor: "pointer",
+            fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 700,
+            boxShadow: `0 4px 16px ${B.accentGlow}`,
+          }}>Go to Record →</button>
+        </div>
+      )}
+
+      {script && (
+        <div ref={scriptOutputRef} style={{
           marginTop: 24, borderRadius: 16, overflow: "hidden",
           boxShadow: "0 8px 40px rgba(10,102,194,0.25), 0 0 0 1px rgba(10,102,194,0.2)",
           animation: "ctaSlideIn 0.4s cubic-bezier(0.34,1.56,0.64,1)",
@@ -836,6 +1165,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
           from { opacity: 0; transform: translateY(12px) scale(0.97); }
           to   { opacity: 1; transform: translateY(0)   scale(1);    }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </Card>
   );
