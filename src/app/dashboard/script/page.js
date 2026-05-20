@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
 import UpgradeModal from "../../../components/UpgradeModal";
+import AuthModal from "../../../components/AuthModal";
 
 const B = {
   bg: "#EBF4FF", surface: "#FFFFFF", border: "#2A5080",
@@ -91,6 +92,7 @@ export default function DashboardScript() {
   const [scriptCount, setScriptCount] = useState(0);
   const [scriptLimitReached, setScriptLimitReached] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [resume, setResume] = useState("");
@@ -198,6 +200,42 @@ export default function DashboardScript() {
   }, [router]);
 
   useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setShowAuthModal(false);
+        setUser(session.user);
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("plan")
+          .eq("id", session.user.id)
+          .single();
+        const plan = profile?.plan || "free";
+        setUserPlan(plan);
+
+        if (plan === "pro" || plan === "lifetime") {
+          setScriptLimitReached(false);
+          loadHistory(session.user.id);
+        } else {
+          const { count } = await supabase
+            .from("scripts")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", session.user.id);
+          const n = count ?? 0;
+          setScriptCount(n);
+          setScriptLimitReached(n >= 1);
+          loadHistory(session.user.id);
+        }
+      } else if (event === "SIGNED_OUT") {
+        setUser(null);
+        setUserPlan("free");
+        router.replace("/");
+      }
+    });
+    return () => { subscription.unsubscribe(); };
+  }, [router]);
+
+  useEffect(() => {
     const gaps = (analysis?.gapsToBridge || []).slice(0, 3);
     if (!gaps.length) {
       setRephrasedQuestions({});
@@ -298,6 +336,11 @@ export default function DashboardScript() {
 
   const generate = async () => {
     if (!resume.trim() || !jobDesc.trim() || !bio.trim()) return;
+
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
 
     if (scriptLimitReached) {
       setShowUpgradeModal(true);
@@ -522,6 +565,10 @@ export default function DashboardScript() {
 
       {showUpgradeModal && (
         <UpgradeModal feature="script" onClose={() => setShowUpgradeModal(false)} />
+      )}
+
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} defaultMode="signup" />
       )}
 
       <main style={{ maxWidth: 760, margin: "0 auto", padding: "40px 20px 80px" }}>
