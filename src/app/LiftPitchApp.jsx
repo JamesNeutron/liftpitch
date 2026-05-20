@@ -523,7 +523,7 @@ function Landing({ onStart }) {
 
 // ─── Unified Script Generator ───
 
-function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, script, onScriptGenerated, onNavigate, user }) {
+function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, script, onScriptGenerated, onNavigate, user, onNeedAuth }) {
   const [resume, setResume] = useState("");
   const [jobDesc, setJobDesc] = useState("");
   const [bio, setBio] = useState("");
@@ -569,6 +569,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
   };
 
   const generate = async () => {
+    if (!user) { onNeedAuth(); return; }
     if (!resume.trim() || !jobDesc.trim() || !bio.trim()) return;
     setLoading(true); onScriptGenerated(""); setAnalysis(null);
 
@@ -1834,7 +1835,7 @@ export default function App() {
           </div>
 
           <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
-            {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} user={user} />}
+            {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} user={user} onNeedAuth={() => openAuth("signup")} />}
             {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} isPaid={isPaid} user={user} onNeedAuth={() => openAuth("signup")} />}
             {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
             {tab === "tips" && <TipsAndTricks />}
