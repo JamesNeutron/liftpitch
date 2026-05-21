@@ -229,11 +229,10 @@ export default function DashboardScript() {
       } else if (event === "SIGNED_OUT") {
         setUser(null);
         setUserPlan("free");
-        router.replace("/");
       }
     });
     return () => { subscription.unsubscribe(); };
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     const gaps = (analysis?.gapsToBridge || []).slice(0, 3);
