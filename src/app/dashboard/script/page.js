@@ -94,6 +94,7 @@ export default function DashboardScript() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   const [resume, setResume] = useState("");
   const [jobDesc, setJobDesc] = useState("");
@@ -126,6 +127,12 @@ export default function DashboardScript() {
   const scriptOutputRef = useRef(null);
 
   const isPaid = userPlan === "pro" || userPlan === "lifetime";
+
+  useEffect(() => {
+    if (!loading) { setLoadingTimeout(false); return; }
+    const t = setTimeout(() => setLoadingTimeout(true), 10000);
+    return () => clearTimeout(t);
+  }, [loading]);
 
   useEffect(() => {
     async function init() {
@@ -540,12 +547,35 @@ export default function DashboardScript() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
-        justifyContent: "center", background: B.bg }}>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center", background: B.bg }}>
         <div style={{ width: 40, height: 40, borderRadius: "50%",
           border: "3px solid transparent", borderTopColor: B.accent,
           animation: "spin 0.8s linear infinite" }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        {loadingTimeout && (
+          <div style={{ marginTop: 24, maxWidth: 420, textAlign: "center",
+            padding: "16px 20px", background: B.surface, borderRadius: 10,
+            border: `1px solid ${B.border}33`, color: B.text,
+            fontSize: 14, lineHeight: 1.6,
+            animation: "fadeIn 0.3s ease" }}>
+            <p style={{ margin: 0, fontWeight: 600, marginBottom: 8 }}>
+              Taking longer than expected?
+            </p>
+            <p style={{ margin: 0 }}>
+              Try refreshing the page. If the issue persists, try opening this page
+              in a private or incognito window, or clear your browser cache.
+            </p>
+            <p style={{ margin: "8px 0 0" }}>
+              Still need help? Contact us at{" "}
+              <a href="mailto:support@lift-pitch.co"
+                style={{ color: B.accent, textDecoration: "underline" }}>
+                support@lift-pitch.co
+              </a>
+            </p>
+          </div>
+        )}
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }`}</style>
       </div>
     );
   }
