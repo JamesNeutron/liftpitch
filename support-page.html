@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LiftPitch — Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #F5F7FA; --surface: #FFFFFF; --border: #E2E8F0;
+    --accent: #0A66C2; --accent-light: #378FE9;
+    --text: #1A1A2E; --muted: #56687A; --dim: #8FA4B8;
+    --success: #057642;
+    --gradient: linear-gradient(135deg, #0A66C2 0%, #378FE9 50%, #70B5F9 100%);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.7; }
+
+  header { background: rgba(255,255,255,0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 18px 40px; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 800; background: var(--gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+  .header-right { font-family: 'Sora', sans-serif; font-size: 13px; color: var(--muted); }
+  .header-right a { color: var(--accent); text-decoration: none; font-weight: 600; }
+
+  .hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 60px 40px; text-align: center; }
+  .hero-eyebrow { font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent-light); margin-bottom: 12px; }
+  .hero h1 { font-family: 'Sora', sans-serif; font-size: 36px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
+  .hero p { font-size: 16px; color: var(--muted); max-width: 500px; margin: 0 auto; line-height: 1.7; }
+
+  .container { max-width: 820px; margin: 0 auto; padding: 48px 24px 80px; }
+
+  .section { margin-bottom: 48px; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+  .section-icon { font-size: 24px; }
+  .section-title { font-family: 'Sora', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); }
+
+  .faq-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 10px; overflow: hidden; transition: border-color 0.2s; }
+  .faq-item:hover { border-color: var(--accent-light); }
+  .faq-question { padding: 18px 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; user-select: none; }
+  .faq-question-text { font-family: 'Sora', sans-serif; font-size: 14px; font-weight: 600; color: var(--text); }
+  .faq-chevron { font-size: 18px; color: var(--dim); transition: transform 0.25s; flex-shrink: 0; }
+  .faq-answer { display: none; padding: 0 20px 18px; font-size: 14px; color: var(--muted); line-height: 1.75; border-top: 1px solid var(--border); padding-top: 14px; }
+  .faq-item.open .faq-chevron { transform: rotate(180deg); }
+  .faq-item.open .faq-answer { display: block; }
+  .faq-item.open { border-color: var(--accent); }
+
+  .step-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; margin: 10px 0 0; }
+  .step-list li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--muted); }
+  .step-num { min-width: 22px; height: 22px; border-radius: 50%; background: var(--gradient); color: #fff; font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 2px; flex-shrink: 0; }
+
+  .highlight-box { padding: 14px 18px; background: rgba(10,102,194,0.05); border: 1px solid rgba(10,102,194,0.15); border-radius: 10px; margin: 12px 0; font-size: 14px; color: var(--muted); line-height: 1.7; }
+  .highlight-box strong { color: var(--text); }
+
+  .warning-box { padding: 14px 18px; background: rgba(231,163,62,0.07); border: 1px solid rgba(231,163,62,0.25); border-radius: 10px; margin: 12px 0; font-size: 14px; color: #7A5C1E; line-height: 1.7; }
+
+  .browser-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 12px 0; }
+  .browser-card { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .browser-name { font-family: 'Sora', sans-serif; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .browser-steps { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+  .contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 36px; text-align: center; margin-top: 48px; }
+  .contact-card h2 { font-family: 'Sora', sans-serif; font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .contact-card p { font-size: 15px; color: var(--muted); margin-bottom: 24px; line-height: 1.7; max-width: 420px; margin-left: auto; margin-right: auto; }
+  .contact-email { display: inline-flex; align-items: center; gap: 8px; padding: 14px 32px; background: var(--gradient); color: #fff; border-radius: 12px; font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 20px rgba(10,102,194,0.2); transition: transform 0.2s; }
+  .contact-email:hover { transform: translateY(-2px); }
+  .contact-note { font-size: 13px; color: var(--dim); margin-top: 14px; }
+
+  .tier-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0; }
+  .tier-table th { background: var(--bg); padding: 10px 14px; text-align: left; font-family: 'Sora', sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--dim); border-bottom: 1px solid var(--border); }
+  .tier-table td { padding: 10px 14px; color: var(--muted); border-bottom: 1px solid var(--border); vertical-align: top; }
+  .tier-table tr:last-child td { border-bottom: none; }
+  .check { color: var(--success); font-weight: 700; }
+  .lock { color: var(--dim); }
+
+  @media (max-width: 600px) {
+    header { padding: 16px 20px; }
+    .hero { padding: 40px 20px; }
+    .hero h1 { font-size: 26px; }
+    .container { padding: 32px 16px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a href="/" class="logo">LiftPitch</a>
+  <div class="header-right">Need help? <a href="mailto:support@lift-pitch.co">support@lift-pitch.co</a></div>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">Help Center</div>
+  <h1>How can we help?</h1>
+  <p>Find answers to common questions about recording, scripts, your account, and more. Can't find what you're looking for? Scroll to the bottom to contact us.</p>
+</div>
+
+<div class="container">
+
+  <!-- Getting Started -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🚀</span>
+      <div class="section-title">Getting Started</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">How does LiftPitch work?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        LiftPitch lets you record a short, live-verified video pitch and share it via a link on your resume. Here's the flow:
+        <ol class="step-list" style="list-style:none;margin-top:10px;">
+          <li><span class="step-num">1</span>Paste your resume and a job description to get a match score and personalized script.</li>
+          <li><span class="step-num">2</span>Use the Strengthen Your Resume tool to address any gaps identified.</li>
+          <li><span class="step-num">3</span>Record your live video pitch directly in your browser — no uploads allowed.</li>
+          <li><span class="step-num">4</span>Copy your verified link and add it to your resume.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">What does the free tier include?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        <table class="tier-table">
+          <thead><tr><th>Feature</th><th>Free</th><th>Pro ($8/mo or $35 lifetime)</th></tr></thead>
+          <tbody>
+            <tr><td>Script generation</td><td class="check">✓ 1 use</td><td class="check">✓ Unlimited</td></tr>
+            <tr><td>Resume strengthening</td><td class="check">✓ 1 use</td><td class="check">✓ Unlimited</td></tr>
+            <tr><td>Video recording</td><td class="check">✓ 1 video</td><td class="check">✓ Unlimited</td></tr>
+            <tr><td>Shareable link</td><td class="check">✓ With watermark</td><td class="check">✓ No watermark</td></tr>
+            <tr><td>View analytics</td><td class="lock">✗</td><td class="check">✓ Full analytics</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">Do I need to create an account?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        Yes — you'll be prompted to create a free account when you click "Generate My Script." This lets us save your script, match analysis, and video so you can access them later. Signing up is free and only takes a moment.
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Recording Issues -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🎥</span>
+      <div class="section-title">Video Recording Issues</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">My camera shows a black screen — what do I do?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        A black camera screen is almost always caused by one of these:
+        <ol class="step-list" style="margin-top:10px;">
+          <li><span class="step-num">1</span><strong>Update your browser.</strong> An outdated version of Chrome is the most common cause. Go to Chrome menu → Help → About Google Chrome to check for updates.</li>
+          <li><span class="step-num">2</span><strong>Check camera permissions.</strong> Your browser needs permission to access your camera. Look for a camera icon in the address bar and click "Allow."</li>
+          <li><span class="step-num">3</span><strong>Close other apps using your camera.</strong> Zoom, FaceTime, or other video apps may have your camera locked. Close them and try again.</li>
+          <li><span class="step-num">4</span><strong>Try a different browser.</strong> Chrome and Edge work best. Safari on Mac also works well.</li>
+          <li><span class="step-num">5</span><strong>Restart your browser.</strong> Close it completely and reopen the page.</li>
+        </ol>
+        <div class="highlight-box" style="margin-top:12px;"><strong>Note:</strong> LiftPitch requires a physical camera on your device. Virtual cameras or screen-sharing software may not work.</div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">How do I allow camera and microphone access?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        <div class="browser-grid">
+          <div class="browser-card">
+            <div class="browser-name">🌐 Chrome</div>
+            <div class="browser-steps">Click the camera icon in the address bar → select "Always allow" → refresh the page.</div>
+          </div>
+          <div class="browser-card">
+            <div class="browser-name">🧭 Safari</div>
+            <div class="browser-steps">Safari menu → Settings for This Website → Camera & Microphone → set to "Allow."</div>
+          </div>
+          <div class="browser-card">
+            <div class="browser-name">🦊 Firefox</div>
+            <div class="browser-steps">Click the camera icon in the address bar → select "Allow" for both camera and microphone.</div>
+          </div>
+          <div class="browser-card">
+            <div class="browser-name">📱 Mobile</div>
+            <div class="browser-steps">Go to your phone's Settings → Privacy → Camera → enable access for your browser app.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">Can I upload a pre-recorded video?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        No — and this is intentional. LiftPitch only allows live, in-browser recordings. This is our core trust and verification feature: every video gets a "Live Verified" badge that tells recruiters the pitch was recorded in real time by a real person. Pre-recorded or AI-generated videos are not accepted.
+      </div>
+    </div>
+  </div>
+
+  <!-- Script Generator Issues -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🎯</span>
+      <div class="section-title">Script Generator Issues</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">The page is spinning and won't load — how do I fix it?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        This is usually caused by your browser serving a cached (saved) old version of the site. Here's how to fix it:
+        <div class="browser-grid" style="margin-top:12px;">
+          <div class="browser-card">
+            <div class="browser-name">🌐 Chrome</div>
+            <div class="browser-steps">Press <strong>Cmd+Shift+R</strong> (Mac) or <strong>Ctrl+Shift+R</strong> (Windows) for a hard reload. Or open an Incognito window (Cmd+Shift+N) and try again.</div>
+          </div>
+          <div class="browser-card">
+            <div class="browser-name">🧭 Safari</div>
+            <div class="browser-steps">Hold <strong>Shift</strong> and click the Reload button. Or go to Develop menu → Empty Caches, then reload.</div>
+          </div>
+          <div class="browser-card">
+            <div class="browser-name">📱 Mobile</div>
+            <div class="browser-steps">Close the browser app completely, reopen it, and navigate back to lift-pitch.co.</div>
+          </div>
+        </div>
+        <div class="warning-box" style="margin-top:12px;">
+          <strong>Still spinning after 10 seconds?</strong> Try opening LiftPitch in a private or incognito window. If it loads there, clearing your browser cache will fix it in your regular window. Contact us at <a href="mailto:support@lift-pitch.co" style="color:#B5780F;font-weight:600;">support@lift-pitch.co</a> if the issue continues.
+        </div>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">My resume looks garbled after pasting — what happened?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        Copying and pasting from a PDF can distort the formatting — words may merge together or lines may be out of order. For best results:
+        <ol class="step-list" style="margin-top:10px;">
+          <li><span class="step-num">1</span>Use the <strong>Upload Word Doc</strong> button to upload your resume as a .docx file.</li>
+          <li><span class="step-num">2</span>Or copy from a plain text version of your resume if you have one.</li>
+          <li><span class="step-num">3</span>If you only have a PDF, try pasting it and then manually cleaning up any obvious formatting errors before generating.</li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">Do I have to use the script?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        Not at all! The script is a starting point, not a requirement. Many users find it most useful to review the <strong>match score and gap analysis</strong> to understand what to highlight in their pitch, and then speak naturally in their own words. The script is there if you need help getting started — but recruiters respond best to authentic, conversational delivery. Use it however feels right for you.
+      </div>
+    </div>
+  </div>
+
+  <!-- Sharing Your Pitch -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">🔗</span>
+      <div class="section-title">Sharing Your Pitch</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">How do I add my pitch link to my resume?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        After recording, copy your verified link from the Record page. Add it to your resume near your name and contact information — for example: <br><br>
+        <div class="highlight-box"><strong>Video Pitch:</strong> lift-pitch.co/v/your-link-here</div>
+        You can also add it as a hyperlink on your name or a "View My Pitch" line. Recruiters who click the link will see your video with a Live Verified badge.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">What do recruiters see when they click my link?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        Recruiters see your video with a Live Verified badge confirming it was recorded live in real time. Free tier videos include a LiftPitch watermark. Pro users get a clean, watermark-free experience. Recruiters do not need a LiftPitch account to watch your video.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">How long does my video stay active?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        Videos are stored for <strong>12 months</strong> from the recording date. After that the link will expire. You can request early deletion at any time by emailing <a href="mailto:support@lift-pitch.co" style="color:var(--accent);">support@lift-pitch.co</a>. We recommend re-recording your pitch periodically to keep it current.
+      </div>
+    </div>
+  </div>
+
+  <!-- Account & Billing -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-icon">💳</span>
+      <div class="section-title">Account & Billing</div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">How do I cancel my Pro subscription?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        You can cancel your monthly subscription at any time. Your Pro access continues until the end of your current billing period. To cancel, email <a href="mailto:support@lift-pitch.co" style="color:var(--accent);">support@lift-pitch.co</a> with the subject "Cancel Subscription" and we'll process it within 1 business day.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">What is your refund policy?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        Monthly plans can be cancelled anytime with no refund for the current period. Lifetime passes are non-refundable after 14 days. If you experience a technical issue within 14 days of purchase, contact us at <a href="mailto:support@lift-pitch.co" style="color:var(--accent);">support@lift-pitch.co</a> and we'll work to resolve it or provide a discretionary refund.
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <div class="faq-question" onclick="toggle(this)">
+        <span class="faq-question-text">How do I delete my account and data?</span>
+        <span class="faq-chevron">▾</span>
+      </div>
+      <div class="faq-answer">
+        Email <a href="mailto:privacy@lift-pitch.co" style="color:var(--accent);">privacy@lift-pitch.co</a> with the subject "Delete My Account." We will delete your account, videos, scripts, and personal data within 30 days. Note that payment records are retained for 7 years as required by U.S. tax law.
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact -->
+  <div class="contact-card">
+    <h2>Still need help?</h2>
+    <p>Our support team is here for you. Send us an email and we'll get back to you as soon as possible.</p>
+    <a href="mailto:support@lift-pitch.co" class="contact-email">✉️ Email Support</a>
+    <div class="contact-note">support@lift-pitch.co · Pangea Square LLC · Michigan, United States</div>
+  </div>
+
+</div>
+
+<script>
+  function toggle(btn) {
+    const item = btn.closest('.faq-item');
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  }
+</script>
+</body>
+</html>

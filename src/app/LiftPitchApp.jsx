@@ -2174,6 +2174,13 @@ export default function App() {
       )}
 
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} defaultMode={authModalMode} />}
+
+      <footer style={{ textAlign: "center", padding: "16px 20px", borderTop: `1px solid ${B.border}` }}>
+        <a href="/support" style={{
+          fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim,
+          textDecoration: "none",
+        }}>Support</a>
+      </footer>
     </div>
   );
 }
