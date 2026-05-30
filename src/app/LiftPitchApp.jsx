@@ -162,32 +162,6 @@ function Landing({ onStart }) {
         background: "radial-gradient(circle, rgba(231,163,62,0.07) 0%, transparent 60%)",
         filter: "blur(90px)", pointerEvents: "none" }} />
 
-      {/* ── Hero Illustration ── */}
-      <div
-        id="hero-illustration"
-        role="img"
-        aria-label="LiftPitch — candidate records their pitch while recruiter watches live."
-        style={{
-          maxWidth: 860, width: "100%",
-          margin: `clamp(72px, 11vw, 130px) auto 0`,
-          borderRadius: 16,
-          overflow: "hidden",
-          boxShadow: "0 8px 40px rgba(0,0,0,0.15)",
-          position: "relative",
-          paddingTop: "25%",
-        }}
-      >
-        <iframe
-          src={`https://customer-${process.env.NEXT_PUBLIC_CLOUDFLARE_STREAM_CUSTOMER_CODE}.cloudflarestream.com/0fb6a1bf38404deb0f37d631422c72f0/iframe`}
-          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-          allowFullScreen
-          style={{
-            position: "absolute", top: 0, left: 0,
-            width: "100%", height: "100%", border: "none",
-          }}
-        />
-      </div>
-
       {/* ── Hero ── */}
       <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: 48, paddingBottom: 24 }}>
         <h1 style={{
