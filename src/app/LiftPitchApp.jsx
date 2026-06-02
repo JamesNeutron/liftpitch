@@ -143,27 +143,32 @@ const steps = [
   },
 ];
 
+// Full-width section band — stretches edge to edge with its own background,
+// while keeping inner content centered at a constrained max-width.
+function Section({ bg, pad, children }) {
+  return (
+    <section style={{
+      width: "100%", background: bg,
+      display: "flex", flexDirection: "column", alignItems: "center",
+      padding: pad || "clamp(56px, 8vw, 96px) 20px",
+    }}>
+      {children}
+    </section>
+  );
+}
+
 function Landing({ onStart }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#F5F7FA",
-      display: "flex", flexDirection: "column", alignItems: "center",
-      padding: "0 20px", position: "relative", overflow: "hidden",
+      background: "#FFFFFF",
+      display: "flex", flexDirection: "column",
+      width: "100%", overflow: "hidden",
     }}>
-      {/* Warm ambient blobs */}
-      <div style={{ position: "absolute", top: "-8%", left: "-8%", width: 800, height: 800,
-        background: "radial-gradient(circle, rgba(224,104,71,0.08) 0%, transparent 60%)",
-        filter: "blur(100px)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", top: "25%", right: "-12%", width: 650, height: 650,
-        background: "radial-gradient(circle, rgba(10,102,194,0.07) 0%, transparent 60%)",
-        filter: "blur(90px)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: "8%", left: "15%", width: 550, height: 550,
-        background: "radial-gradient(circle, rgba(231,163,62,0.07) 0%, transparent 60%)",
-        filter: "blur(90px)", pointerEvents: "none" }} />
 
       {/* ── Hero ── */}
-      <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: 48, paddingBottom: 24 }}>
+      <Section bg="#FFFFFF" pad="clamp(40px, 6vw, 72px) 20px clamp(48px, 7vw, 88px)">
+      <div style={{ maxWidth: 740, width: "100%", textAlign: "center", margin: "0 auto" }}>
         <p style={{
           fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent,
           letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 16px",
@@ -235,7 +240,7 @@ function Landing({ onStart }) {
       </div>
 
       {/* Feature pills */}
-      <div className="feature-pills" style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 32 }}>
+      <div className="feature-pills" style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: "clamp(24px, 4vw, 40px)" }}>
         {[
           { icon: "🛡️", label: "Live verified — no fakes" },
           { icon: "🎯", label: "Job-matched AI script" },
@@ -251,9 +256,11 @@ function Landing({ onStart }) {
           }}><span>{f.icon}</span> {f.label}</div>
         ))}
       </div>
+      </Section>
 
       {/* ── See LiftPitch in Action ── */}
-      <div style={{ maxWidth: 800, width: "100%", marginTop: "clamp(72px, 9vw, 112px)", textAlign: "center" }}>
+      <Section bg="#F5F7FA">
+      <div style={{ maxWidth: 800, width: "100%", textAlign: "center" }}>
         <h2 style={{
           fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800,
           margin: "0 auto 32px", lineHeight: 1.22,
@@ -277,9 +284,11 @@ function Landing({ onStart }) {
           </div>
         </div>
       </div>
+      </Section>
 
       {/* ── How It Works ── */}
-      <div style={{ maxWidth: 900, width: "100%", marginTop: "clamp(80px, 10vw, 124px)" }}>
+      <Section bg="#FFFFFF">
+      <div style={{ maxWidth: 900, width: "100%" }}>
         <p style={{
           fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
           letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10,
@@ -320,9 +329,11 @@ function Landing({ onStart }) {
           ))}
         </div>
       </div>
+      </Section>
 
       {/* ── Pricing ── */}
-      <div style={{ maxWidth: 980, width: "100%", marginTop: "clamp(80px, 10vw, 124px)" }}>
+      <Section bg="#F5F7FA">
+      <div style={{ maxWidth: 980, width: "100%" }}>
         <p style={{
           fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
           letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10,
@@ -488,11 +499,12 @@ function Landing({ onStart }) {
           textAlign: "center", marginTop: 28,
         }}>🔒 Secure payments · Cancel anytime · Instant access</p>
       </div>
+      </Section>
 
       {/* ── Let's Get Started ── */}
+      <Section bg="#FFFFFF">
       <div style={{
         maxWidth: 700, width: "100%",
-        margin: "clamp(80px, 10vw, 124px) auto clamp(72px, 9vw, 112px)",
         borderRadius: 32, overflow: "hidden",
         boxShadow: "0 16px 56px rgba(224,104,71,0.18)",
       }}>
@@ -529,6 +541,7 @@ function Landing({ onStart }) {
           </p>
         </div>
       </div>
+      </Section>
 
       <style>{`
         @keyframes landingFadeUp {
