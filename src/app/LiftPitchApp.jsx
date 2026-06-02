@@ -164,6 +164,13 @@ function Landing({ onStart }) {
 
       {/* ── Hero ── */}
       <div style={{ maxWidth: 740, width: "100%", textAlign: "center", paddingTop: 48, paddingBottom: 24 }}>
+        <p style={{
+          fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent,
+          letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 16px",
+        }}>
+          Built by Recruiters, for Job Seekers
+        </p>
+
         <h1 style={{
           fontFamily: "'Sora', sans-serif", fontSize: "clamp(36px, 6.5vw, 70px)", fontWeight: 800,
           lineHeight: 1.1, margin: "0 0 8px",
@@ -172,11 +179,47 @@ function Landing({ onStart }) {
           You're More Than a PDF.
         </h1>
 
+        {/* Testimonials */}
+        <div className="testimonial-cards" style={{
+          display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap",
+          margin: "32px auto 28px",
+        }}>
+          {[
+            { img: "/testimonial-michael.webp", quote: "LiftPitch helped me book more interviews than I've ever had.", label: "Michael, 54 · Operations Director" },
+            { img: "/testimonial-jamila.webp", quote: "LiftPitch helped me secure a job at my dream company.", label: "Jamila, 28 · Marketing Manager" },
+            { img: "/testimonial-sarah.webp", quote: "LiftPitch helped me secure the six-figure position I was looking for.", label: "Sarah, 39 · Finance Executive" },
+          ].map(t => (
+            <div key={t.label} style={{
+              flex: "1 1 220px", maxWidth: 240, display: "flex", flexDirection: "column",
+              alignItems: "center", textAlign: "center", padding: "24px 20px",
+              borderRadius: 18, background: "rgba(255,255,255,0.9)",
+              border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
+            }}>
+              <img src={t.img} alt={t.label} style={{
+                width: 72, height: 72, borderRadius: "50%", objectFit: "cover",
+                objectPosition: "center top", marginBottom: 12,
+              }} />
+              <div style={{ color: B.warning, fontSize: 15, letterSpacing: 2, marginBottom: 10 }}>★★★★★</div>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, fontStyle: "italic",
+                color: B.text, lineHeight: 1.6, margin: "0 0 14px",
+              }}>
+                "{t.quote}"
+              </p>
+              <div style={{
+                fontFamily: "'Sora', sans-serif", fontSize: 12.5, fontWeight: 600, color: B.textMuted,
+              }}>
+                {t.label}
+              </div>
+            </div>
+          ))}
+        </div>
+
         <p style={{
           fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(17px, 2.4vw, 21px)", color: B.textMuted,
           lineHeight: 1.8, margin: "24px auto 32px", maxWidth: 580,
         }}>
-          LiftPitch lets you record a verified 60-second video pitch and share it right from your resume. Let them meet you before the interview.
+          Struggling to land interviews? Recruiters and hiring managers are always looking for two things: skills match and personality match. We'll help you with both. LiftPitch will help you tailor your resume to each individual role you apply to — helping get your resume past those ATS systems. Then, to really set yourself apart, we'll help you film a 60-second pitch so they can see you as a person, not a PDF.
         </p>
 
         <Btn onClick={onStart} style={{ padding: "18px 56px", fontSize: 17, borderRadius: 16,
