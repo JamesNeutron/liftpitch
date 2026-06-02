@@ -191,25 +191,27 @@ function Landing({ onStart }) {
           ].map(t => (
             <div key={t.label} style={{
               flex: "1 1 220px", maxWidth: 240, display: "flex", flexDirection: "column",
-              alignItems: "center", textAlign: "center", padding: "24px 20px",
+              textAlign: "center", overflow: "hidden",
               borderRadius: 18, background: "rgba(255,255,255,0.9)",
               border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
             }}>
               <img src={t.img} alt={t.label} style={{
-                width: 72, height: 72, borderRadius: "50%", objectFit: "cover",
-                objectPosition: "center top", marginBottom: 12,
+                width: "100%", aspectRatio: "4 / 5", objectFit: "cover",
+                objectPosition: "center top", display: "block",
               }} />
-              <div style={{ color: B.warning, fontSize: 15, letterSpacing: 2, marginBottom: 10 }}>★★★★★</div>
-              <p style={{
-                fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, fontStyle: "italic",
-                color: B.text, lineHeight: 1.6, margin: "0 0 14px",
-              }}>
-                "{t.quote}"
-              </p>
-              <div style={{
-                fontFamily: "'Sora', sans-serif", fontSize: 12.5, fontWeight: 600, color: B.textMuted,
-              }}>
-                {t.label}
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 20px 24px" }}>
+                <div style={{ color: B.warning, fontSize: 15, letterSpacing: 2, marginBottom: 10 }}>★★★★★</div>
+                <p style={{
+                  fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, fontStyle: "italic",
+                  color: B.text, lineHeight: 1.6, margin: "0 0 14px",
+                }}>
+                  "{t.quote}"
+                </p>
+                <div style={{
+                  fontFamily: "'Sora', sans-serif", fontSize: 12.5, fontWeight: 600, color: B.textMuted,
+                }}>
+                  {t.label}
+                </div>
               </div>
             </div>
           ))}
