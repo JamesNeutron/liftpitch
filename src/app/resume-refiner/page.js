@@ -280,6 +280,23 @@ export default function ResumeRefiner() {
               </div>
             </Card>
 
+            {/* Full refined resume */}
+            {result.fullResume && (
+              <Card>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+                  gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+                  <SectionHeader title="Refined Resume" subtitle="Same facts, sharper wording and ATS-friendly keywords" noMargin />
+                  <CopyButton text={result.fullResume} label="Copy Full Resume" />
+                </div>
+                <pre style={{
+                  fontFamily: DM, fontSize: 14, color: B.text, lineHeight: 1.7,
+                  whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0,
+                  background: B.surfaceHover, border: `1px solid ${B.border}`,
+                  borderRadius: 12, padding: 20,
+                }}>{result.fullResume}</pre>
+              </Card>
+            )}
+
             {/* Keywords */}
             {result.keywords?.length > 0 && (
               <Card>
@@ -376,23 +393,6 @@ export default function ResumeRefiner() {
                     </div>
                   ))}
                 </div>
-              </Card>
-            )}
-
-            {/* Full refined resume */}
-            {result.fullResume && (
-              <Card>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start",
-                  gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-                  <SectionHeader title="Refined Resume" subtitle="Same facts, sharper wording and ATS-friendly keywords" noMargin />
-                  <CopyButton text={result.fullResume} label="Copy Full Resume" />
-                </div>
-                <pre style={{
-                  fontFamily: DM, fontSize: 14, color: B.text, lineHeight: 1.7,
-                  whiteSpace: "pre-wrap", wordBreak: "break-word", margin: 0,
-                  background: B.surfaceHover, border: `1px solid ${B.border}`,
-                  borderRadius: 12, padding: 20,
-                }}>{result.fullResume}</pre>
               </Card>
             )}
           </div>
