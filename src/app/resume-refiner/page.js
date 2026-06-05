@@ -224,8 +224,43 @@ export default function ResumeRefiner() {
         )}
 
         {/* ── Results ── */}
-        {result && (
+        {result && (() => {
+          // Green keywords are the ones we successfully surfaced in the resume.
+          const greenKeywords = (result.keywords || []).filter((k) => k.status === "found");
+          const yellowKeywords = (result.keywords || []).filter((k) => k.status === "partial");
+          const redKeywords = (result.keywords || []).filter((k) => k.status === "missing");
+          // Estimate the post-refinement score: ~4.5 pts per green keyword, capped at 99%.
+          const newScore = Math.min(99, result.matchScore + Math.round(greenKeywords.length * 4.5));
+          return (
           <div style={{ marginTop: 48, display: "flex", flexDirection: "column", gap: 24 }}>
+            {/* Before → after score comparison */}
+            {newScore > result.matchScore && (
+              <Card style={{ padding: 24 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
+                  gap: "clamp(16px, 5vw, 48px)", flexWrap: "wrap" }}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontFamily: SORA, fontSize: 11, fontWeight: 700, color: B.textDim,
+                      textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Original</div>
+                    <div style={{ fontFamily: SORA, fontSize: 44, fontWeight: 800,
+                      color: result.matchScore >= 75 ? B.success : result.matchScore >= 50 ? B.warning : B.danger }}>
+                      {result.matchScore}%
+                    </div>
+                  </div>
+                  <span style={{ fontFamily: SORA, fontSize: 36, fontWeight: 800, color: B.textDim }}>→</span>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ fontFamily: SORA, fontSize: 11, fontWeight: 700, color: B.success,
+                      textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>After Refinement</div>
+                    <div style={{ fontFamily: SORA, fontSize: 44, fontWeight: 800, color: B.success }}>
+                      {newScore}%
+                    </div>
+                  </div>
+                </div>
+                <p style={{ fontFamily: DM, fontSize: 13, color: B.textMuted, textAlign: "center",
+                  marginTop: 16, marginBottom: 0 }}>
+                  Estimated lift from surfacing {greenKeywords.length} keyword{greenKeywords.length === 1 ? "" : "s"} the ATS is screening for.
+                </p>
+              </Card>
+            )}
             {/* Score + summary */}
             <Card>
               <div style={{ display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap" }}>
@@ -249,30 +284,64 @@ export default function ResumeRefiner() {
             {result.keywords?.length > 0 && (
               <Card>
                 <SectionHeader title="Keyword Analysis" subtitle={`${result.keywords.length} keywords pulled from the job description`} />
-                <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 18 }}>
-                  {Object.entries(KW).map(([k, v]) => (
-                    <div key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ width: 10, height: 10, borderRadius: 3, background: v.dot, display: "inline-block" }} />
-                      <span style={{ fontFamily: SORA, fontSize: 12, fontWeight: 600, color: B.textMuted }}>{v.label}</span>
+
+                {/* Box 1 — green keywords successfully added */}
+                {greenKeywords.length > 0 && (
+                  <div style={{
+                    border: `1px solid ${KW.found.border}`, background: "rgba(5,118,66,0.04)",
+                    borderRadius: 14, padding: 20, marginBottom: 16,
+                  }}>
+                    <div style={{ fontFamily: SORA, fontSize: 14, fontWeight: 700, color: B.success, marginBottom: 6 }}>
+                      ✓ In your refined resume
                     </div>
-                  ))}
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {result.keywords.map((kw, i) => {
-                    const v = KW[kw.status] || KW.missing;
-                    return (
-                      <span key={i} style={{
-                        display: "inline-flex", alignItems: "center", gap: 7,
-                        padding: "8px 14px", borderRadius: 100,
-                        background: v.bg, border: `1px solid ${v.border}`,
-                        fontFamily: DM, fontSize: 13.5, fontWeight: 500, color: v.color,
-                      }}>
-                        <span style={{ width: 7, height: 7, borderRadius: "50%", background: v.dot }} />
-                        {kw.keyword}
-                      </span>
-                    );
-                  })}
-                </div>
+                    <div style={{ fontFamily: DM, fontSize: 13, color: B.textMuted, lineHeight: 1.5, marginBottom: 14 }}>
+                      These keywords appear in your updated resume — either they were already there or your experience genuinely supports them. Please double check before sending to an employer.
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                      {greenKeywords.map((kw, i) => (
+                        <KeywordTag key={i} keyword={kw.keyword} status="found" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Box 2 — remaining gaps (yellow + red) */}
+                {(yellowKeywords.length > 0 || redKeywords.length > 0) && (
+                  <div style={{
+                    border: `1px solid ${B.border}`, background: B.surfaceHover,
+                    borderRadius: 14, padding: 20,
+                  }}>
+                    <div style={{ fontFamily: SORA, fontSize: 14, fontWeight: 700, color: B.text, marginBottom: 16 }}>
+                      Remaining gaps
+                    </div>
+
+                    {yellowKeywords.length > 0 && (
+                      <div style={{ marginBottom: redKeywords.length > 0 ? 18 : 0 }}>
+                        <div style={{ fontFamily: DM, fontSize: 13, fontWeight: 600, color: "#B27A12", marginBottom: 10 }}>
+                          Potentially addable — review if these honestly fit your experience
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                          {yellowKeywords.map((kw, i) => (
+                            <KeywordTag key={i} keyword={kw.keyword} status="partial" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {redKeywords.length > 0 && (
+                      <div>
+                        <div style={{ fontFamily: DM, fontSize: 13, fontWeight: 600, color: B.danger, marginBottom: 10 }}>
+                          Do not add — your background does not support these keywords
+                        </div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+                          {redKeywords.map((kw, i) => (
+                            <KeywordTag key={i} keyword={kw.keyword} status="missing" />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </Card>
             )}
 
@@ -327,7 +396,8 @@ export default function ResumeRefiner() {
               </Card>
             )}
           </div>
-        )}
+          );
+        })()}
       </main>
 
       <footer style={{ textAlign: "center", padding: "24px 20px", borderTop: `1px solid ${B.border}` }}>
@@ -343,6 +413,21 @@ function Card({ children, style = {} }) {
       background: B.card, border: `1px solid ${B.border}`, borderRadius: 20,
       padding: 32, boxShadow: "0 1px 3px rgba(0,0,0,0.06)", ...style,
     }}>{children}</div>
+  );
+}
+
+function KeywordTag({ keyword, status }) {
+  const v = KW[status] || KW.missing;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 7,
+      padding: "8px 14px", borderRadius: 100,
+      background: v.bg, border: `1px solid ${v.border}`,
+      fontFamily: DM, fontSize: 13.5, fontWeight: 500, color: v.color,
+    }}>
+      <span style={{ width: 7, height: 7, borderRadius: "50%", background: v.dot }} />
+      {keyword}
+    </span>
   );
 }
 
