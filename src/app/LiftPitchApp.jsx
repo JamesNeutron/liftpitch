@@ -184,44 +184,6 @@ function Landing({ onStart }) {
           You're More Than a PDF.
         </h1>
 
-        {/* Testimonials */}
-        <div className="testimonial-cards" style={{
-          display: "flex", gap: 16, justifyContent: "center", flexWrap: "wrap",
-          margin: "32px auto 28px",
-        }}>
-          {[
-            { img: "/testimonial-michael.webp", quote: "LiftPitch helped me book more interviews than I've ever had.", label: "Michael, 54 · Operations Director" },
-            { img: "/testimonial-jamila.webp", quote: "LiftPitch helped me secure a job at my dream company.", label: "Jamila, 28 · Marketing Manager" },
-            { img: "/testimonial-sarah.webp", quote: "LiftPitch helped me secure the six-figure position I was looking for.", label: "Sarah, 39 · Finance Executive" },
-          ].map(t => (
-            <div key={t.label} style={{
-              flex: "1 1 220px", maxWidth: 240, display: "flex", flexDirection: "column",
-              textAlign: "center", overflow: "hidden",
-              borderRadius: 18, background: "rgba(255,255,255,0.9)",
-              border: "1px solid rgba(0,0,0,0.07)", boxShadow: "0 4px 18px rgba(0,0,0,0.05)",
-            }}>
-              <img src={t.img} alt={t.label} style={{
-                width: "100%", aspectRatio: "4 / 5", objectFit: "cover",
-                objectPosition: "center top", display: "block",
-              }} />
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 20px 24px" }}>
-                <div style={{ color: B.warning, fontSize: 15, letterSpacing: 2, marginBottom: 10 }}>★★★★★</div>
-                <p style={{
-                  fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, fontStyle: "italic",
-                  color: B.text, lineHeight: 1.6, margin: "0 0 14px",
-                }}>
-                  "{t.quote}"
-                </p>
-                <div style={{
-                  fontFamily: "'Sora', sans-serif", fontSize: 12.5, fontWeight: 600, color: B.textMuted,
-                }}>
-                  {t.label}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
         <p style={{
           fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(17px, 2.4vw, 21px)", color: B.textMuted,
           lineHeight: 1.8, margin: "24px auto 32px", maxWidth: 580,
@@ -258,33 +220,7 @@ function Landing({ onStart }) {
       </div>
       </Section>
 
-      {/* ── See LiftPitch in Action ── */}
-      <Section bg="#F5F7FA">
-      <div style={{ maxWidth: 800, width: "100%", textAlign: "center" }}>
-        <h2 style={{
-          fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800,
-          margin: "0 auto 32px", lineHeight: 1.22,
-          background: B.gradientHot, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-        }}>See LiftPitch in Action</h2>
-        <div style={{
-          position: "relative", width: "100%", paddingTop: "56.25%",
-          borderRadius: 20, overflow: "hidden",
-          background: "linear-gradient(160deg, #1A1F2E 0%, #0D1117 100%)",
-          boxShadow: "0 12px 48px rgba(0,0,0,0.18), 0 0 0 1px rgba(255,255,255,0.06)",
-        }}>
-          <div style={{
-            position: "absolute", inset: 0,
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12,
-          }}>
-            <span style={{ fontSize: 40 }}>🎬</span>
-            <span style={{
-              fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 700,
-              color: "rgba(255,255,255,0.7)", letterSpacing: "0.02em",
-            }}>How-To Video Coming Soon</span>
-          </div>
-        </div>
-      </div>
-      </Section>
+      {/* ── See LiftPitch in Action — section removed until the real demo video exists; re-add the <Section> with the video embed here ── */}
 
       {/* ── How It Works ── */}
       <Section bg="#FFFFFF">
@@ -843,7 +779,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
             Upgrade to Pro to generate a unique script for every job you apply to.
           </p>
           <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-            Upgrade — $8/mo or $35 lifetime
+            Upgrade — $8/mo or $99 lifetime
           </Btn>
         </div>
       )}
@@ -1708,7 +1644,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
               Pro Monthly — $8/mo
             </Btn>
             <Btn variant="secondary" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-              Lifetime Pass — $35
+              Lifetime Pass — $99
             </Btn>
           </div>
         </div>
@@ -1894,7 +1830,7 @@ function Analytics({ isPaid, videos }) {
             Track total views, unique viewers, average watch time, and daily activity for every video you record.
             Know exactly when a recruiter clicks your link.</p>
           <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-            Upgrade — $8/mo or $35 lifetime</Btn>
+            Upgrade — $8/mo or $99 lifetime</Btn>
         </div>
       ) : videos.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px 20px" }}>

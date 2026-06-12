@@ -186,7 +186,7 @@ export default function SupportPage() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, margin: "12px 0" }}>
               <thead>
                 <tr>
-                  {["Feature", "Free", "Pro ($8/mo or $35 lifetime)"].map(h => (
+                  {["Feature", "Free", "Pro ($8/mo or $99 lifetime)"].map(h => (
                     <th key={h} style={{
                       background: C.bg, padding: "10px 14px", textAlign: "left",
                       fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700,

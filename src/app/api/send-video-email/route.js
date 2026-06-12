@@ -66,7 +66,7 @@ export async function POST(request) {
               <!-- Upgrade nudge -->
               <div style="background:linear-gradient(135deg,rgba(10,102,194,0.05),rgba(55,143,233,0.05));border:1px solid rgba(10,102,194,0.15);border-radius:12px;padding:20px 24px;">
                 <p style="margin:0 0 8px;font-size:14px;font-weight:700;color:#0A66C2;">Want to record more pitches?</p>
-                <p style="margin:0 0 14px;font-size:13px;color:#56687A;line-height:1.6;">Upgrade to Pro for unlimited videos, no watermark, and full analytics. Starting at $8/month or $35 one-time.</p>
+                <p style="margin:0 0 14px;font-size:13px;color:#56687A;line-height:1.6;">Upgrade to Pro for unlimited videos, no watermark, and full analytics. Starting at $8/month or $99 one-time.</p>
                 <a href="https://lift-pitch.co/pricing" style="display:inline-block;padding:10px 24px;background:linear-gradient(135deg,#0A66C2,#E06847);color:#ffffff;text-decoration:none;border-radius:8px;font-size:13px;font-weight:700;">View Upgrade Options →</a>
               </div>
             </td>

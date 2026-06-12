@@ -62,7 +62,7 @@ export default function UpgradeModal({ feature = "script", onClose }) {
               marginBottom: 8,
             }}>Lifetime Pass</div>
             <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 28, fontWeight: 800, color: B.text }}>
-              $35<span style={{ fontSize: 14, fontWeight: 400, color: B.textMuted }}> once</span>
+              $99<span style={{ fontSize: 14, fontWeight: 400, color: B.textMuted }}> once</span>
             </div>
           </div>
         </div>

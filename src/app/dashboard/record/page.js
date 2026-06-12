@@ -471,7 +471,7 @@ function RecordPageInner() {
               <div style={{ flex: 1, minWidth: 130, padding: "16px", borderRadius: 12, border: `1.5px solid ${B.accent}`, background: "linear-gradient(135deg, rgba(10,102,194,0.06), rgba(55,143,233,0.06))" }}>
                 <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700, color: B.accent, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Lifetime Pass</div>
                 <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800, color: B.text }}>
-                  $35<span style={{ fontSize: 13, fontWeight: 400, color: B.textMuted }}> once</span>
+                  $99<span style={{ fontSize: 13, fontWeight: 400, color: B.textMuted }}> once</span>
                 </div>
               </div>
             </div>

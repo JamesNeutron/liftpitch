@@ -130,7 +130,7 @@ function TermsOfService() {
           <UL items={[
             <><strong>Free Tier:</strong> One job match check, one AI script, one watermarked video</>,
             <><strong>Pro Monthly — $8.00/mo:</strong> Unlimited scripts, recordings, analytics, no watermark</>,
-            <><strong>Lifetime Pass — $35.00:</strong> All Pro features, no recurring billing</>,
+            <><strong>Lifetime Pass — $99.00:</strong> All Pro features, no recurring billing</>,
           ]} />
           <HL><strong>Refund Policy:</strong> Monthly plans cancel anytime; access continues through end of billing period. Lifetime passes are non-refundable after 14 days. Technical issues? Contact <A href="mailto:support@lift-pitch.co">support@lift-pitch.co</A> within 14 days for resolution or discretionary refund.</HL>
           <P>Pricing may change with 30 days' written notice to active subscribers.</P>
