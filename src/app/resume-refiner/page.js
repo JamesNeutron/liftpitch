@@ -229,12 +229,14 @@ export default function ResumeRefiner() {
           const greenKeywords = (result.keywords || []).filter((k) => k.status === "found");
           const yellowKeywords = (result.keywords || []).filter((k) => k.status === "partial");
           const redKeywords = (result.keywords || []).filter((k) => k.status === "missing");
-          // Estimate the post-refinement score: ~4.5 pts per green keyword, capped at 99%.
-          const newScore = Math.min(99, result.matchScore + Math.round(greenKeywords.length * 4.5));
+          // Real, deterministic after-score computed server-side against the refined resume.
+          const newScore = result.refinedScore;
+          const improved = newScore > result.matchScore;
           return (
           <div style={{ marginTop: 48, display: "flex", flexDirection: "column", gap: 24 }}>
-            {/* Before → after score comparison */}
-            {newScore > result.matchScore && (
+            {/* Before → after score comparison — shown even when unchanged: an already-optimized
+                resume is a trust-building result, not one to hide. */}
+            {newScore >= result.matchScore && (
               <Card style={{ padding: 24 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
                   gap: "clamp(16px, 5vw, 48px)", flexWrap: "wrap" }}>
@@ -255,9 +257,22 @@ export default function ResumeRefiner() {
                     </div>
                   </div>
                 </div>
-                <p style={{ fontFamily: DM, fontSize: 13, color: B.textMuted, textAlign: "center",
-                  marginTop: 16, marginBottom: 0 }}>
-                  Estimated lift from surfacing {greenKeywords.length} keyword{greenKeywords.length === 1 ? "" : "s"} the ATS is screening for.
+                <p style={{ fontFamily: DM, fontSize: 13.5, color: B.textMuted, textAlign: "center",
+                  marginTop: 16, marginBottom: 0, lineHeight: 1.6, maxWidth: 620, marginLeft: "auto", marginRight: "auto" }}>
+                  {improved ? (
+                    <>
+                      <strong style={{ color: B.text }}>{result.matchScore}% → {newScore}%, honestly.</strong>{" "}
+                      That lift comes only from surfacing strengths your experience already backs up —
+                      nothing invented. The rest of the gap is the red keywords below: things your
+                      background doesn&apos;t support, so we left them out. Closing that gap is what your
+                      video pitch is for — it shows the parts of you a keyword match can&apos;t.
+                    </>
+                  ) : (
+                    <>
+                      Your resume already surfaces everything your experience supports. The gap that&apos;s
+                      left is what your video pitch is for.
+                    </>
+                  )}
                 </p>
               </Card>
             )}
