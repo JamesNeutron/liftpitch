@@ -1,9 +1,12 @@
 // Deterministic ATS match score.
-// Each keyword carries a weight (1–3). Score = (Σ weights of keywords whose term
-// appears in the resume text) / (Σ all weights), as a 0–100 integer. The SAME
-// function scores the original and the refined resume, so the two are comparable.
-function keywordInText(keyword, lowerText) {
-  const kw = String(keyword || "").trim().toLowerCase();
+// Each keyword carries a weight (1–3) and a set of matchTerms (the term plus tight
+// synonyms / head term). A keyword counts as present if ANY of its matchTerms appears
+// in the resume — this is what lets the ORIGINAL resume match concepts it phrases
+// differently than the JD, instead of only the verbatim JD phrase.
+// Score = (Σ weights of present keywords) / (Σ all weights), as a 0–100 integer.
+// The SAME function scores the original and the refined resume, so they're comparable.
+function termInText(term, lowerText) {
+  const kw = String(term || "").trim().toLowerCase();
   if (!kw) return false;
   // Escape regex metachars, allow flexible whitespace between words, and accept an
   // optional trailing "s" (plural) when the term ends in a letter.
@@ -14,14 +17,28 @@ function keywordInText(keyword, lowerText) {
   return re.test(lowerText);
 }
 
-function scoreResume(resumeText, keywords) {
+function keywordPresent(matchTerms, lowerText) {
+  return matchTerms.some((t) => termInText(t, lowerText));
+}
+
+// Bare single-word tokens that are too generic to be distinctive of any one skill —
+// they appear in unrelated resume contexts and cause false "present" matches. The
+// extraction prompt forbids the model from emitting these as standalone matchTerms,
+// but the model isn't perfectly reliable, so we also strip them deterministically.
+// Multi-word terms containing one of these (e.g. "team leadership") are unaffected.
+const FORBIDDEN_GENERIC_MATCH_TERMS = new Set([
+  "data", "strategy", "strategic", "team", "work", "management", "analysis",
+  "analytics", "support", "lead", "metrics", "planning", "experience",
+]);
+
+export function scoreResume(resumeText, keywords) {
   const lower = String(resumeText || "").toLowerCase();
   let total = 0;
   let matched = 0;
   const present = new Set();
   for (const k of keywords) {
     total += k.weight;
-    if (keywordInText(k.keyword, lower)) {
+    if (keywordPresent(k.matchTerms, lower)) {
       matched += k.weight;
       present.add(k.keyword);
     }
@@ -29,23 +46,15 @@ function scoreResume(resumeText, keywords) {
   return { score: total > 0 ? Math.round((matched / total) * 100) : 0, present };
 }
 
-export async function POST(request) {
-  let body;
-  try {
-    body = await request.json();
-  } catch (err) {
-    return Response.json({ error: "Invalid request body JSON", detail: String(err) }, { status: 400 });
-  }
-
-  const { resume, jobDesc } = body || {};
-  if (!resume || !jobDesc) {
-    const missing = ["resume", "jobDesc"].filter((k) => !{ resume, jobDesc }[k]);
-    return Response.json({ error: "Missing required fields", missing }, { status: 400 });
-  }
-
+// Runs the full analysis: extract weighted keywords, refine the resume, and compute
+// the deterministic before/after scores. Returns either { ok: true, ... } with the
+// client-facing `result` plus internal `rawKeywords` / `before` / `after` (handy for
+// tests and diagnostics), or { ok: false, status, body } describing the failure.
+// POST is a thin wrapper around this.
+export async function analyzeResume(resume, jobDesc) {
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error("refine-resume: ANTHROPIC_API_KEY is not set");
-    return Response.json({ error: "Server misconfiguration: missing API key" }, { status: 500 });
+    return { ok: false, status: 500, body: { error: "Server misconfiguration: missing API key" } };
   }
 
   const prompt = `You are an expert ATS (Applicant Tracking System) optimization specialist and professional resume writer. A job seeker has pasted their resume and a job description. Extract the keywords the role screens for and produce concrete, honest improvements to the resume.
@@ -60,7 +69,7 @@ Return your answer as a SINGLE valid JSON object and NOTHING else — no markdow
 
 {
   "keywords": [
-    { "keyword": "<important skill/term from the job description>", "weight": <1 | 2 | 3>, "eligibility": "present" | "addable" | "unsupported" }
+    { "keyword": "<short core skill/term>", "matchTerms": ["<term>", "<synonym>"], "weight": <1 | 2 | 3>, "eligibility": "present" | "addable" | "unsupported" }
   ],
   "bulletImprovements": [
     { "original": "<the relevant line/phrase from the candidate's real resume, or a short note like 'New bullet from existing experience' if drawn from described experience>", "improved": "<stronger ATS-optimized rewrite grounded only in what the resume already shows>" }
@@ -69,13 +78,14 @@ Return your answer as a SINGLE valid JSON object and NOTHING else — no markdow
 }
 
 Requirements:
-- "keywords": extract 12 to 16 of the most important keywords, skills, tools, and qualifications from the JOB DESCRIPTION. For each:
+- "keywords": extract 12 to 16 of the most important skills, tools, and qualifications the JOB DESCRIPTION screens for. For each:
+  - "keyword": the SHORTEST matchable unit a real resume would actually contain — the core skill noun, NOT a full JD phrase or boilerplate. Strip filler. Examples: "data-driven decision-making" -> "data-driven"; "partnership with senior leadership" -> "senior leadership"; "proven track record of full-cycle recruiting" -> "full-cycle recruiting". Extract the concept, not the JD's sentence.
+  - "matchTerms": 1 to 4 SPECIFIC terms that should each count as this keyword being PRESENT if they appear in a resume — the keyword itself plus tight synonyms, common abbreviations, and the distinctive MULTI-WORD head term. HARD RULE: every match term must be distinctive to THIS skill. NEVER include a bare generic single word that also appears in unrelated resume contexts — forbidden on their own: "data", "strategy", "strategic", "team", "work", "management", "analysis", "analytics", "support", "lead", "metrics", "planning", "experience". Spell out the distinctive phrase instead of a generic stem. Examples: "ATS" -> ["ATS", "applicant tracking system"]; "senior leadership" -> ["senior leadership", "executives", "leadership team"]; "data-driven" -> ["data-driven", "data-informed", "data-driven decision"] (NEVER bare "data" or "analytics"); "strategic thinking" -> ["strategic thinking", "strategic planning"] (NEVER bare "strategy" or "strategic"). A match term of two or more words is almost always safer than a single word.
   - "weight": how central it is to the role — 3 = core/required, 2 = important, 1 = nice-to-have.
   - "eligibility": judged against the ORIGINAL resume —
     - "present" if the original resume already clearly demonstrates it,
     - "addable" if the candidate's real experience genuinely supports it even though it is not yet stated (you should weave these into the refined resume),
     - "unsupported" if the candidate's background does not support it (do NOT add these).
-  Use the exact same keyword spelling in this list as you naturally write it into the refined resume, so an automated text match can find it.
 - "bulletImprovements": provide 3 to 4 rewritten bullet points. Each must be grounded strictly in the candidate's real experience from their resume — stronger verbs, clearer impact, relevant keywords they truly qualify for. Never add achievements they didn't state.
 - "fullResume": rewrite the entire resume applying the improvements. Keep every real fact and every job title, employer, and date exactly as written. Only reorganize, sharpen wording, and incorporate keywords the candidate legitimately qualifies for ("present" and "addable").
 
@@ -104,23 +114,20 @@ Output ONLY the JSON object.`;
     });
   } catch (err) {
     console.error("refine-resume: network error calling Anthropic:", err);
-    return Response.json({ error: "Failed to reach Anthropic API", detail: String(err) }, { status: 502 });
+    return { ok: false, status: 502, body: { error: "Failed to reach Anthropic API", detail: String(err) } };
   }
 
   if (!anthropicResponse.ok) {
     const errBody = await anthropicResponse.text();
     console.error(`refine-resume: Anthropic returned ${anthropicResponse.status}:`, errBody);
-    return Response.json(
-      { error: `Anthropic API error ${anthropicResponse.status}`, detail: errBody },
-      { status: 502 }
-    );
+    return { ok: false, status: 502, body: { error: `Anthropic API error ${anthropicResponse.status}`, detail: errBody } };
   }
 
   let data;
   try {
     data = await anthropicResponse.json();
   } catch (err) {
-    return Response.json({ error: "Failed to parse Anthropic response", detail: String(err) }, { status: 502 });
+    return { ok: false, status: 502, body: { error: "Failed to parse Anthropic response", detail: String(err) } };
   }
 
   const text = data.content?.map((b) => b.text || "").join("") || "";
@@ -136,20 +143,40 @@ Output ONLY the JSON object.`;
     parsed = JSON.parse(jsonSlice);
   } catch (err) {
     console.error("refine-resume: failed to parse model JSON. Raw:", text.slice(0, 500));
-    return Response.json({ error: "Could not parse analysis. Please try again.", detail: String(err) }, { status: 502 });
+    return { ok: false, status: 502, body: { error: "Could not parse analysis. Please try again.", detail: String(err) } };
   }
 
   // Normalize / guard the shape so the client always gets safe defaults.
   const rawKeywords = Array.isArray(parsed.keywords)
     ? parsed.keywords
         .filter((k) => k && k.keyword)
-        .map((k) => ({
-          keyword: String(k.keyword),
-          weight: [1, 2, 3].includes(k.weight) ? k.weight : 2,
-          eligibility: ["present", "addable", "unsupported"].includes(k.eligibility)
-            ? k.eligibility
-            : "unsupported",
-        }))
+        .map((k) => {
+          const keyword = String(k.keyword);
+          // Build the match-term set: AI-supplied synonyms/head terms, always including
+          // the keyword itself, de-duped case-insensitively.
+          const supplied = Array.isArray(k.matchTerms)
+            ? k.matchTerms.filter((t) => typeof t === "string" && t.trim()).map((t) => t.trim())
+            : [];
+          const matchTerms = [];
+          const seen = new Set();
+          for (const t of [keyword, ...supplied]) {
+            const key = t.toLowerCase();
+            if (seen.has(key)) continue;
+            // Drop bare generic tokens the model emitted despite the prompt rule.
+            // Never drop the keyword itself, so a keyword always keeps at least one term.
+            if (t !== keyword && FORBIDDEN_GENERIC_MATCH_TERMS.has(key)) continue;
+            seen.add(key);
+            matchTerms.push(t);
+          }
+          return {
+            keyword,
+            matchTerms,
+            weight: [1, 2, 3].includes(k.weight) ? k.weight : 2,
+            eligibility: ["present", "addable", "unsupported"].includes(k.eligibility)
+              ? k.eligibility
+              : "unsupported",
+          };
+        })
     : [];
 
   const fullResume = typeof parsed.fullResume === "string" ? parsed.fullResume : "";
@@ -185,5 +212,26 @@ Output ONLY the JSON object.`;
     fullResume,
   };
 
-  return Response.json(result);
+  return { ok: true, result, rawKeywords, before, after };
+}
+
+export async function POST(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (err) {
+    return Response.json({ error: "Invalid request body JSON", detail: String(err) }, { status: 400 });
+  }
+
+  const { resume, jobDesc } = body || {};
+  if (!resume || !jobDesc) {
+    const missing = ["resume", "jobDesc"].filter((k) => !{ resume, jobDesc }[k]);
+    return Response.json({ error: "Missing required fields", missing }, { status: 400 });
+  }
+
+  const outcome = await analyzeResume(resume, jobDesc);
+  if (!outcome.ok) {
+    return Response.json(outcome.body, { status: outcome.status });
+  }
+  return Response.json(outcome.result);
 }
