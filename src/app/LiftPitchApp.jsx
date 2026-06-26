@@ -2084,6 +2084,17 @@ export default function App() {
           background: B.gradient, WebkitBackgroundClip: "text",
           WebkitTextFillColor: "transparent", cursor: "pointer" }}>LiftPitch</div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <a href="/employers" style={{
+            display: "inline-flex", alignItems: "center", gap: 6,
+            padding: "8px 16px", borderRadius: 10,
+            background: B.gradientHot, color: "#fff",
+            fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700,
+            textDecoration: "none", boxShadow: "0 2px 10px rgba(224,104,71,0.25)",
+            transition: "all 0.2s", whiteSpace: "nowrap",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(224,104,71,0.35)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 2px 10px rgba(224,104,71,0.25)"; }}
+          >For Employers <span aria-hidden="true">→</span></a>
           {user && isPaid && (
             <a href="/dashboard" style={{
               padding: "8px 16px", borderRadius: 10,
