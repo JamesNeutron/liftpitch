@@ -177,11 +177,6 @@ export default function EmployerPricing() {
           <a href="/employers" style={{
             fontFamily: SORA, fontSize: 13, fontWeight: 600, color: B.textMuted, textDecoration: "none",
           }}>Overview</a>
-          <a href="/employers/signup" style={{
-            padding: "8px 18px", borderRadius: 10, background: B.gradient, color: "#fff",
-            fontFamily: SORA, fontSize: 13, fontWeight: 700, textDecoration: "none",
-            boxShadow: `0 2px 10px ${B.accentGlow}`,
-          }}>Start Free Pilot</a>
         </div>
       </header>
 
@@ -216,6 +211,22 @@ export default function EmployerPricing() {
 
       {/* Tiers */}
       <Section bg={B.bg} pad="clamp(24px, 4vw, 40px) 24px clamp(40px, 6vw, 64px)">
+        <div style={{ textAlign: "center", marginBottom: "clamp(36px, 5vw, 52px)" }}>
+          <a href="/employers/signup" style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 12,
+            padding: "20px 56px", borderRadius: 16, background: B.gradientHot, color: "#fff",
+            fontFamily: SORA, fontSize: "clamp(18px, 2.2vw, 22px)", fontWeight: 800,
+            letterSpacing: "-0.01em", textDecoration: "none",
+            boxShadow: "0 12px 40px rgba(10,102,194,0.35)", transition: "all 0.2s",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 18px 52px rgba(10,102,194,0.45)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(10,102,194,0.35)"; }}
+          >
+            Start Free Pilot
+            <Icon paths={ICONS.arrow} size={24} color="#fff" strokeWidth={2.5} />
+          </a>
+        </div>
+
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
           gap: 24, alignItems: "start",
