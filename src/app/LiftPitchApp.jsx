@@ -2008,16 +2008,16 @@ export default function App() {
       );
       const queryPromise = supabase
         .from('profiles')
-        .select('plan')
+        .select('plan, account_type')
         .eq('id', userId)
         .single();
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
-      if (error || !data) return false;
+      if (error || !data) return { paid: false, accountType: 'candidate' };
       const paid = data.plan === 'pro' || data.plan === 'lifetime';
       localStorage.setItem('lp_user_plan', data.plan);
-      return paid;
+      return { paid, accountType: data.account_type || 'candidate' };
     } catch (e) {
-      return false;
+      return { paid: false, accountType: 'candidate' };
     }
   };
 
@@ -2039,9 +2039,12 @@ export default function App() {
       if (session?.user) {
         setUser(session.user);
         setShowAuthModal(false);
-        const paid = await loadUserStatus(session.user.id);
+        const { paid, accountType } = await loadUserStatus(session.user.id);
         setIsPaid(paid);
-        if (paid && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+        // Employers route to their own area regardless of plan; check first.
+        if (accountType === 'employer' && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+          router.replace('/employers/console');
+        } else if (paid && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
           router.replace('/dashboard');
         }
       } else {

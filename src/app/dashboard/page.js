@@ -113,9 +113,12 @@ export default function DashboardHome() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("plan")
+        .select("plan, account_type")
         .eq("id", session.user.id)
         .single();
+
+      // Employers belong in their own area, even if their plan is paid.
+      if (profile?.account_type === "employer") { router.replace("/employers/console"); return; }
 
       if (profile?.plan !== "pro" && profile?.plan !== "lifetime") { router.replace("/dashboard/script"); return; }
 

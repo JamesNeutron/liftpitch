@@ -1,4 +1,12 @@
 -- profiles: one row per authenticated user
+--
+-- NOTE: an `account_type` column (text, not null, default 'candidate', values
+-- 'candidate' | 'employer') exists in the live database — added directly in
+-- Supabase, not via this file. It is intentionally NOT declared in the create
+-- table below to avoid recreating/migrating it. account_type controls routing
+-- (candidate dashboard vs /employers/console) and is independent of `plan`,
+-- which controls feature access. Employer signups set it client-side via the
+-- existing "Users can update own profile" policy.
 create table profiles (
   id          uuid primary key references auth.users on delete cascade,
   email       text,
