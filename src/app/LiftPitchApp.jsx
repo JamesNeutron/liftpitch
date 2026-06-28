@@ -340,11 +340,14 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
   const [bullets, setBullets] = useState(null);
   const [bulletsCopied, setBulletsCopied] = useState({});
   const [bulletsLimitReached, setBulletsLimitReached] = useState(false);
+  const [dailyLimitReached, setDailyLimitReached] = useState(false);
   const [regeneratingWithBullets, setRegeneratingWithBullets] = useState(false);
   const [isRegenerated, setIsRegenerated] = useState(false);
   const scriptOutputRef = useRef(null);
 
-  const canGenerate = isPaid || !scriptUsed;
+  // Candidates are free. Anonymous users get 1 free AI generation (then a free
+  // signup); signed-in candidates are capped server-side at 20/day (abuse only).
+  const canGenerate = user ? !dailyLimitReached : !scriptUsed;
 
   useEffect(() => {
     const gaps = (analysis?.gapsToBridge || []).slice(0, 3);
@@ -454,8 +457,9 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
         body: JSON.stringify({ resume, jobDesc, bio, duration }),
       });
 
-      if (response.status === 403) {
-        onScriptUsed();
+      if (response.status === 429) {
+        // Signed-in candidate hit the daily abuse cap.
+        setDailyLimitReached(true);
         setLoading(false);
         return;
       }
@@ -483,9 +487,10 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
         }).select().single();
         if (inserted?.id) setSavedId(inserted.id);
       } else {
+        // Anonymous: consume the single free generation (prompts free signup next).
         localStorage.setItem("lp_script_used", "1");
+        onScriptUsed();
       }
-      if (!isPaid) onScriptUsed();
     } catch (err) {
       onScriptGenerated("Something went wrong. Please check your connection and try again.");
     }
@@ -507,7 +512,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
         headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({ gapExperiences, scriptId: savedId }),
       });
-      if (res.status === 403) {
+      if (res.status === 429) {
         setBulletsLimitReached(true);
         setGeneratingBullets(false);
         return;
@@ -539,6 +544,12 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
         },
         body: JSON.stringify({ resume: augmentedResume, jobDesc, bio, duration }),
       });
+
+      if (response.status === 429) {
+        setDailyLimitReached(true);
+        setRegeneratingWithBullets(false);
+        return;
+      }
 
       if (response.ok) {
         const data = await response.json();
@@ -579,8 +590,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
         <span style={{ fontSize: 24 }}>🎯</span>
         <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 700, color: B.text, margin: 0 }}>Script Generator</h2>
-        {!isPaid && <PillBadge label="1 Free Use" color={B.warning} />}
-        {isPaid && <PillBadge label="Unlimited" color={B.success} />}
+        {user ? <PillBadge label="Free" color={B.success} /> : <PillBadge label="1 Free Use" color={B.warning} />}
       </div>
 
       <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, lineHeight: 1.6, marginBottom: 24 }}>
@@ -593,15 +603,28 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
           padding: 20, borderRadius: 14, marginBottom: 20,
           background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.15)", textAlign: "center",
         }}>
-          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.accent, margin: "0 0 8px" }}>
-            You&apos;ve used your free script
-          </p>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "0 0 16px", lineHeight: 1.5 }}>
-            Upgrade to Pro to generate a unique script for every job you apply to.
-          </p>
-          <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-            Upgrade — $8/mo or $99 lifetime
-          </Btn>
+          {user ? (
+            <>
+              <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.accent, margin: "0 0 8px" }}>
+                You&apos;ve reached today&apos;s limit
+              </p>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: 0, lineHeight: 1.5 }}>
+                You&apos;ve generated the max number of scripts for today. Check back tomorrow to make more — it&apos;s still free.
+              </p>
+            </>
+          ) : (
+            <>
+              <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.accent, margin: "0 0 8px" }}>
+                You&apos;ve used your free script
+              </p>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "0 0 16px", lineHeight: 1.5 }}>
+                Create a free account to generate a tailored script for every job you apply to.
+              </p>
+              <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={onNeedAuth}>
+                Create a free account
+              </Btn>
+            </>
+          )}
         </div>
       )}
 
@@ -810,21 +833,13 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
               <div style={{
                 padding: "16px 20px", borderRadius: 14,
                 background: "rgba(10,102,194,0.04)", border: "1px solid rgba(10,102,194,0.15)",
-                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
               }}>
-                <div>
-                  <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent }}>
-                    Resume bullets already generated
-                  </span>
-                  <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "4px 0 0" }}>
-                    Upgrade to Pro to strengthen your resume for every application.
-                  </p>
-                </div>
-                <a href="/pricing" style={{
-                  padding: "10px 20px", borderRadius: 10,
-                  background: B.gradient, color: "#fff", textDecoration: "none",
-                  fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, whiteSpace: "nowrap",
-                }}>Upgrade to Pro →</a>
+                <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent }}>
+                  You&apos;ve reached today&apos;s limit
+                </span>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "4px 0 0" }}>
+                  You&apos;ve strengthened the max number of resumes for today. Check back tomorrow to do more — it&apos;s still free.
+                </p>
               </div>
             ) : (
               <button
@@ -877,8 +892,7 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
                 Add these to your resume before recording your pitch!<br />
                 💡 These are suggestions based on what you shared. Tweak the wording so it&apos;s accurate and true to your own experience before adding it to your resume.
               </p>
-              {isPaid && (
-                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
                   <button
                     onClick={regenerateWithBullets}
                     disabled={regeneratingWithBullets}
@@ -896,7 +910,6 @@ function ScriptGenerator({ isPaid, scriptUsed, onScriptUsed, onResetScript, scri
                       : "✨ Re-generate Script With These Additions"}
                   </button>
                 </div>
-              )}
             </div>
           )}
         </div>
@@ -1151,7 +1164,6 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   const scrollPxRef = useRef(1);
   const scrollIntervalMsRef = useRef(67);
   const SCROLL_CONFIG = { slow: { px: 1, ms: 67 }, medium: { px: 2, ms: 67 } };
-  const [videoLimitReached, setVideoLimitReached] = useState(false);
 
   useEffect(() => { if (script) { setEditableScript(script); if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0; } }, [script]);
 
@@ -1163,16 +1175,6 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   }, [editableScript]);
 
   useEffect(() => () => { if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current); }, []);
-
-  useEffect(() => {
-    if (!user || isPaid) return;
-    supabase
-      .from("videos")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .then(({ count }) => setVideoLimitReached((count ?? 0) >= 1))
-      .catch(err => console.warn("[VideoRecorder] video count fetch failed:", err));
-  }, [user, isPaid]);
 
   const startScroll = () => {
     if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
@@ -1448,29 +1450,6 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         💡 <strong style={{ color: B.text }}>Pro tip:</strong> Find a plain wall or tidy corner — good lighting matters more than a perfect background!
       </div>
 
-      {videoLimitReached && (
-        <div style={{
-          padding: 20, borderRadius: 14, marginBottom: 20,
-          background: "rgba(10,102,194,0.05)", border: "1px solid rgba(10,102,194,0.15)", textAlign: "center",
-        }}>
-          <span style={{ fontSize: 32, display: "block", marginBottom: 8 }}>🎉</span>
-          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600, color: B.accent, margin: "0 0 8px" }}>
-            You&apos;ve built your first LiftPitch application package!
-          </p>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted, margin: "0 0 16px", lineHeight: 1.5 }}>
-            Upgrade to Pro to create a unique pitch for every job you apply to — plus see exactly who watched your video.
-          </p>
-          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-            <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-              Pro Monthly — $8/mo
-            </Btn>
-            <Btn variant="secondary" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-              Lifetime Pass — $99
-            </Btn>
-          </div>
-        </div>
-      )}
-
       <div style={{ position: "relative", borderRadius: 16, overflow: "hidden", background: "#000",
         aspectRatio: "16/9", marginBottom: 20,
         border: state === "recording" ? "2px solid #DC3545" : state === "countdown" ? `2px solid ${B.warning}` : `1px solid ${B.border}` }}>
@@ -1529,7 +1508,7 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
         </p>
       )}
       <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-        {state === "idle" && !videoLimitReached && <Btn onClick={() => { if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
+        {state === "idle" && <Btn onClick={() => { if (!user) { onNeedAuth(); return; } startCamera(); }}>📷 Open Camera</Btn>}
         {state === "previewing" && <Btn onClick={startCountdown} style={{
           background: "linear-gradient(135deg, #DC3545, #C0392B)", boxShadow: "0 4px 24px rgba(220,53,69,0.2)" }}>⏺ Start Recording</Btn>}
         {state === "recording" && <Btn onClick={stopRec} variant="secondary">⏹ Stop Recording</Btn>}
@@ -1617,11 +1596,11 @@ function VideoRecorder({ onVideoRecorded, script, isPaid, user, onNeedAuth }) {
   );
 }
 
-// ─── View Analytics (Paid) ───
+// ─── View Analytics (free for all candidates) ───
 
-function Analytics({ isPaid, videos }) {
+function Analytics({ videos }) {
   const [demoData] = useState(() => {
-    if (!isPaid || videos.length === 0) return [];
+    if (videos.length === 0) return [];
     return videos.map((v, i) => ({
       id: v, label: `Video Pitch ${i + 1}`,
       views: Math.floor(Math.random() * 25) + 3,
@@ -1639,21 +1618,10 @@ function Analytics({ isPaid, videos }) {
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
         <span style={{ fontSize: 24 }}>📊</span>
         <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 22, fontWeight: 700, color: B.text, margin: 0 }}>View Analytics</h2>
-        {isPaid ? <PillBadge label="Pro" color={B.success} /> : <PillBadge label="Pro Only" color={B.warning} />}
+        <PillBadge label="Free" color={B.success} />
       </div>
 
-      {!isPaid ? (
-        <div style={{ textAlign: "center", padding: "40px 20px" }}>
-          <span style={{ fontSize: 48, display: "block", marginBottom: 16, opacity: 0.4 }}>📊</span>
-          <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600, color: B.text, margin: "0 0 8px" }}>
-            See who's watching your pitch</p>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted, margin: "0 0 24px", lineHeight: 1.6 }}>
-            Track total views, unique viewers, average watch time, and daily activity for every video you record.
-            Know exactly when a recruiter clicks your link.</p>
-          <Btn variant="hot" style={{ padding: "12px 28px", fontSize: 14 }} onClick={() => {}}>
-            Upgrade — $8/mo or $99 lifetime</Btn>
-        </div>
-      ) : videos.length === 0 ? (
+      {videos.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px 20px" }}>
           <span style={{ fontSize: 40, display: "block", marginBottom: 12, opacity: 0.4 }}>🎥</span>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14, color: B.textMuted }}>
@@ -1979,7 +1947,7 @@ export default function App() {
           <div style={{ maxWidth: 680, margin: "0 auto", padding: "8px 20px 60px" }}>
             {tab === "script" && <ScriptGenerator isPaid={isPaid} scriptUsed={scriptUsed} onScriptUsed={() => setScriptUsed(true)} onResetScript={() => setScriptUsed(false)} script={script} onScriptGenerated={setScript} onNavigate={setTab} user={user} onNeedAuth={() => openAuth("signup")} />}
             {tab === "record" && <VideoRecorder onVideoRecorded={hash => setVideos(v => [...v, hash])} script={script} isPaid={isPaid} user={user} onNeedAuth={() => openAuth("signup")} />}
-            {tab === "analytics" && <Analytics isPaid={isPaid} videos={videos} />}
+            {tab === "analytics" && <Analytics videos={videos} />}
             {tab === "tips" && <TipsAndTricks />}
           </div>
         </div>

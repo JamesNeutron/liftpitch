@@ -24,7 +24,9 @@ export async function POST(request) {
     return Response.json({ error: "Missing required fields", missing }, { status: 400 });
   }
 
-  // Server-side free tier enforcement for authenticated users
+  // Abuse-protection daily cap for authenticated candidates (candidates are free;
+  // this only bounds expensive AI calls). ~20 script generations per user per day.
+  const DAILY_SCRIPT_CAP = 20;
   const authHeader = request.headers.get("Authorization");
   const token = authHeader?.replace("Bearer ", "").trim();
   if (token) {
@@ -35,19 +37,15 @@ export async function POST(request) {
     );
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("id", user.id)
-        .single();
-      if (profile?.plan !== "pro" && profile?.plan !== "lifetime") {
-        const { count } = await supabase
-          .from("scripts")
-          .select("*", { count: "exact", head: true })
-          .eq("user_id", user.id);
-        if ((count ?? 0) >= 1) {
-          return Response.json({ error: "free_limit_reached" }, { status: 403 });
-        }
+      const startOfDay = new Date();
+      startOfDay.setUTCHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from("scripts")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", startOfDay.toISOString());
+      if ((count ?? 0) >= DAILY_SCRIPT_CAP) {
+        return Response.json({ error: "daily_limit_reached" }, { status: 429 });
       }
     }
   }

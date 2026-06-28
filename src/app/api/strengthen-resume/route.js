@@ -26,23 +26,19 @@ export async function POST(request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("plan")
-    .eq("id", user.id)
-    .single();
-
-  const isPaid = profile?.plan === "pro" || profile?.plan === "lifetime";
-  if (!isPaid) {
-    // Free users get one use — tracked by checking for any saved resume_bullets
-    const { count } = await supabase
-      .from("scripts")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .not("resume_bullets", "is", null);
-    if ((count ?? 0) >= 1) {
-      return Response.json({ error: "Free resume strengthening already used. Upgrade to Pro for unlimited access." }, { status: 403 });
-    }
+  // Abuse-protection daily cap for candidates (free; this only bounds expensive AI
+  // calls). ~20 resume-strengthening generations per user per day.
+  const DAILY_STRENGTHEN_CAP = 20;
+  const startOfDay = new Date();
+  startOfDay.setUTCHours(0, 0, 0, 0);
+  const { count } = await supabase
+    .from("scripts")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .not("resume_bullets", "is", null)
+    .gte("created_at", startOfDay.toISOString());
+  if ((count ?? 0) >= DAILY_STRENGTHEN_CAP) {
+    return Response.json({ error: "daily_limit_reached" }, { status: 429 });
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
