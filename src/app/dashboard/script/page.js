@@ -207,32 +207,36 @@ export default function DashboardScript() {
   }, [router]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Synchronous callback: awaiting Supabase queries directly inside an
+    // onAuthStateChange handler holds GoTrue's auth lock and causes contention.
+    // Defer the queries with setTimeout so the lock releases first.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setShowAuthModal(false);
         setUser(session.user);
+        setTimeout(async () => {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("plan")
+            .eq("id", session.user.id)
+            .single();
+          const plan = profile?.plan || "free";
+          setUserPlan(plan);
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("plan")
-          .eq("id", session.user.id)
-          .single();
-        const plan = profile?.plan || "free";
-        setUserPlan(plan);
-
-        if (plan === "pro" || plan === "lifetime") {
-          setScriptLimitReached(false);
-          loadHistory(session.user.id);
-        } else {
-          const { count } = await supabase
-            .from("scripts")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", session.user.id);
-          const n = count ?? 0;
-          setScriptCount(n);
-          setScriptLimitReached(n >= 1);
-          loadHistory(session.user.id);
-        }
+          if (plan === "pro" || plan === "lifetime") {
+            setScriptLimitReached(false);
+            loadHistory(session.user.id);
+          } else {
+            const { count } = await supabase
+              .from("scripts")
+              .select("*", { count: "exact", head: true })
+              .eq("user_id", session.user.id);
+            const n = count ?? 0;
+            setScriptCount(n);
+            setScriptLimitReached(n >= 1);
+            loadHistory(session.user.id);
+          }
+        }, 0);
       } else if (event === "SIGNED_OUT") {
         setUser(null);
         setUserPlan("free");

@@ -1787,27 +1787,35 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signup");
+  const [redirecting, setRedirecting] = useState(false);
 
   const router = useRouter();
 
+  // Looks up the user's plan + account type. Retries a few times on transient
+  // failure. Critically, an inconclusive lookup returns accountType: null and
+  // ok: false — we must NOT default to 'candidate', or an employer whose lookup
+  // hiccups would be misrouted into the candidate flow.
   const loadUserStatus = async (userId) => {
-    try {
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Query timeout')), 8000)
-      );
-      const queryPromise = supabase
-        .from('profiles')
-        .select('plan, account_type')
-        .eq('id', userId)
-        .single();
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
-      if (error || !data) return { paid: false, accountType: 'candidate' };
-      const paid = data.plan === 'pro' || data.plan === 'lifetime';
-      localStorage.setItem('lp_user_plan', data.plan);
-      return { paid, accountType: data.account_type || 'candidate' };
-    } catch (e) {
-      return { paid: false, accountType: 'candidate' };
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('plan, account_type')
+          .eq('id', userId)
+          .single();
+        if (!error && data) {
+          const paid = data.plan === 'pro' || data.plan === 'lifetime';
+          if (data.plan) localStorage.setItem('lp_user_plan', data.plan);
+          // A successfully-read row with a null account_type is a legitimate
+          // candidate (employers are explicitly tagged 'employer').
+          return { paid, accountType: data.account_type || 'candidate', ok: true };
+        }
+      } catch (e) {
+        // fall through to retry
+      }
+      await new Promise(r => setTimeout(r, 300));
     }
+    return { paid: false, accountType: null, ok: false };
   };
 
   useEffect(() => {
@@ -1816,7 +1824,12 @@ export default function App() {
         const { data: { session } } = await supabase.auth.getSession();
         const sessionUser = session?.user ?? null;
         setUser(sessionUser);
-        if (!sessionUser) {
+        if (sessionUser) {
+          // Show the redirecting cue optimistically so a logged-in user never
+          // sees the email+logout limbo. The INITIAL_SESSION handler below
+          // resolves it (redirect, or clear it for a free candidate).
+          setRedirecting(true);
+        } else {
           setScriptUsed(!!localStorage.getItem("lp_script_used"));
         }
       } catch (e) {
@@ -1824,21 +1837,35 @@ export default function App() {
       }
     }
     init();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // NOTE: this callback is intentionally synchronous. Awaiting Supabase
+    // queries inside it holds GoTrue's auth lock and caused ~8s of contention
+    // before redirect. We defer the profile lookup with setTimeout so the lock
+    // releases first, then the lookup runs fast (~100ms).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
         setUser(session.user);
         setShowAuthModal(false);
-        const { paid, accountType } = await loadUserStatus(session.user.id);
-        setIsPaid(paid);
-        // Employers route to their own area regardless of plan; check first.
-        if (accountType === 'employer' && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-          router.replace('/employers/console');
-        } else if (paid && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-          router.replace('/dashboard');
-        }
+        const shouldRoute = event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
+        if (shouldRoute) setRedirecting(true);
+        setTimeout(async () => {
+          const { paid, accountType, ok } = await loadUserStatus(session.user.id);
+          setIsPaid(paid);
+          if (!shouldRoute) return;
+          // Employers route to their own area regardless of plan; check first.
+          if (accountType === 'employer') {
+            router.replace('/employers/console');
+          } else if (ok && paid) {
+            router.replace('/dashboard');
+          } else {
+            // Free candidate, or an inconclusive lookup (ok === false). Never
+            // redirect an inconclusive lookup as a candidate — just stay put.
+            setRedirecting(false);
+          }
+        }, 0);
       } else {
         setUser(null);
         setIsPaid(false);
+        setRedirecting(false);
         localStorage.removeItem('lp_user_plan');
         setScriptUsed(!!localStorage.getItem("lp_script_used"));
       }
@@ -1857,6 +1884,28 @@ export default function App() {
   const openAuth = (mode = "signup") => { setAuthModalMode(mode); setShowAuthModal(true); };
 
   const goApp = () => { setPage("app"); setTimeout(() => setFadeIn(true), 50); };
+
+  if (redirecting) {
+    return (
+      <div style={{
+        minHeight: "100vh", background: B.bg, color: B.text,
+        fontFamily: "'DM Sans', sans-serif",
+        display: "flex", flexDirection: "column", alignItems: "center",
+        justifyContent: "center", gap: 20, padding: 24,
+      }}>
+        <div style={{
+          width: 40, height: 40, borderRadius: "50%",
+          border: `3px solid ${B.surfaceHover}`, borderTopColor: B.accent,
+          animation: "lpspin 0.8s linear infinite",
+        }} />
+        <div style={{
+          fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 600,
+          color: B.textMuted, textAlign: "center",
+        }}>Redirecting you to your dashboard…</div>
+        <style>{`@keyframes lpspin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   const tabs = [
     { id: "script", label: "🎯 Script" },
