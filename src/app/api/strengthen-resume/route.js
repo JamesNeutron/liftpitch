@@ -78,7 +78,7 @@ Output ONLY the ${gapCount} bullet point(s), one per line, with the • characte
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-5-20250929",
+        model: "claude-haiku-4-5",
         max_tokens: 1000,
         messages: [{ role: "user", content: prompt }],
       }),
