@@ -18,11 +18,21 @@ const DM = "'DM Sans', sans-serif";
 // Suggested defaults — editable; question_2 is optional.
 const DEFAULT_Q1 = "Tell us a bit about yourself and why this role is exciting to you.";
 const ICEBREAKERS = [
-  "What's something that always makes your day a little better?",
+  "What's the most interesting thing in your fridge right now?",
   "If your coworkers described you in three words, what would they be?",
   "What's a small win you're proud of recently?",
 ];
 const DEFAULT_BRAND_COLOR = "#0A66C2";
+const DEFAULT_ACCENT_COLOR = "#1A1A2E";
+
+// Format a count of questions into the candidate's recording allowance.
+// 60 seconds per question.
+function recordingTime(questionCount) {
+  const total = questionCount * 60;
+  const mm = Math.floor(total / 60);
+  const ss = String(total % 60).padStart(2, "0");
+  return `${mm}:${ss}`;
+}
 
 // Inline Lucide-style icons — same hand-written SVG convention as /employers.
 function Icon({ paths, size = 18, color = B.accent, strokeWidth = 1.75 }) {
@@ -47,6 +57,7 @@ export default function EmployerConsole() {
   // Brand settings — stamped onto every role; editable, default to last saved role.
   const [companyName, setCompanyName] = useState("");
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_COLOR);
+  const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT_COLOR);
 
   // Create / edit form.
   const [roleTitle, setRoleTitle] = useState("");
@@ -75,6 +86,7 @@ export default function EmployerConsole() {
     if (data && data.length > 0) {
       setCompanyName(prev => prev || data[0].company_name || "");
       setBrandColor(prev => (prev === DEFAULT_BRAND_COLOR ? (data[0].brand_color || DEFAULT_BRAND_COLOR) : prev));
+      setAccentColor(prev => (prev === DEFAULT_ACCENT_COLOR ? (data[0].accent_color || DEFAULT_ACCENT_COLOR) : prev));
     }
     setRolesLoading(false);
   };
@@ -121,6 +133,7 @@ export default function EmployerConsole() {
     // Brand settings reflect the role being edited.
     setCompanyName(role.company_name || "");
     setBrandColor(role.brand_color || DEFAULT_BRAND_COLOR);
+    setAccentColor(role.accent_color || DEFAULT_ACCENT_COLOR);
     setFormError("");
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -142,6 +155,7 @@ export default function EmployerConsole() {
       question_2: q2.trim() || null, // optional — null = a 1-question role
       company_name: companyName.trim() || null,
       brand_color: brandColor || DEFAULT_BRAND_COLOR,
+      accent_color: accentColor || DEFAULT_ACCENT_COLOR,
     };
 
     try {
@@ -204,6 +218,9 @@ export default function EmployerConsole() {
     display: "flex", alignItems: "center", gap: 8,
   };
 
+  // Live recording-time helper: 60s per filled question.
+  const questionCount = (q1.trim() ? 1 : 0) + (q2.trim() ? 1 : 0);
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center",
@@ -245,7 +262,7 @@ export default function EmployerConsole() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 760, margin: "0 auto", padding: "clamp(32px, 6vw, 56px) 24px" }}>
+      <main style={{ maxWidth: 1140, margin: "0 auto", padding: "clamp(32px, 6vw, 56px) 24px" }}>
         {/* Page intro */}
         <div style={{ marginBottom: 32 }}>
           <div style={{
@@ -286,10 +303,10 @@ export default function EmployerConsole() {
                 onBlur={e => e.target.style.borderColor = B.border} />
             </div>
             <div>
-              <label style={labelStyle}>Brand color</label>
+              <label style={labelStyle}>Primary color</label>
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <input type="color" value={brandColor} onChange={e => setBrandColor(e.target.value)}
-                  aria-label="Brand color"
+                  aria-label="Primary color"
                   style={{
                     width: 48, height: 46, padding: 2, border: `1px solid ${B.border}`,
                     borderRadius: 10, background: "#fff", cursor: "pointer", flexShrink: 0,
@@ -300,17 +317,42 @@ export default function EmployerConsole() {
                   onBlur={e => e.target.style.borderColor = B.border} />
               </div>
             </div>
+            <div>
+              <label style={labelStyle}>Accent color</label>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)}
+                  aria-label="Accent color"
+                  style={{
+                    width: 48, height: 46, padding: 2, border: `1px solid ${B.border}`,
+                    borderRadius: 10, background: "#fff", cursor: "pointer", flexShrink: 0,
+                  }} />
+                <input value={accentColor} onChange={e => setAccentColor(e.target.value)}
+                  placeholder={DEFAULT_ACCENT_COLOR} style={{ ...inputStyle, fontFamily: DM }}
+                  onFocus={e => e.target.style.borderColor = B.accent}
+                  onBlur={e => e.target.style.borderColor = B.border} />
+              </div>
+            </div>
           </div>
         </div>
 
+        {/* Two-column workspace: create/edit form (left) + saved roles (right).
+            Stacks vertically on narrow screens — form on top, list below. */}
+        <div style={{
+          display: "grid", gap: 24, alignItems: "start",
+          gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+        }}>
         {/* 2. CREATE / EDIT A ROLE */}
-        <div style={{ ...cardStyle, marginBottom: 36, borderColor: editingId ? B.accent : B.border }}>
-          <div style={sectionLabel}>
+        <div style={{ ...cardStyle, borderColor: editingId ? B.accent : B.border }}>
+          <button type="button" onClick={resetForm} title="Start a fresh new role"
+            style={{
+              ...sectionLabel, background: "none", border: "none", padding: 0,
+              cursor: "pointer", appearance: "none",
+            }}>
             <Icon size={16} paths={editingId
               ? <><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" /></>
               : <><path d="M5 12h14" /><path d="M12 5v14" /></>} />
             {editingId ? "Edit role" : "Create a role"}
-          </div>
+          </button>
 
           <div style={{ marginBottom: 18 }}>
             <label style={labelStyle}>Role title <span style={{ color: B.danger }}>*</span></label>
@@ -353,6 +395,20 @@ export default function EmployerConsole() {
               </div>
             </div>
           </div>
+
+          {questionCount > 0 && (
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8, marginBottom: 18,
+              padding: "10px 14px", borderRadius: 10,
+              background: "rgba(10,102,194,0.05)", border: `1px solid ${B.border}`,
+            }}>
+              <Icon size={15} color={B.accent} paths={<><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>} />
+              <span style={{ fontFamily: DM, fontSize: 13.5, color: B.textMuted }}>
+                Candidates will have {recordingTime(questionCount)} to record
+                {questionCount === 2 ? " (60 seconds per question)" : ""}.
+              </span>
+            </div>
+          )}
 
           {formError && (
             <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 16,
@@ -470,6 +526,8 @@ export default function EmployerConsole() {
               ))}
             </div>
           )}
+        </div>
+        {/* end two-column workspace */}
         </div>
       </main>
     </div>
