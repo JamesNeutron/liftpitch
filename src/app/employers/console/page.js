@@ -78,20 +78,8 @@ export default function EmployerConsole() {
       return;
     }
     setRoles(data || []);
-    // Seed brand settings from the most recent role so they persist visually
-    // across visits (only when the user hasn't started editing them).
-    if (data && data.length > 0) {
-      setCompanyName(prev => prev || data[0].company_name || "");
-      setBrandColor(prev => (prev === DEFAULT_BRAND_COLOR ? (data[0].brand_color || DEFAULT_BRAND_COLOR) : prev));
-      setAccentColor(prev => (prev === DEFAULT_ACCENT_COLOR ? (data[0].accent_color || DEFAULT_ACCENT_COLOR) : prev));
-      // Brand already exists (it's stamped on saved roles) → show read-only by
-      // default. Don't clobber a snapshot already restored from localStorage.
-      setSavedBrand(prev => prev || {
-        companyName: data[0].company_name || "",
-        brandColor: data[0].brand_color || DEFAULT_BRAND_COLOR,
-        accentColor: data[0].accent_color || DEFAULT_ACCENT_COLOR,
-      });
-    }
+    // Brand settings live on the profiles row (loaded in init), so there's no
+    // need to seed them from roles here.
     setRolesLoading(false);
   };
 
@@ -102,7 +90,7 @@ export default function EmployerConsole() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("account_type")
+        .select("account_type, company_name, brand_color, accent_color")
         .eq("id", session.user.id)
         .single();
 
@@ -112,24 +100,19 @@ export default function EmployerConsole() {
       setUser(session.user);
       setLoading(false);
 
-      // Restore a saved brand from localStorage so it sticks even before any
-      // role exists (a brand-new employer who saved their brand first). Roles,
-      // when present, are the durable source and are merged in loadRoles().
-      if (typeof window !== "undefined") {
-        const raw = localStorage.getItem(`lp_employer_brand_${session.user.id}`);
-        if (raw) {
-          try {
-            const b = JSON.parse(raw);
-            setCompanyName(b.companyName || "");
-            setBrandColor(b.brandColor || DEFAULT_BRAND_COLOR);
-            setAccentColor(b.accentColor || DEFAULT_ACCENT_COLOR);
-            setSavedBrand({
-              companyName: b.companyName || "",
-              brandColor: b.brandColor || DEFAULT_BRAND_COLOR,
-              accentColor: b.accentColor || DEFAULT_ACCENT_COLOR,
-            });
-          } catch { /* ignore malformed cache */ }
-        }
+      // Brand settings live on the employer's profiles row — the single source
+      // of truth, so they follow the account across devices.
+      const cn = profile.company_name || "";
+      const bc = profile.brand_color || DEFAULT_BRAND_COLOR;
+      const ac = profile.accent_color || DEFAULT_ACCENT_COLOR;
+      setCompanyName(cn);
+      setBrandColor(bc);
+      setAccentColor(ac);
+      // Brand counts as "set" once they've named the company or moved off the
+      // default colors → show the read-only state. A brand-new employer (null
+      // company name, default colors) gets the open fields.
+      if (cn.trim() || bc !== DEFAULT_BRAND_COLOR || ac !== DEFAULT_ACCENT_COLOR) {
+        setSavedBrand({ companyName: cn, brandColor: bc, accentColor: ac });
       }
 
       loadRoles();
@@ -137,8 +120,9 @@ export default function EmployerConsole() {
     init();
   }, [router]);
 
-  // Persist the brand and collapse to the read-only display. Saved to
-  // localStorage (works with zero roles) and synced onto any existing roles.
+  // Persist the brand to the employer's profiles row (single source of truth,
+  // scoped to the user by RLS) and collapse to the read-only display. Existing
+  // roles are re-stamped so their swatches stay in sync with the new brand.
   const handleSaveBrand = async () => {
     if (savingBrand) return;
     setSavingBrand(true);
@@ -147,23 +131,25 @@ export default function EmployerConsole() {
       brandColor: brandColor || DEFAULT_BRAND_COLOR,
       accentColor: accentColor || DEFAULT_ACCENT_COLOR,
     };
+    const brandCols = {
+      company_name: snapshot.companyName || null,
+      brand_color: snapshot.brandColor,
+      accent_color: snapshot.accentColor,
+    };
     try {
-      if (typeof window !== "undefined" && user) {
-        localStorage.setItem(`lp_employer_brand_${user.id}`, JSON.stringify(snapshot));
-      }
+      const { error } = await supabase
+        .from("profiles")
+        .update(brandCols)
+        .eq("id", user.id);
+      if (error) throw error;
       if (roles.length > 0) {
-        await supabase
-          .from("roles")
-          .update({
-            company_name: snapshot.companyName || null,
-            brand_color: snapshot.brandColor,
-            accent_color: snapshot.accentColor,
-          })
-          .eq("employer_id", user.id);
+        await supabase.from("roles").update(brandCols).eq("employer_id", user.id);
         await loadRoles();
       }
       setSavedBrand(snapshot);
       setBrandEditing(false);
+    } catch (err) {
+      console.warn("[brand save] failed:", err);
     } finally {
       setSavingBrand(false);
     }
