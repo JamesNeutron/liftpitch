@@ -25,15 +25,6 @@ const ICEBREAKERS = [
 const DEFAULT_BRAND_COLOR = "#0A66C2";
 const DEFAULT_ACCENT_COLOR = "#1A1A2E";
 
-// Format a count of questions into the candidate's recording allowance.
-// 60 seconds per question.
-function recordingTime(questionCount) {
-  const total = questionCount * 60;
-  const mm = Math.floor(total / 60);
-  const ss = String(total % 60).padStart(2, "0");
-  return `${mm}:${ss}`;
-}
-
 // Inline Lucide-style icons — same hand-written SVG convention as /employers.
 function Icon({ paths, size = 18, color = B.accent, strokeWidth = 1.75 }) {
   return (
@@ -58,6 +49,12 @@ export default function EmployerConsole() {
   const [companyName, setCompanyName] = useState("");
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_COLOR);
   const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT_COLOR);
+  // Snapshot of the last-saved brand. null until a brand has been saved; drives
+  // the read-only display and the personalized header (independent of in-progress
+  // edits to the working fields above).
+  const [savedBrand, setSavedBrand] = useState(null);
+  const [brandEditing, setBrandEditing] = useState(false);
+  const [savingBrand, setSavingBrand] = useState(false);
 
   // Create / edit form.
   const [roleTitle, setRoleTitle] = useState("");
@@ -87,6 +84,13 @@ export default function EmployerConsole() {
       setCompanyName(prev => prev || data[0].company_name || "");
       setBrandColor(prev => (prev === DEFAULT_BRAND_COLOR ? (data[0].brand_color || DEFAULT_BRAND_COLOR) : prev));
       setAccentColor(prev => (prev === DEFAULT_ACCENT_COLOR ? (data[0].accent_color || DEFAULT_ACCENT_COLOR) : prev));
+      // Brand already exists (it's stamped on saved roles) → show read-only by
+      // default. Don't clobber a snapshot already restored from localStorage.
+      setSavedBrand(prev => prev || {
+        companyName: data[0].company_name || "",
+        brandColor: data[0].brand_color || DEFAULT_BRAND_COLOR,
+        accentColor: data[0].accent_color || DEFAULT_ACCENT_COLOR,
+      });
     }
     setRolesLoading(false);
   };
@@ -107,10 +111,84 @@ export default function EmployerConsole() {
 
       setUser(session.user);
       setLoading(false);
+
+      // Restore a saved brand from localStorage so it sticks even before any
+      // role exists (a brand-new employer who saved their brand first). Roles,
+      // when present, are the durable source and are merged in loadRoles().
+      if (typeof window !== "undefined") {
+        const raw = localStorage.getItem(`lp_employer_brand_${session.user.id}`);
+        if (raw) {
+          try {
+            const b = JSON.parse(raw);
+            setCompanyName(b.companyName || "");
+            setBrandColor(b.brandColor || DEFAULT_BRAND_COLOR);
+            setAccentColor(b.accentColor || DEFAULT_ACCENT_COLOR);
+            setSavedBrand({
+              companyName: b.companyName || "",
+              brandColor: b.brandColor || DEFAULT_BRAND_COLOR,
+              accentColor: b.accentColor || DEFAULT_ACCENT_COLOR,
+            });
+          } catch { /* ignore malformed cache */ }
+        }
+      }
+
       loadRoles();
     }
     init();
   }, [router]);
+
+  // Persist the brand and collapse to the read-only display. Saved to
+  // localStorage (works with zero roles) and synced onto any existing roles.
+  const handleSaveBrand = async () => {
+    if (savingBrand) return;
+    setSavingBrand(true);
+    const snapshot = {
+      companyName: companyName.trim(),
+      brandColor: brandColor || DEFAULT_BRAND_COLOR,
+      accentColor: accentColor || DEFAULT_ACCENT_COLOR,
+    };
+    try {
+      if (typeof window !== "undefined" && user) {
+        localStorage.setItem(`lp_employer_brand_${user.id}`, JSON.stringify(snapshot));
+      }
+      if (roles.length > 0) {
+        await supabase
+          .from("roles")
+          .update({
+            company_name: snapshot.companyName || null,
+            brand_color: snapshot.brandColor,
+            accent_color: snapshot.accentColor,
+          })
+          .eq("employer_id", user.id);
+        await loadRoles();
+      }
+      setSavedBrand(snapshot);
+      setBrandEditing(false);
+    } finally {
+      setSavingBrand(false);
+    }
+  };
+
+  // Reopen the fields, pre-filled with the saved brand.
+  const handleEditBrand = () => {
+    if (savedBrand) {
+      setCompanyName(savedBrand.companyName);
+      setBrandColor(savedBrand.brandColor);
+      setAccentColor(savedBrand.accentColor);
+    }
+    setBrandEditing(true);
+  };
+
+  // Back out of editing without saving — restore the working fields to the
+  // last saved brand so unsaved tweaks don't leak onto a newly created role.
+  const handleEditBrandCancel = () => {
+    if (savedBrand) {
+      setCompanyName(savedBrand.companyName);
+      setBrandColor(savedBrand.brandColor);
+      setAccentColor(savedBrand.accentColor);
+    }
+    setBrandEditing(false);
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -272,7 +350,11 @@ export default function EmployerConsole() {
           <h1 style={{
             fontFamily: SORA, fontSize: "clamp(26px, 4vw, 36px)", fontWeight: 800,
             letterSpacing: "-0.02em", margin: "0 0 12px", color: B.text, lineHeight: 1.15,
-          }}>Your roles</h1>
+          }}>
+            {savedBrand?.companyName?.trim()
+              ? `${savedBrand.companyName.trim()}'s Roles`
+              : "Your Roles"}
+          </h1>
           <p style={{ fontFamily: DM, fontSize: 16, color: B.textMuted, lineHeight: 1.6, margin: 0, maxWidth: 540 }}>
             Set your brand once, then create the roles candidates will pitch for. Each role
             asks one or two short questions — keep it warm and human.
@@ -281,58 +363,118 @@ export default function EmployerConsole() {
 
         {/* 1. BRAND SETTINGS */}
         <div style={{ ...cardStyle, marginBottom: 24 }}>
-          <div style={sectionLabel}>
-            <Icon size={16} paths={<>
-              <circle cx="13.5" cy="6.5" r=".5" fill={B.accent} />
-              <circle cx="17.5" cy="10.5" r=".5" fill={B.accent} />
-              <circle cx="8.5" cy="7.5" r=".5" fill={B.accent} />
-              <circle cx="6.5" cy="12.5" r=".5" fill={B.accent} />
-              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z" />
-            </>} />
-            Brand settings
-          </div>
-          <p style={{ fontFamily: DM, fontSize: 14, color: B.textMuted, margin: "-6px 0 20px", lineHeight: 1.55 }}>
-            Saved onto each role you create. You can change these any time.
-          </p>
-          <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-            <div>
-              <label style={labelStyle}>Company name</label>
-              <input value={companyName} onChange={e => setCompanyName(e.target.value)}
-                placeholder="Acme Inc." style={inputStyle}
-                onFocus={e => e.target.style.borderColor = B.accent}
-                onBlur={e => e.target.style.borderColor = B.border} />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+            <div style={{ ...sectionLabel, marginBottom: 0 }}>
+              <Icon size={16} paths={<>
+                <circle cx="13.5" cy="6.5" r=".5" fill={B.accent} />
+                <circle cx="17.5" cy="10.5" r=".5" fill={B.accent} />
+                <circle cx="8.5" cy="7.5" r=".5" fill={B.accent} />
+                <circle cx="6.5" cy="12.5" r=".5" fill={B.accent} />
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.555C21.965 6.012 17.461 2 12 2z" />
+              </>} />
+              Brand settings
             </div>
-            <div>
-              <label style={labelStyle}>Primary color</label>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <input type="color" value={brandColor} onChange={e => setBrandColor(e.target.value)}
-                  aria-label="Primary color"
-                  style={{
-                    width: 48, height: 46, padding: 2, border: `1px solid ${B.border}`,
-                    borderRadius: 10, background: "#fff", cursor: "pointer", flexShrink: 0,
-                  }} />
-                <input value={brandColor} onChange={e => setBrandColor(e.target.value)}
-                  placeholder={DEFAULT_BRAND_COLOR} style={{ ...inputStyle, fontFamily: DM }}
-                  onFocus={e => e.target.style.borderColor = B.accent}
-                  onBlur={e => e.target.style.borderColor = B.border} />
+            {savedBrand && !brandEditing && (
+              <button onClick={handleEditBrand} aria-label="Edit brand settings" style={{
+                padding: "8px 16px", borderRadius: 9, border: `1.5px solid ${B.border}`,
+                background: "transparent", color: B.textMuted, flexShrink: 0,
+                fontFamily: SORA, fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = B.accent; e.currentTarget.style.color = B.accent; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.color = B.textMuted; }}
+              >Edit</button>
+            )}
+          </div>
+
+          {savedBrand && !brandEditing ? (
+            // Saved / read-only: brand feels locked in, not a form awaiting input.
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "20px 40px", marginTop: 20 }}>
+              <div>
+                <div style={labelStyle}>Company name</div>
+                <div style={{ fontFamily: SORA, fontSize: 17, fontWeight: 700, color: B.text }}>
+                  {savedBrand.companyName?.trim() || <span style={{ color: B.textDim, fontWeight: 500 }}>Not set</span>}
+                </div>
+              </div>
+              <div>
+                <div style={labelStyle}>Colors</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  {[
+                    { label: "Primary", color: savedBrand.brandColor },
+                    { label: "Accent", color: savedBrand.accentColor },
+                  ].map(({ label, color }) => (
+                    <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{
+                        width: 22, height: 22, borderRadius: 7, flexShrink: 0,
+                        background: color, border: `1px solid ${B.border}`,
+                      }} />
+                      <span style={{ fontFamily: DM, fontSize: 14, color: B.textMuted }}>{color}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div>
-              <label style={labelStyle}>Accent color</label>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)}
-                  aria-label="Accent color"
-                  style={{
-                    width: 48, height: 46, padding: 2, border: `1px solid ${B.border}`,
-                    borderRadius: 10, background: "#fff", cursor: "pointer", flexShrink: 0,
-                  }} />
-                <input value={accentColor} onChange={e => setAccentColor(e.target.value)}
-                  placeholder={DEFAULT_ACCENT_COLOR} style={{ ...inputStyle, fontFamily: DM }}
-                  onFocus={e => e.target.style.borderColor = B.accent}
-                  onBlur={e => e.target.style.borderColor = B.border} />
+          ) : (
+            <>
+              <p style={{ fontFamily: DM, fontSize: 14, color: B.textMuted, margin: "-6px 0 20px", lineHeight: 1.55 }}>
+                Saved onto each role you create. You can change these any time.
+              </p>
+              <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
+                <div>
+                  <label style={labelStyle}>Company name</label>
+                  <input value={companyName} onChange={e => setCompanyName(e.target.value)}
+                    placeholder="Acme Inc." style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = B.accent}
+                    onBlur={e => e.target.style.borderColor = B.border} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Primary color</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="color" value={brandColor} onChange={e => setBrandColor(e.target.value)}
+                      aria-label="Primary color"
+                      style={{
+                        width: 48, height: 46, padding: 2, border: `1px solid ${B.border}`,
+                        borderRadius: 10, background: "#fff", cursor: "pointer", flexShrink: 0,
+                      }} />
+                    <input value={brandColor} onChange={e => setBrandColor(e.target.value)}
+                      placeholder={DEFAULT_BRAND_COLOR} style={{ ...inputStyle, fontFamily: DM }}
+                      onFocus={e => e.target.style.borderColor = B.accent}
+                      onBlur={e => e.target.style.borderColor = B.border} />
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>Accent color</label>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)}
+                      aria-label="Accent color"
+                      style={{
+                        width: 48, height: 46, padding: 2, border: `1px solid ${B.border}`,
+                        borderRadius: 10, background: "#fff", cursor: "pointer", flexShrink: 0,
+                      }} />
+                    <input value={accentColor} onChange={e => setAccentColor(e.target.value)}
+                      placeholder={DEFAULT_ACCENT_COLOR} style={{ ...inputStyle, fontFamily: DM }}
+                      onFocus={e => e.target.style.borderColor = B.accent}
+                      onBlur={e => e.target.style.borderColor = B.border} />
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 22 }}>
+                <button onClick={handleSaveBrand} disabled={savingBrand} style={{
+                  padding: "12px 24px", borderRadius: 12, border: "none",
+                  background: savingBrand ? "#C8D0D9" : B.gradient, color: "#fff",
+                  fontFamily: SORA, fontSize: 15, fontWeight: 700,
+                  cursor: savingBrand ? "not-allowed" : "pointer",
+                  boxShadow: savingBrand ? "none" : `0 4px 20px ${B.accentGlow}`, transition: "all 0.2s",
+                }}>{savingBrand ? "Saving…" : "Save brand"}</button>
+                {savedBrand && (
+                  <button onClick={handleEditBrandCancel} disabled={savingBrand} style={{
+                    padding: "12px 20px", borderRadius: 12, border: `1.5px solid ${B.border}`,
+                    background: "transparent", color: B.textMuted,
+                    fontFamily: SORA, fontSize: 15, fontWeight: 600, cursor: "pointer",
+                  }}>Cancel</button>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Two-column workspace: create/edit form (left) + saved roles (right).
@@ -404,8 +546,7 @@ export default function EmployerConsole() {
             }}>
               <Icon size={15} color={B.accent} paths={<><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" /></>} />
               <span style={{ fontFamily: DM, fontSize: 13.5, color: B.textMuted }}>
-                Candidates will have {recordingTime(questionCount)} to record
-                {questionCount === 2 ? " (60 seconds per question)" : ""}.
+                Each question is 60 seconds.
               </span>
             </div>
           )}
