@@ -12,6 +12,24 @@ const DEFAULT_ACCENT_COLOR = "#1A1A2E";
 const SORA = "'Sora', sans-serif";
 const DM = "'DM Sans', sans-serif";
 
+// Parse a #rgb / #rrggbb brand color into channels so we can lay a low-opacity
+// wash over white for the page background.
+function hexToRgb(hex) {
+  const h = (hex || "").replace("#", "");
+  const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h;
+  const n = parseInt(full, 16);
+  if (full.length !== 6 || Number.isNaN(n)) return { r: 26, g: 26, b: 46 };
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+// Pick a legible text color (near-black or white) for a given background by its
+// perceived brightness — a light brand color (e.g. cyan #14d4e1) needs dark text.
+function readableTextOn(hex) {
+  const { r, g, b } = hexToRgb(hex);
+  const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+  return brightness > 0.6 ? "#1A1A2E" : "#ffffff";
+}
+
 const SECONDS_PER_QUESTION = 60;
 
 // Same timer hook as the candidate dashboard recorder.
@@ -126,6 +144,15 @@ export default function CandidateRecordPage() {
   const brandColor = role?.brand_color || DEFAULT_BRAND_COLOR;
   const accentColor = role?.accent_color || DEFAULT_ACCENT_COLOR;
   const companyName = role?.company_name || "This company";
+
+  // Page background: a soft wash of the accent over white — tinted but light
+  // enough that the white cards stay legible.
+  const { r, g, b } = hexToRgb(accentColor);
+  const pageBg = `linear-gradient(rgba(${r},${g},${b},0.12), rgba(${r},${g},${b},0.12)), #ffffff`;
+  // Legible header/badge text — survives light brand or accent colors.
+  const headerText = readableTextOn(brandColor);
+  const headerSubText = headerText === "#ffffff" ? "rgba(255,255,255,0.75)" : "rgba(26,26,46,0.75)";
+  const badgeText = readableTextOn(accentColor);
 
   // Public, no-session read of a single role by id. Goes through the
   // get_recording_role(uuid) SECURITY DEFINER function (granted to anon) rather
@@ -246,23 +273,23 @@ export default function CandidateRecordPage() {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#F4F7FB", fontFamily: DM,
+      minHeight: "100vh", background: pageBg, fontFamily: DM,
       paddingBottom: 48,
     }}>
       {/* Branded header bar */}
       <header style={{
-        background: accentColor, padding: "20px 24px",
+        background: brandColor, padding: "20px 24px",
       }}>
         <div style={{ maxWidth: 720, margin: "0 auto" }}>
           <div style={{
             fontFamily: SORA, fontSize: 13, fontWeight: 600,
-            color: "rgba(255,255,255,0.7)", letterSpacing: "0.04em",
+            color: headerSubText, letterSpacing: "0.04em",
           }}>
             {companyName} · {role.role_title} Application
           </div>
           <h1 style={{
             fontFamily: SORA, fontSize: 24, fontWeight: 800,
-            color: "#fff", margin: "6px 0 0",
+            color: headerText, margin: "6px 0 0",
           }}>
             Record your video pitch.
           </h1>
@@ -277,7 +304,7 @@ export default function CandidateRecordPage() {
           boxShadow: "0 2px 12px rgba(42,80,128,0.05)",
         }}>
           <div style={{
-            fontFamily: SORA, fontSize: 11, fontWeight: 700, color: accentColor,
+            fontFamily: SORA, fontSize: 11, fontWeight: 700, color: brandColor,
             textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14,
           }}>
             {questions.length > 1 ? "Answer these questions" : "Your prompt"}
@@ -287,7 +314,7 @@ export default function CandidateRecordPage() {
               <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                 <div style={{
                   flexShrink: 0, width: 24, height: 24, borderRadius: "50%",
-                  background: brandColor, color: "#fff", fontFamily: SORA,
+                  background: accentColor, color: badgeText, fontFamily: SORA,
                   fontSize: 12, fontWeight: 700, display: "flex",
                   alignItems: "center", justifyContent: "center", marginTop: 1,
                 }}>{i + 1}</div>
@@ -313,7 +340,7 @@ export default function CandidateRecordPage() {
           boxShadow: "0 2px 12px rgba(42,80,128,0.05)",
         }}>
           <label htmlFor="candidate-name" style={{
-            fontFamily: SORA, fontSize: 12, fontWeight: 700, color: accentColor,
+            fontFamily: SORA, fontSize: 12, fontWeight: 700, color: brandColor,
             textTransform: "uppercase", letterSpacing: "0.1em", display: "block",
             marginBottom: 10,
           }}>Your name</label>

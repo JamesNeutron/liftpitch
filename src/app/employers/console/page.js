@@ -63,6 +63,8 @@ export default function EmployerConsole() {
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
+  // Which role's recording link was just copied — drives the "Copied" state.
+  const [copiedId, setCopiedId] = useState(null);
 
   // Fetch this employer's roles. RLS already scopes rows to auth.uid() =
   // employer_id, but we also filter explicitly as defense-in-depth so the list
@@ -250,6 +252,12 @@ export default function EmployerConsole() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const copyRecordingLink = (id) => {
+    navigator.clipboard?.writeText(`https://lift-pitch.co/r/${id}`);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2500);
   };
 
   const handleDelete = async (role) => {
@@ -635,6 +643,29 @@ export default function EmployerConsole() {
                         </li>
                       )}
                     </ol>
+                    {/* Recording link — paste into an ATS application. */}
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${B.border}` }}>
+                      <div style={labelStyle}>Recording link</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{
+                          flex: 1, minWidth: 0, padding: "9px 12px", background: B.bg,
+                          borderRadius: 9, border: `1px solid ${B.border}`, fontFamily: DM,
+                          fontSize: 13, color: B.textMuted,
+                          overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                        }}>{`https://lift-pitch.co/r/${role.id}`}</div>
+                        <button onClick={() => copyRecordingLink(role.id)} style={{
+                          padding: "9px 14px", borderRadius: 9,
+                          border: copiedId === role.id ? "none" : `1px solid ${B.border}`,
+                          background: copiedId === role.id ? B.success : "transparent",
+                          color: copiedId === role.id ? "#fff" : B.textMuted,
+                          fontFamily: SORA, fontSize: 12, fontWeight: 600,
+                          cursor: "pointer", flexShrink: 0, whiteSpace: "nowrap", transition: "all 0.2s",
+                        }}>{copiedId === role.id ? "✓ Copied" : "📋 Copy"}</button>
+                      </div>
+                      <p style={{ fontFamily: DM, fontSize: 12.5, color: B.textDim, margin: "8px 0 0", lineHeight: 1.5 }}>
+                        Paste this into your ATS application as a question.
+                      </p>
+                    </div>
                   </div>
                   <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
                     <button onClick={() => startEdit(role)} aria-label="Edit role" style={{
