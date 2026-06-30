@@ -64,13 +64,18 @@ export default function EmployerConsole() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
 
-  // Fetch this employer's roles. RLS scopes rows to auth.uid() = employer_id,
-  // so no app-level employer_id filter is needed here.
-  const loadRoles = async () => {
+  // Fetch this employer's roles. RLS already scopes rows to auth.uid() =
+  // employer_id, but we also filter explicitly as defense-in-depth so the list
+  // stays scoped even if a SELECT policy ever regresses (as happened when a
+  // broad public-read policy briefly exposed every employer's roles).
+  // employerId is passed explicitly from init (where the `user` state isn't set
+  // yet); the handler call sites fall back to the `user` state.
+  const loadRoles = async (employerId = user?.id) => {
     setLoadError("");
     const { data, error } = await supabase
       .from("roles")
       .select("*")
+      .eq("employer_id", employerId)
       .order("created_at", { ascending: false });
     if (error) {
       setLoadError("We couldn't load your roles. Please refresh to try again.");
@@ -115,7 +120,7 @@ export default function EmployerConsole() {
         setSavedBrand({ companyName: cn, brandColor: bc, accentColor: ac });
       }
 
-      loadRoles();
+      loadRoles(session.user.id);
     }
     init();
   }, [router]);

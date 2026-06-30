@@ -127,27 +127,28 @@ export default function CandidateRecordPage() {
   const accentColor = role?.accent_color || DEFAULT_ACCENT_COLOR;
   const companyName = role?.company_name || "This company";
 
-  // Public, no-session read. Gated only by the "Anyone can view roles for
-  // recording" SELECT policy — same anon client used elsewhere for public reads.
+  // Public, no-session read of a single role by id. Goes through the
+  // get_recording_role(uuid) SECURITY DEFINER function (granted to anon) rather
+  // than a direct table select: the roles table is owner-only, so the function
+  // is what lets a candidate load one role by its UUID without exposing the
+  // table to anonymous enumeration.
   useEffect(() => {
     let cancelled = false;
     async function loadRole() {
       if (!roleId) { setLoadState("notfound"); return; }
       try {
         const { data, error } = await supabase
-          .from("roles")
-          .select("role_title, question_1, question_2, company_name, brand_color, accent_color")
-          .eq("id", roleId)
-          .single();
+          .rpc("get_recording_role", { role_id: roleId });
         if (cancelled) return;
-        if (error || !data) {
-          // Surface the real reason — a swallowed PostgREST error (e.g. a
-          // missing column) is indistinguishable from a bad link otherwise.
+        const row = data?.[0];
+        if (error || !row) {
+          // Surface the real reason — a swallowed PostgREST error is otherwise
+          // indistinguishable from a genuinely bad link.
           if (error) console.error("[/r] role load failed:", error.message, error);
           setLoadState("notfound");
           return;
         }
-        setRole(data);
+        setRole(row);
         setLoadState("ready");
       } catch (err) {
         console.error("[/r] role load threw:", err);
