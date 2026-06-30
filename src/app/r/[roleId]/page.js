@@ -140,10 +140,17 @@ export default function CandidateRecordPage() {
           .eq("id", roleId)
           .single();
         if (cancelled) return;
-        if (error || !data) { setLoadState("notfound"); return; }
+        if (error || !data) {
+          // Surface the real reason — a swallowed PostgREST error (e.g. a
+          // missing column) is indistinguishable from a bad link otherwise.
+          if (error) console.error("[/r] role load failed:", error.message, error);
+          setLoadState("notfound");
+          return;
+        }
         setRole(data);
         setLoadState("ready");
-      } catch {
+      } catch (err) {
+        console.error("[/r] role load threw:", err);
         if (!cancelled) setLoadState("notfound");
       }
     }
