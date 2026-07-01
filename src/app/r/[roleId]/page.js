@@ -3,32 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import { hexToRgb, readableTextOn, DEFAULT_BRAND_COLOR, DEFAULT_ACCENT_COLOR } from "../../../lib/color";
 
-// Brand fallbacks — mirror the employer console defaults so a role with null
-// colors still renders on-brand. brand_color = primary (buttons/accents),
-// accent_color = headings/borders.
-const DEFAULT_BRAND_COLOR = "#0A66C2";
-const DEFAULT_ACCENT_COLOR = "#1A1A2E";
 const SORA = "'Sora', sans-serif";
 const DM = "'DM Sans', sans-serif";
-
-// Parse a #rgb / #rrggbb brand color into channels so we can lay a low-opacity
-// wash over white for the page background.
-function hexToRgb(hex) {
-  const h = (hex || "").replace("#", "");
-  const full = h.length === 3 ? h.split("").map(c => c + c).join("") : h;
-  const n = parseInt(full, 16);
-  if (full.length !== 6 || Number.isNaN(n)) return { r: 26, g: 26, b: 46 };
-  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
-}
-
-// Pick a legible text color (near-black or white) for a given background by its
-// perceived brightness — a light brand color (e.g. cyan #14d4e1) needs dark text.
-function readableTextOn(hex) {
-  const { r, g, b } = hexToRgb(hex);
-  const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-  return brightness > 0.6 ? "#1A1A2E" : "#ffffff";
-}
 
 const SECONDS_PER_QUESTION = 60;
 
@@ -436,31 +414,6 @@ export default function CandidateRecordPage() {
                       {takeKept ? "Take saved" : "Click below to start your camera"}
                     </span>
                 }
-              </div>
-            )}
-
-            {/* On-screen prompt guide during recording */}
-            {state === "recording" && questions.length > 0 && (
-              <div style={{
-                position: "absolute", bottom: 12, left: 12, right: 12, zIndex: 8,
-                padding: "12px 16px", borderRadius: 12,
-                background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)",
-              }}>
-                <div style={{
-                  fontFamily: SORA, fontSize: 10, fontWeight: 700,
-                  color: "rgba(255,255,255,0.55)", textTransform: "uppercase",
-                  letterSpacing: "0.1em", marginBottom: 6,
-                }}>
-                  {questions.length > 1 ? "Cover these" : "Your prompt"}
-                </div>
-                {questions.map((q, i) => (
-                  <p key={i} style={{
-                    margin: i === 0 ? 0 : "6px 0 0", fontFamily: DM, fontSize: 13.5,
-                    color: "rgba(255,255,255,0.92)", lineHeight: 1.45,
-                  }}>
-                    {questions.length > 1 ? `${i + 1}. ` : ""}{q}
-                  </p>
-                ))}
               </div>
             )}
 

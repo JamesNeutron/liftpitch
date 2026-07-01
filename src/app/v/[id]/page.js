@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { hexToRgb, readableTextOn, DEFAULT_BRAND_COLOR, DEFAULT_ACCENT_COLOR } from "../../../lib/color";
 
 const B = {
   accent: "#0A66C2", accentLight: "#378FE9",
@@ -170,6 +171,215 @@ export default function VideoPage({ params }) {
   const recordedDate = new Date(video.created_at).toLocaleDateString("en-US", {
     year: "numeric", month: "long", day: "numeric",
   });
+
+  // ── Sponsored recruiter pitch page ───────────────────────────────────────────
+  // Dedicated employer-facing layout for sponsored rows. The generic candidate
+  // page below is left untouched — non-sponsored playback is unchanged.
+  if (video.sponsored) {
+    const brandColor = video.brand_color || DEFAULT_BRAND_COLOR;
+    const accentColor = video.accent_color || DEFAULT_ACCENT_COLOR;
+    // Faint ~10% accent wash over white — themed but keeps white cards legible.
+    const { r, g, b } = hexToRgb(accentColor);
+    const pageBg = `linear-gradient(rgba(${r},${g},${b},0.10), rgba(${r},${g},${b},0.10)), #ffffff`;
+    const headerText = readableTextOn(brandColor);
+    const headerSubText = headerText === "#ffffff" ? "rgba(255,255,255,0.78)" : "rgba(26,26,46,0.72)";
+    const questions = [video.question_1, video.question_2].filter(q => q && q.trim());
+
+    return (
+      <div style={{ minHeight: "100vh", background: pageBg, fontFamily: "'DM Sans', sans-serif" }}>
+
+        {/* Branded recruiter header */}
+        <header style={{ background: brandColor, padding: "20px 24px" }}>
+          <div style={{
+            maxWidth: 800, margin: "0 auto", display: "flex",
+            justifyContent: "space-between", alignItems: "flex-start", gap: 16, flexWrap: "wrap",
+          }}>
+            <div>
+              <h1 style={{ fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 800,
+                color: headerText, margin: 0, lineHeight: 1.2 }}>
+                {video.candidate_name || "Candidate"}
+              </h1>
+              <p style={{ fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 600,
+                color: headerSubText, margin: "6px 0 0", letterSpacing: "0.01em" }}>
+                {[video.role_name, video.company_name].filter(Boolean).join(" · ")}
+              </p>
+            </div>
+
+            {/* Live Verified — always LiftPitch green, never employer-tinted */}
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 14px",
+              borderRadius: 100, background: "rgba(255,255,255,0.95)",
+              border: "1px solid rgba(5,118,66,0.25)", flexShrink: 0,
+            }}>
+              <svg width={12} height={12} viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.09 4.26L17 3.29L17.97 6.2L21 6.58L20.42 9.58L23 11.36L21.18 13.84L22.56 16.58L19.82 17.66L19.56 20.66L16.56 20.42L14.78 23L12 21.82L9.22 23L7.44 20.42L4.44 20.66L4.18 17.66L1.44 16.58L2.82 13.84L1 11.36L3.58 9.58L3 6.58L6.03 6.2L7 3.29L9.91 4.26L12 2Z" fill="#057642"/>
+                <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700,
+                color: B.success, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Live Verified
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <div style={{ maxWidth: 800, margin: "32px auto 64px", padding: "0 20px" }}>
+
+          {/* Questions asked — brand-accented, above the video */}
+          {questions.length > 0 && (
+            <div style={{
+              marginBottom: 24, padding: 24, background: B.surface, borderRadius: 16,
+              border: `1px solid ${B.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+            }}>
+              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 11, fontWeight: 700,
+                color: brandColor, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14 }}>
+                Questions asked
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {questions.map((q, i) => (
+                  <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <div style={{
+                      flexShrink: 0, width: 24, height: 24, borderRadius: "50%",
+                      background: brandColor, color: readableTextOn(brandColor),
+                      fontFamily: "'Sora', sans-serif", fontSize: 12, fontWeight: 700,
+                      display: "flex", alignItems: "center", justifyContent: "center", marginTop: 1,
+                    }}>{i + 1}</div>
+                    <p style={{ margin: 0, fontFamily: "'DM Sans', sans-serif", fontSize: 15.5,
+                      color: B.text, lineHeight: 1.55 }}>{q}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Verified video player */}
+          <div style={{
+            position: "relative", width: "100%", aspectRatio: "16/9", background: "#000",
+            borderRadius: 16, overflow: "hidden", boxShadow: "0 16px 56px rgba(0,0,0,0.2)",
+          }}>
+            {video.stream_uid ? (
+              <iframe
+                src={`https://customer-${process.env.NEXT_PUBLIC_CLOUDFLARE_STREAM_CUSTOMER_CODE}.cloudflarestream.com/${video.stream_uid}/iframe`}
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+              />
+            ) : (
+              <video
+                ref={videoRef}
+                controls
+                playsInline
+                onPlay={handlePlay}
+                onPause={handlePause}
+                onEnded={handlePause}
+                style={{ width: "100%", height: "100%", display: "block", objectFit: "cover" }}
+              >
+                {video.mp4_url && video.transcoded
+                  ? <source src={video.mp4_url} type="video/mp4" />
+                  : <source src={video.r2_url} type="video/webm" />}
+              </video>
+            )}
+
+            {showProcessing && (
+              <div style={{
+                position: "absolute", bottom: 14, left: 14, zIndex: 5,
+                display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 14px",
+                borderRadius: 100, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.15)", pointerEvents: "none",
+              }}>
+                <div style={{
+                  width: 8, height: 8, borderRadius: "50%", background: B.warning, flexShrink: 0,
+                  animation: "pulse 1.4s ease-in-out infinite",
+                }} />
+                <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 11,
+                  color: "rgba(255,255,255,0.85)" }}>
+                  Processing for all browsers — refresh in a moment
+                </span>
+              </div>
+            )}
+
+            {/* Verified overlay badge — LiftPitch green */}
+            <div style={{
+              position: "absolute", top: 14, right: 14, zIndex: 5,
+              display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 13px",
+              borderRadius: 100, background: "rgba(5,118,66,0.85)", backdropFilter: "blur(8px)",
+              border: "1px solid rgba(5,118,66,0.4)", pointerEvents: "none",
+            }}>
+              <svg width={11} height={11} viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L14.09 4.26L17 3.29L17.97 6.2L21 6.58L20.42 9.58L23 11.36L21.18 13.84L22.56 16.58L19.82 17.66L19.56 20.66L16.56 20.42L14.78 23L12 21.82L9.22 23L7.44 20.42L4.44 20.66L4.18 17.66L1.44 16.58L2.82 13.84L1 11.36L3.58 9.58L3 6.58L6.03 6.2L7 3.29L9.91 4.26L12 2Z" fill="white"/>
+                <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 700,
+                color: "#fff", letterSpacing: "0.06em" }}>LIVE VERIFIED</span>
+            </div>
+          </div>
+
+          {/* Verification certificate — LiftPitch's own green guarantee, never
+              employer-tinted, so it reads consistently across every brand. */}
+          <div style={{
+            marginTop: 24, padding: 28, background: B.surface, borderRadius: 18,
+            border: `1px solid ${B.border}`, boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+          }}>
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+              flexWrap: "wrap", gap: 16, marginBottom: 20,
+            }}>
+              <div>
+                <h2 style={{ fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 700,
+                  color: B.text, margin: "0 0 6px" }}>
+                  Verified Video Pitch
+                </h2>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14,
+                  color: B.textMuted, margin: 0 }}>
+                  Recorded {recordedDate}
+                </p>
+              </div>
+
+              {video.verification_hash && (
+                <div style={{ padding: "10px 16px", borderRadius: 10, background: B.bg, border: `1px solid ${B.border}` }}>
+                  <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 600,
+                    color: B.textDim, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 3 }}>
+                    Verification ID
+                  </div>
+                  <div style={{ fontFamily: "monospace", fontSize: 12, color: B.text, letterSpacing: "0.04em" }}>
+                    {video.verification_hash}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{
+              paddingTop: 20, borderTop: `1px solid ${B.border}`,
+              display: "grid", gridTemplateColumns: "auto 1fr", gap: "9px 24px",
+              fontFamily: "'DM Sans', sans-serif", fontSize: 13,
+            }}>
+              <span style={{ color: B.textDim }}>Method</span>
+              <span style={{ color: B.success, fontWeight: 600 }}>LIVE CAPTURE</span>
+
+              <span style={{ color: B.textDim }}>Device Stream</span>
+              <span style={{ color: B.success }}>✓ Verified from webcam</span>
+
+              <span style={{ color: B.textDim }}>Live Recording</span>
+              <span style={{ color: B.success }}>✓ Recorded in real-time</span>
+
+              <span style={{ color: B.textDim }}>Real Person</span>
+              <span style={{ color: B.success }}>✓ No AI-generated video</span>
+            </div>
+          </div>
+
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: B.textDim,
+            textAlign: "center", margin: "32px 0 0" }}>
+            Powered by <span style={{ fontWeight: 700, color: B.textMuted }}>LiftPitch</span>
+          </p>
+        </div>
+
+        <style>{`
+          @keyframes spin { to { transform: rotate(360deg); } }
+          @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        `}</style>
+      </div>
+    );
+  }
 
   // ── Video player ─────────────────────────────────────────────────────────────
   return (
