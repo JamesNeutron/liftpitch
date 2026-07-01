@@ -1,47 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import { pollStreamReady, streamMp4Url, getIpLocation, shareLinkFor } from "../../../lib/stream";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
-
-async function pollStreamReady(uid, maxWaitMs = 55_000) {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const streamToken = process.env.CLOUDFLARE_STREAM_TOKEN;
-  const deadline = Date.now() + maxWaitMs;
-
-  while (Date.now() < deadline) {
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/stream/${uid}`,
-      { headers: { Authorization: `Bearer ${streamToken}` } }
-    );
-    if (!res.ok) {
-      console.error("[register-video] Stream status check failed:", res.status);
-      break;
-    }
-    const { result } = await res.json();
-    console.log("[register-video] Stream status:", result.status?.state);
-    if (result.status?.state === "ready") return result;
-    await new Promise(r => setTimeout(r, 3000));
-  }
-  return null;
-}
-
-async function getIpLocation(request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
-  const ip = (forwarded ? forwarded.split(",")[0].trim() : null) || realIp || null;
-  if (!ip) return "Location unavailable";
-  try {
-    const res = await fetch(`http://ip-api.com/json/${ip}?fields=city,regionName,country,status`, { signal: AbortSignal.timeout(4000) });
-    if (!res.ok) return "Location unavailable";
-    const data = await res.json();
-    if (data.status !== "success") return "Location unavailable";
-    const parts = [data.city, data.regionName, data.country].filter(Boolean);
-    return parts.length ? parts.join(", ") : "Location unavailable";
-  } catch {
-    return "Location unavailable";
-  }
-}
 
 export async function POST(request) {
   console.log("[register-video] POST received");
@@ -140,8 +102,7 @@ export async function POST(request) {
     return Response.json({ error: "Failed to save video record", detail: String(err) }, { status: 500 });
   }
 
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "https://lift-pitch.co").replace(/\/$/, "");
-  const shareLink = `${appUrl}/v/${videoRecord.id}`;
+  const shareLink = shareLinkFor(videoRecord.id);
   try {
     const { error } = await supabase
       .from("videos")
@@ -156,8 +117,7 @@ export async function POST(request) {
   // Poll Stream until ready, then update the row.
   const streamResult = await pollStreamReady(streamUid);
   if (streamResult) {
-    const customerCode = process.env.CLOUDFLARE_STREAM_CUSTOMER_CODE;
-    const mp4Url = `https://customer-${customerCode}.cloudflarestream.com/${streamUid}/manifest/video.m3u8`;
+    const mp4Url = streamMp4Url(streamUid);
     try {
       const { error } = await supabase
         .from("videos")

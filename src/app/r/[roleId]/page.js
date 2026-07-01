@@ -118,14 +118,21 @@ export default function CandidateRecordPage() {
   const [loadState, setLoadState] = useState("loading"); // loading | ready | notfound
   const [role, setRole] = useState(null);
 
-  // Candidate-entered name — collected & held in state. NOT required in 3a;
-  // enforcement ("name required before link generation") arrives in Stage 3b.
+  // Candidate details — collected in the "details" step, after a take is kept.
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState(false);
 
-  // Recorder state machine — mirrors the dashboard recorder.
-  const [state, setState] = useState("idle"); // idle | previewing | countdown | recording | preview | accepted
+  // Recorder state machine — mirrors the dashboard recorder, then continues
+  // through the accountless save: details → uploading → done.
+  const [state, setState] = useState("idle"); // idle | previewing | countdown | recording | preview | details | uploading | done
   const [countdown, setCountdown] = useState(3);
   const [cameraError, setCameraError] = useState(null);
+
+  // Result of the save: the candidate's own /v/{id} link + copy feedback.
+  const [resultLink, setResultLink] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
 
   const videoRef = useRef(null);
   const mrRef = useRef(null);
@@ -258,15 +265,71 @@ export default function CandidateRecordPage() {
     setTimeout(() => startCamera(), 200);
   };
 
-  // "Use this take" — keep the blob in state and STOP (Stage 3a ends here).
+  // "Use this take" — keep the blob and move to the details step.
   const acceptTake = () => {
     if (!pendingBlobRef.current) return;
     acceptedBlobRef.current = pendingBlobRef.current;
     pendingBlobRef.current = null;
-    setState("accepted");
+    setUploadError(null);
+    setState("details");
+  };
+
+  // "Get my link" — upload the accepted take through the sponsored
+  // (unauthenticated, service-role) routes, then surface the /v/{id} link.
+  const submit = async () => {
+    if (!name.trim() || !consent || !acceptedBlobRef.current) return;
+    setUploadError(null);
+    setState("uploading");
+    try {
+      const urlRes = await fetch("/api/sponsored/get-upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId }),
+      });
+      if (!urlRes.ok) throw new Error(`get-upload-url: ${urlRes.status}`);
+      const { uploadURL, uid } = await urlRes.json();
+
+      const formData = new FormData();
+      formData.append("file", acceptedBlobRef.current.blob, "video.webm");
+      const putRes = await fetch(uploadURL, { method: "POST", body: formData });
+      if (!putRes.ok) throw new Error(`stream upload: ${putRes.status}`);
+
+      const regRes = await fetch("/api/sponsored/register-video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          roleId,
+          streamUid: uid,
+          candidateName: name.trim(),
+          candidateEmail: email.trim() || null,
+        }),
+      });
+      if (!regRes.ok) throw new Error(`register-video: ${regRes.status}`);
+      const { shareLink } = await regRes.json();
+      setResultLink(shareLink);
+      setState("done");
+    } catch (err) {
+      console.error("[/r] submit failed:", err);
+      setUploadError("Something went wrong saving your video. Please try again.");
+      setState("details");
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(resultLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard unavailable — link is still visible for manual copy */
+    }
   };
 
   const fmt = s => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
+
+  // States after a take is kept — the recorder viewport shows the "Take saved" card.
+  const takeKept = state === "details" || state === "uploading" || state === "done";
+  const canSubmit = name.trim().length > 0 && consent;
 
   if (loadState === "loading") return <Spinner color={DEFAULT_BRAND_COLOR} />;
   if (loadState === "notfound") return <NotFound />;
@@ -333,34 +396,6 @@ export default function CandidateRecordPage() {
           </p>
         </div>
 
-        {/* Name field — collected now, required in Stage 3b. Does NOT gate the camera. */}
-        <div style={{
-          background: "#fff", border: `1px solid #E3E9F0`, borderRadius: 16,
-          padding: 24, marginBottom: 20,
-          boxShadow: "0 2px 12px rgba(42,80,128,0.05)",
-        }}>
-          <label htmlFor="candidate-name" style={{
-            fontFamily: SORA, fontSize: 12, fontWeight: 700, color: brandColor,
-            textTransform: "uppercase", letterSpacing: "0.1em", display: "block",
-            marginBottom: 10,
-          }}>Your name</label>
-          <input
-            id="candidate-name"
-            type="text"
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="e.g. Jordan Rivera"
-            style={{
-              width: "100%", padding: "14px 16px", boxSizing: "border-box",
-              border: `1.5px solid #D6DEE8`, borderRadius: 12,
-              fontFamily: DM, fontSize: 15, color: "#1A1A2E", background: "#F7FAFD",
-              outline: "none", transition: "border-color 0.2s",
-            }}
-            onFocus={e => { e.target.style.borderColor = brandColor; }}
-            onBlur={e => { e.target.style.borderColor = "#D6DEE8"; }}
-          />
-        </div>
-
         {/* Recorder card */}
         <div style={{
           background: "#fff", border: `1px solid #E3E9F0`, borderRadius: 16,
@@ -380,25 +415,25 @@ export default function CandidateRecordPage() {
               ref={videoRef}
               style={{
                 width: "100%", height: "100%", objectFit: "cover",
-                display: state === "idle" || state === "accepted" ? "none" : "block",
+                display: takeKept || state === "idle" ? "none" : "block",
                 transform: state !== "preview" ? "scaleX(-1)" : "none",
               }}
               playsInline
               controls={state === "preview"}
             />
 
-            {(state === "idle" || state === "accepted") && (
+            {(takeKept || state === "idle") && (
               <div style={{
                 position: "absolute", inset: 0, display: "flex", flexDirection: "column",
                 alignItems: "center", justifyContent: "center", background: "#0D1825",
               }}>
                 <div style={{ fontSize: 48, marginBottom: 12, opacity: 0.4 }}>
-                  {state === "accepted" ? "✅" : "📹"}
+                  {takeKept ? "✅" : "📹"}
                 </div>
                 {cameraError
                   ? <span style={{ fontFamily: DM, fontSize: 13, color: "#FF8A80", textAlign: "center", padding: "0 16px" }}>{cameraError}</span>
                   : <span style={{ fontFamily: DM, fontSize: 14, color: "rgba(255,255,255,0.6)" }}>
-                      {state === "accepted" ? "Take saved" : "Click below to start your camera"}
+                      {takeKept ? "Take saved" : "Click below to start your camera"}
                     </span>
                 }
               </div>
@@ -510,27 +545,160 @@ export default function CandidateRecordPage() {
             )}
           </div>
 
-          {/* Stage 3a stops here — placeholder after a take is accepted. */}
-          {state === "accepted" && (
-            <div style={{
-              marginTop: 4, padding: 20, borderRadius: 14,
-              background: "rgba(5,118,66,0.05)", border: "1px solid rgba(5,118,66,0.18)",
-            }}>
+          {/* Details step — collect name / email / consent, then save. */}
+          {(state === "details" || state === "uploading") && (
+            <div style={{ marginTop: 4 }}>
               <div style={{
                 fontFamily: SORA, fontSize: 13, fontWeight: 700, color: "#057642",
-                display: "flex", alignItems: "center", gap: 8,
+                display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
               }}>
-                <span>✓</span> Take saved
+                <span>✓</span> Take saved — add your details to get your link
               </div>
-              <p style={{ fontFamily: DM, fontSize: 14, color: "#56687A", margin: "8px 0 16px", lineHeight: 1.55 }}>
-                Your video is ready. Next step coming soon — you&apos;ll add your details and
-                get a shareable link to send {companyName}.
+
+              {/* Name (required) */}
+              <label htmlFor="candidate-name" style={{
+                fontFamily: SORA, fontSize: 12, fontWeight: 700, color: brandColor,
+                textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8,
+              }}>Your name</label>
+              <input
+                id="candidate-name"
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="e.g. Jordan Rivera"
+                disabled={state === "uploading"}
+                style={{
+                  width: "100%", padding: "14px 16px", boxSizing: "border-box",
+                  border: `1.5px solid #D6DEE8`, borderRadius: 12, marginBottom: 16,
+                  fontFamily: DM, fontSize: 15, color: "#1A1A2E", background: "#F7FAFD",
+                  outline: "none", transition: "border-color 0.2s",
+                }}
+                onFocus={e => { e.target.style.borderColor = brandColor; }}
+                onBlur={e => { e.target.style.borderColor = "#D6DEE8"; }}
+              />
+
+              {/* Email (optional) */}
+              <label htmlFor="candidate-email" style={{
+                fontFamily: SORA, fontSize: 12, fontWeight: 700, color: brandColor,
+                textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8,
+              }}>Email <span style={{ color: "#8A97A6", fontWeight: 600 }}>(optional)</span></label>
+              <input
+                id="candidate-email"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                disabled={state === "uploading"}
+                style={{
+                  width: "100%", padding: "14px 16px", boxSizing: "border-box",
+                  border: `1.5px solid #D6DEE8`, borderRadius: 12, marginBottom: 6,
+                  fontFamily: DM, fontSize: 15, color: "#1A1A2E", background: "#F7FAFD",
+                  outline: "none", transition: "border-color 0.2s",
+                }}
+                onFocus={e => { e.target.style.borderColor = brandColor; }}
+                onBlur={e => { e.target.style.borderColor = "#D6DEE8"; }}
+              />
+              <p style={{ fontFamily: DM, fontSize: 12.5, color: "#8A97A6", margin: "0 0 18px" }}>
+                We&apos;ll email you your link.
               </p>
-              <button onClick={redo} style={{
-                padding: "10px 22px", borderRadius: 10, border: "1.5px solid #D6DEE8",
-                background: "#fff", color: "#1A1A2E",
-                fontFamily: SORA, fontSize: 13, fontWeight: 600, cursor: "pointer",
-              }}>🔄 Record a different take</button>
+
+              {/* Consent (required) */}
+              <label style={{
+                display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer",
+                padding: "14px 16px", borderRadius: 12, background: "#F7FAFD",
+                border: `1.5px solid ${consent ? brandColor : "#D6DEE8"}`, transition: "border-color 0.2s",
+              }}>
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={e => setConsent(e.target.checked)}
+                  disabled={state === "uploading"}
+                  style={{ marginTop: 2, width: 18, height: 18, accentColor: brandColor, flexShrink: 0 }}
+                />
+                <span style={{ fontFamily: DM, fontSize: 13.5, color: "#1A1A2E", lineHeight: 1.55 }}>
+                  I confirm I&apos;m the person in this recording, that it was recorded live just now,
+                  and I agree to LiftPitch&apos;s{" "}
+                  <a href="/legal#tos" target="_blank" rel="noopener noreferrer" style={{ color: brandColor, fontWeight: 600 }}>Terms of Service</a>{" "}
+                  and{" "}
+                  <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: brandColor, fontWeight: 600 }}>Privacy Policy</a>,
+                  including recording this video and sharing it with the employer.
+                </span>
+              </label>
+
+              <p style={{ fontFamily: DM, fontSize: 12.5, color: "#56687A", margin: "12px 0 0", textAlign: "center" }}>
+                Real people review your pitch — it&apos;s never scored or ranked by AI.
+              </p>
+
+              {uploadError && (
+                <p style={{ fontFamily: DM, fontSize: 13, color: "#DC3545", margin: "14px 0 0", textAlign: "center" }}>
+                  {uploadError}
+                </p>
+              )}
+
+              <button
+                onClick={submit}
+                disabled={!canSubmit || state === "uploading"}
+                style={{
+                  marginTop: 18, width: "100%", padding: "15px 32px", borderRadius: 12, border: "none",
+                  background: (!canSubmit || state === "uploading") ? "#C4CDD8" : brandColor, color: "#fff",
+                  fontFamily: SORA, fontSize: 15, fontWeight: 700,
+                  cursor: (!canSubmit || state === "uploading") ? "not-allowed" : "pointer",
+                }}
+              >
+                {state === "uploading" ? "Saving your video…" : "Get my link"}
+              </button>
+
+              {state === "details" && (
+                <button onClick={redo} style={{
+                  marginTop: 10, width: "100%", padding: "10px 22px", borderRadius: 10,
+                  border: "1.5px solid #D6DEE8", background: "#fff", color: "#1A1A2E",
+                  fontFamily: SORA, fontSize: 13, fontWeight: 600, cursor: "pointer",
+                }}>🔄 Record a different take</button>
+              )}
+            </div>
+          )}
+
+          {/* Result step — the candidate's own /v/{id} link. */}
+          {state === "done" && (
+            <div style={{ marginTop: 4 }}>
+              <div style={{
+                fontFamily: SORA, fontSize: 15, fontWeight: 800, color: "#1A1A2E", marginBottom: 6,
+              }}>
+                🎉 Your video is ready!
+              </div>
+              <p style={{ fontFamily: DM, fontSize: 14, color: "#56687A", margin: "0 0 16px", lineHeight: 1.55 }}>
+                Paste this link into your job application.
+              </p>
+
+              <div style={{
+                background: "#F7FAFD", border: `1.5px solid #D6DEE8`, borderRadius: 12,
+                padding: "16px 18px", marginBottom: 12,
+              }}>
+                <div style={{
+                  fontFamily: SORA, fontSize: 11, fontWeight: 700, color: brandColor,
+                  textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8,
+                }}>Your verified link</div>
+                <a href={resultLink} target="_blank" rel="noopener noreferrer" style={{
+                  fontFamily: DM, fontSize: 15, color: brandColor, fontWeight: 600, wordBreak: "break-all",
+                }}>{resultLink}</a>
+              </div>
+
+              <button onClick={copyLink} style={{
+                width: "100%", padding: "14px 32px", borderRadius: 12, border: "none",
+                background: copied ? "#057642" : brandColor, color: "#fff",
+                fontFamily: SORA, fontSize: 15, fontWeight: 700, cursor: "pointer",
+                transition: "background 0.2s",
+              }}>{copied ? "✓ Copied" : "Copy link"}</button>
+
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                margin: "18px 0 0",
+              }}>
+                <span style={{ fontSize: 15 }}>✅</span>
+                <span style={{ fontFamily: DM, fontSize: 13, color: "#56687A" }}>
+                  Verified live recording · <span style={{ fontWeight: 700, color: "#56687A" }}>Powered by LiftPitch</span>
+                </span>
+              </div>
             </div>
           )}
         </div>
