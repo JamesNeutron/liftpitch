@@ -123,24 +123,9 @@ function useTimer(max) {
 // ─── Landing Page ───
 
 const steps = [
-  {
-    n: "1", emoji: "📄",
-    color: "#E06847", colorLight: "rgba(224,104,71,0.1)", colorMid: "rgba(224,104,71,0.18)",
-    t: "Paste your resume & the job description",
-    d: "No formatting needed — just paste the text of your resume and the job posting, then add a quick paragraph about yourself. The whole thing takes about 2 minutes.",
-  },
-  {
-    n: "2", emoji: "✨",
-    color: "#0A66C2", colorLight: "rgba(10,102,194,0.08)", colorMid: "rgba(10,102,194,0.16)",
-    t: "Get a personalized script written for you",
-    d: "Our AI reads your resume and the job posting together, then writes a pitch that connects your real experience to what they're actually looking for. No generic fluff — just your story, told well.",
-  },
-  {
-    n: "3", emoji: "🎥",
-    color: "#057642", colorLight: "rgba(5,118,66,0.08)", colorMid: "rgba(5,118,66,0.16)",
-    t: "Record a unique pitch for each application",
-    d: "Each pitch is tailored to the specific role and company. Recruiters can tell when a video is generic — a personalized pitch shows you actually want THIS job.",
-  },
+  { n: "1", img: "/howitworks-1-console.png", t: "Set up your roles & company branding" },
+  { n: "2", img: "/howitworks-2-application.png", t: "Add your link to the post's application questions" },
+  { n: "3", img: "/howitworks-3-record.png", t: "Receive real, verified candidate intros" },
 ];
 
 // Full-width section band — stretches edge to edge with its own background,
@@ -196,6 +181,37 @@ function HeroVisual() {
           }}>Product preview</span>
         </div>
       )}
+    </div>
+  );
+}
+
+// Uniform screenshot for a "How it works" card. Fixed height + object-fit cover
+// so all three line up cleanly regardless of source dimensions. Falls back to a
+// same-size neutral placeholder if the image file isn't present.
+function StepImage({ src, alt }) {
+  const [imgOk, setImgOk] = useState(true);
+  const frame = {
+    width: "100%", height: 200, borderRadius: 16, overflow: "hidden",
+    border: `1px solid ${B.border}`,
+    boxShadow: "0 6px 24px rgba(10,102,194,0.10), 0 2px 8px rgba(0,0,0,0.05)",
+  };
+  return imgOk ? (
+    <img
+      src={src}
+      alt={alt}
+      onError={() => setImgOk(false)}
+      style={{ ...frame, display: "block", objectFit: "cover", objectPosition: "top" }}
+    />
+  ) : (
+    <div style={{
+      ...frame,
+      background: "linear-gradient(135deg, #EDF2F8 0%, #DCE6F2 100%)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <span style={{
+        fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 600,
+        color: B.textDim, letterSpacing: "0.04em",
+      }}>Preview</span>
     </div>
   );
 }
@@ -289,43 +305,36 @@ function Landing({ onStart }) {
 
       {/* ── How It Works ── */}
       <Section bg="#FFFFFF" id="how-it-works">
-      <div style={{ maxWidth: 900, width: "100%" }}>
+      <div style={{ maxWidth: 1200, width: "100%" }}>
         <p style={{
           fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
           letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10,
         }}>How it works</p>
         <h2 style={{
           fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800,
-          color: B.text, textAlign: "center", margin: "0 auto 52px", maxWidth: 520, lineHeight: 1.22,
+          color: B.text, textAlign: "center", margin: "0 auto 52px", maxWidth: 620, lineHeight: 1.22,
         }}>
-          Three steps from invisible<br />to unforgettable
+          From open role to verified intro — in three steps
         </h2>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 24, justifyContent: "center" }}>
-          {steps.map((s, i) => (
-            <div key={s.n} style={{
-              flex: "1 1 250px", maxWidth: 278,
-              background: "#FFFFFF",
-              border: `1.5px solid ${s.colorMid}`,
-              borderRadius: 24, padding: "36px 30px",
-              boxShadow: `0 6px 28px rgba(0,0,0,0.05)`,
-              position: "relative", overflow: "hidden",
-            }}>
-              {/* Colored step number badge */}
-              <div style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                width: 48, height: 48, borderRadius: 14,
-                background: s.colorLight, marginBottom: 20,
-              }}>
-                <span style={{
-                  fontFamily: "'Sora', sans-serif", fontSize: 26, fontWeight: 900, color: s.color,
-                  lineHeight: 1,
-                }}>{s.n}</span>
+        <div className="howitworks-grid">
+          {steps.map((s) => (
+            <div key={s.n} style={{ display: "flex", flexDirection: "column" }}>
+              <StepImage src={s.img} alt={s.t} />
+              <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 22 }}>
+                {/* Brand-blue step number badge */}
+                <div style={{
+                  flexShrink: 0,
+                  display: "inline-flex", alignItems: "center", justifyContent: "center",
+                  width: 40, height: 40, borderRadius: 12, background: B.accent,
+                }}>
+                  <span style={{
+                    fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 900, color: "#fff",
+                    lineHeight: 1,
+                  }}>{s.n}</span>
+                </div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 700,
+                  color: B.text, lineHeight: 1.3 }}>{s.t}</div>
               </div>
-              <div style={{ fontSize: 34, marginBottom: 14 }}>{s.emoji}</div>
-              <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 700,
-                color: B.text, marginBottom: 12, lineHeight: 1.35 }}>{s.t}</div>
-              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 14.5, color: B.textMuted,
-                lineHeight: 1.8 }}>{s.d}</div>
             </div>
           ))}
         </div>

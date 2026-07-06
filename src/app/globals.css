@@ -39,3 +39,18 @@ body {
     gap: 40px;
   }
 }
+
+/* How it works: three cards across on desktop, one column on mobile */
+.howitworks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(24px, 3vw, 40px);
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .howitworks-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+}
