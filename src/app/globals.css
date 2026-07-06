@@ -21,3 +21,21 @@ body {
     flex-wrap: wrap;
   }
 }
+
+/* Employer hero: two columns on desktop, stacks (text first) on tablet/mobile */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: clamp(32px, 5vw, 64px);
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+}

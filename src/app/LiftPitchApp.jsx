@@ -145,9 +145,9 @@ const steps = [
 
 // Full-width section band — stretches edge to edge with its own background,
 // while keeping inner content centered at a constrained max-width.
-function Section({ bg, pad, children }) {
+function Section({ bg, pad, children, id }) {
   return (
-    <section style={{
+    <section id={id} style={{
       width: "100%", background: bg,
       display: "flex", flexDirection: "column", alignItems: "center",
       padding: pad || "clamp(56px, 8vw, 96px) 20px",
@@ -157,7 +157,53 @@ function Section({ bg, pad, children }) {
   );
 }
 
+// Browser-framed product screenshot for the employer hero. Falls back to a
+// same-size placeholder box if /hero-recruiter-intro.png isn't present yet.
+function HeroVisual() {
+  const [imgOk, setImgOk] = useState(true);
+  return (
+    <div style={{
+      width: "100%", borderRadius: 16, overflow: "hidden", background: "#FFFFFF",
+      border: `1px solid ${B.border}`,
+      boxShadow: "0 24px 64px rgba(10,102,194,0.14), 0 4px 16px rgba(0,0,0,0.06)",
+    }}>
+      {/* Browser chrome bar */}
+      <div style={{
+        display: "flex", alignItems: "center", gap: 8, padding: "12px 16px",
+        background: "#F1F4F8", borderBottom: `1px solid ${B.border}`,
+      }}>
+        {["#FF5F57", "#FEBC2E", "#28C840"].map(c => (
+          <span key={c} style={{ width: 11, height: 11, borderRadius: "50%", background: c }} />
+        ))}
+      </div>
+      {/* Screenshot, or placeholder of the same footprint */}
+      {imgOk ? (
+        <img
+          src="/hero-recruiter-intro.png"
+          alt="LiftPitch recruiter workflow with candidate video intros"
+          onError={() => setImgOk(false)}
+          style={{ display: "block", width: "100%", height: "auto" }}
+        />
+      ) : (
+        <div style={{
+          width: "100%", aspectRatio: "16 / 10",
+          background: "linear-gradient(135deg, #EDF2F8 0%, #DCE6F2 100%)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <span style={{
+            fontFamily: "'Sora', sans-serif", fontSize: 14, fontWeight: 600,
+            color: B.textDim, letterSpacing: "0.04em",
+          }}>Product preview</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Landing({ onStart }) {
+  const scrollToHowItWorks = () =>
+    document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -166,64 +212,83 @@ function Landing({ onStart }) {
       width: "100%", overflow: "hidden",
     }}>
 
-      {/* ── Hero ── */}
-      <Section bg="#FFFFFF" pad="clamp(40px, 6vw, 72px) 20px clamp(48px, 7vw, 88px)">
-      <div style={{ maxWidth: 740, width: "100%", textAlign: "center", margin: "0 auto" }}>
-        <p style={{
-          fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent,
-          letterSpacing: "0.12em", textTransform: "uppercase", margin: "0 0 16px",
-        }}>
-          Built by Recruiters, for Job Seekers
-        </p>
+      {/* ── Hero (employer-first, two-column) ── */}
+      <Section bg="#FFFFFF" pad="clamp(48px, 6vw, 80px) 20px clamp(56px, 7vw, 96px)">
+      <div className="hero-grid">
+        {/* Left column — copy */}
+        <div>
+          <p style={{
+            fontFamily: "'Sora', sans-serif", fontSize: 13, fontWeight: 700, color: B.accent,
+            letterSpacing: "0.14em", textTransform: "uppercase", margin: "0 0 18px",
+          }}>
+            For Employers
+          </p>
 
-        <h1 style={{
-          fontFamily: "'Sora', sans-serif", fontSize: "clamp(36px, 6.5vw, 70px)", fontWeight: 800,
-          lineHeight: 1.1, margin: "0 0 8px",
-          background: B.gradientHot, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-        }}>
-          A resume can only get you so far.
-        </h1>
+          <h1 style={{
+            fontFamily: "'Sora', sans-serif", fontSize: "clamp(30px, 4.4vw, 50px)", fontWeight: 800,
+            lineHeight: 1.12, letterSpacing: "-0.02em", color: B.text, margin: "0 0 20px",
+          }}>
+            Walk into your first-round screens like they&rsquo;re a warm meeting.
+          </h1>
 
-        <p style={{
-          fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(17px, 2.4vw, 21px)", color: B.textMuted,
-          lineHeight: 1.8, margin: "24px auto 32px", maxWidth: 580,
-        }}>
-          Our honest ATS helper gets you noticed — and a personalized video intro helps seal the deal.
-        </p>
+          <p style={{
+            fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(16px, 1.4vw, 19px)", color: B.textMuted,
+            lineHeight: 1.7, margin: "0 0 32px", maxWidth: 540,
+          }}>
+            LiftPitch adds candidate video intros to your job-post workflow — so you can assess for
+            culture and cut through the AI noise before you decide who to screen.
+          </p>
 
-        <Btn onClick={onStart} style={{ padding: "18px 56px", fontSize: 17, borderRadius: 16,
-          boxShadow: "0 6px 28px rgba(10,102,194,0.2)" }}>
-          Create My Free Pitch →
-        </Btn>
+          {/* CTAs */}
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", alignItems: "center" }}>
+            <a href="/employers/signup" style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              padding: "16px 36px", borderRadius: 14,
+              background: B.gradientHot, color: "#fff", textDecoration: "none",
+              fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, letterSpacing: "0.01em",
+              boxShadow: "0 8px 28px rgba(10,102,194,0.22)", transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 12px 36px rgba(10,102,194,0.3)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(10,102,194,0.22)"; }}
+            >
+              Start Free Pilot →
+            </a>
+            <button onClick={scrollToHowItWorks} style={{
+              padding: "16px 28px", borderRadius: 14, cursor: "pointer",
+              background: B.surface, color: B.text, border: `1.5px solid ${B.border}`,
+              fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
+              transition: "border-color 0.2s, color 0.2s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = B.accent; e.currentTarget.style.color = B.accent; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.color = B.text; }}
+            >
+              See how it works
+            </button>
+          </div>
 
-        <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, color: B.textDim, marginTop: 16 }}>
-          No account needed · Takes under 5 minutes · 100% free to start
-        </p>
-      </div>
+          {/* Trust chips */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 28 }}>
+            {["Live-verified", "Drops into any ATS", "Never scored by AI"].map(t => (
+              <span key={t} style={{
+                display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 14px",
+                borderRadius: 100, background: "#F1F4F8", border: `1px solid ${B.border}`,
+                fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textMuted,
+              }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: B.success }} /> {t}
+              </span>
+            ))}
+          </div>
+        </div>
 
-      {/* Feature pills */}
-      <div className="feature-pills" style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginTop: "clamp(24px, 4vw, 40px)" }}>
-        {[
-          { icon: "🛡️", label: "Live verified — no fakes" },
-          { icon: "🎯", label: "Job-matched AI script" },
-          { icon: "🔗", label: "Shareable link for any app" },
-          { icon: "📊", label: "See who watched" },
-        ].map(f => (
-          <div key={f.label} style={{
-            display: "flex", alignItems: "center", gap: 8, padding: "10px 20px",
-            borderRadius: 100, background: "rgba(255,255,255,0.9)",
-            border: "1px solid rgba(0,0,0,0.07)",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
-            fontSize: 13.5, color: B.textMuted, fontFamily: "'DM Sans', sans-serif",
-          }}><span>{f.icon}</span> {f.label}</div>
-        ))}
+        {/* Right column — product screenshot */}
+        <HeroVisual />
       </div>
       </Section>
 
       {/* ── See LiftPitch in Action — section removed until the real demo video exists; re-add the <Section> with the video embed here ── */}
 
       {/* ── How It Works ── */}
-      <Section bg="#FFFFFF">
+      <Section bg="#FFFFFF" id="how-it-works">
       <div style={{ maxWidth: 900, width: "100%" }}>
         <p style={{
           fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
