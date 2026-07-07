@@ -44,7 +44,7 @@ body {
 .howitworks-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: clamp(24px, 3vw, 40px);
+  gap: clamp(32px, 3.5vw, 52px);
   width: 100%;
 }
 

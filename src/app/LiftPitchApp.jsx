@@ -191,7 +191,7 @@ function HeroVisual() {
 function StepImage({ src, alt }) {
   const [imgOk, setImgOk] = useState(true);
   const frame = {
-    width: "100%", height: 200, borderRadius: 16, overflow: "hidden",
+    width: "100%", height: "clamp(240px, 26vw, 360px)", borderRadius: 16, overflow: "hidden",
     border: `1px solid ${B.border}`,
     boxShadow: "0 6px 24px rgba(10,102,194,0.10), 0 2px 8px rgba(0,0,0,0.05)",
   };
@@ -229,7 +229,7 @@ function Landing({ onStart }) {
     }}>
 
       {/* ── Hero (employer-first, two-column) ── */}
-      <Section bg="#FFFFFF" pad="clamp(48px, 6vw, 80px) 20px clamp(56px, 7vw, 96px)">
+      <Section bg="#FFFFFF" pad="clamp(48px, 6vw, 80px) 20px clamp(32px, 4vw, 56px)">
       <div className="hero-grid">
         {/* Left column — copy */}
         <div>
@@ -304,15 +304,15 @@ function Landing({ onStart }) {
       {/* ── See LiftPitch in Action — section removed until the real demo video exists; re-add the <Section> with the video embed here ── */}
 
       {/* ── How It Works ── */}
-      <Section bg="#FFFFFF" id="how-it-works">
-      <div style={{ maxWidth: 1200, width: "100%" }}>
+      <Section bg="#FFFFFF" id="how-it-works" pad="clamp(28px, 3.5vw, 44px) 16px clamp(40px, 5vw, 72px)">
+      <div style={{ maxWidth: 1340, width: "100%" }}>
         <p style={{
           fontFamily: "'Sora', sans-serif", fontSize: 12, color: B.textDim, textAlign: "center",
           letterSpacing: "0.14em", textTransform: "uppercase", marginBottom: 10,
         }}>How it works</p>
         <h2 style={{
-          fontFamily: "'Sora', sans-serif", fontSize: "clamp(24px, 3.5vw, 36px)", fontWeight: 800,
-          color: B.text, textAlign: "center", margin: "0 auto 52px", maxWidth: 620, lineHeight: 1.22,
+          fontFamily: "'Sora', sans-serif", fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 800,
+          color: B.text, textAlign: "center", margin: "0 auto 40px", maxWidth: 620, lineHeight: 1.22,
         }}>
           From open role to verified intro — in three steps
         </h2>
@@ -332,7 +332,7 @@ function Landing({ onStart }) {
                     lineHeight: 1,
                   }}>{s.n}</span>
                 </div>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 18, fontWeight: 700,
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 23, fontWeight: 700,
                   color: B.text, lineHeight: 1.3 }}>{s.t}</div>
               </div>
             </div>
