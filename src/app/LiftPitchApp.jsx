@@ -171,7 +171,7 @@ function HeroVisual() {
         />
       ) : (
         <div style={{
-          width: "100%", aspectRatio: "16 / 10",
+          width: "100%", aspectRatio: "1440 / 754",
           background: "linear-gradient(135deg, #EDF2F8 0%, #DCE6F2 100%)",
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>
@@ -217,9 +217,6 @@ function StepImage({ src, alt }) {
 }
 
 function Landing({ onStart }) {
-  const scrollToHowItWorks = () =>
-    document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
-
   return (
     <div style={{
       minHeight: "100vh",
@@ -269,17 +266,6 @@ function Landing({ onStart }) {
             >
               Start Free Pilot →
             </a>
-            <button onClick={scrollToHowItWorks} style={{
-              padding: "16px 28px", borderRadius: 14, cursor: "pointer",
-              background: B.surface, color: B.text, border: `1.5px solid ${B.border}`,
-              fontFamily: "'Sora', sans-serif", fontSize: 15, fontWeight: 600,
-              transition: "border-color 0.2s, color 0.2s",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = B.accent; e.currentTarget.style.color = B.accent; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = B.border; e.currentTarget.style.color = B.text; }}
-            >
-              See how it works
-            </button>
           </div>
 
           {/* Trust chips */}
