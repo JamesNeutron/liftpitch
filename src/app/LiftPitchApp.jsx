@@ -185,13 +185,15 @@ function HeroVisual() {
   );
 }
 
-// Uniform screenshot for a "How it works" card. Fixed height + object-fit cover
-// so all three line up cleanly regardless of source dimensions. Falls back to a
+// Uniform screenshot for a "How it works" card. Fixed height + object-fit contain
+// on a light background so the full screenshot shows (no edge cropping) and all
+// three line up cleanly regardless of source dimensions. Falls back to a
 // same-size neutral placeholder if the image file isn't present.
 function StepImage({ src, alt }) {
   const [imgOk, setImgOk] = useState(true);
   const frame = {
-    width: "100%", height: "clamp(240px, 26vw, 360px)", borderRadius: 16, overflow: "hidden",
+    width: "100%", height: "clamp(240px, 22vw, 280px)", borderRadius: 16, overflow: "hidden",
+    background: "#F5F7FA",
     border: `1px solid ${B.border}`,
     boxShadow: "0 6px 24px rgba(10,102,194,0.10), 0 2px 8px rgba(0,0,0,0.05)",
   };
@@ -200,7 +202,7 @@ function StepImage({ src, alt }) {
       src={src}
       alt={alt}
       onError={() => setImgOk(false)}
-      style={{ ...frame, display: "block", objectFit: "cover", objectPosition: "top" }}
+      style={{ ...frame, display: "block", objectFit: "contain" }}
     />
   ) : (
     <div style={{
@@ -339,31 +341,30 @@ function Landing({ onStart }) {
           <h2 style={{
             fontFamily: "'Sora', sans-serif", fontSize: "clamp(26px, 4vw, 40px)", fontWeight: 800,
             color: "#fff", margin: "0 0 18px", lineHeight: 1.18,
-          }}>Let's get started.</h2>
+          }}>Meet the real candidate first.</h2>
           <p style={{
             fontFamily: "'DM Sans', sans-serif", fontSize: "clamp(15px, 2vw, 19px)",
             color: "rgba(255,255,255,0.9)", lineHeight: 1.75, margin: "0 auto 36px", maxWidth: 500,
           }}>
-            You've already done the hardest part — putting yourself out there.
-            Let us help you make sure the right people actually see you.
-            Your next interview is closer than you think.
+            Add a short video intro to the applications you already receive — and meet the
+            real person before you spend a single screening call. Set up your first role in minutes.
           </p>
-          <button onClick={onStart} style={{
+          <a href="/employers/signup" style={{
             display: "inline-block", padding: "18px 52px", borderRadius: 16,
-            background: "#fff", color: "#C4552E",
+            background: "#fff", color: "#C4552E", textDecoration: "none",
             fontFamily: "'Sora', sans-serif", fontSize: 17, fontWeight: 800,
-            border: "none", cursor: "pointer",
+            cursor: "pointer",
             boxShadow: "0 4px 24px rgba(0,0,0,0.15)",
             transition: "transform 0.2s, box-shadow 0.2s",
           }}
             onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 10px 36px rgba(0,0,0,0.2)"; }}
             onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(0,0,0,0.15)"; }}
           >
-            Create My Free Pitch →
-          </button>
+            Start Free Pilot →
+          </a>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 13.5,
             color: "rgba(255,255,255,0.65)", marginTop: 16 }}>
-            Free · No account needed · Done in 5 minutes
+            Free during the pilot · No credit card · Works inside your ATS
           </p>
         </div>
       </div>
