@@ -40,17 +40,47 @@ body {
   }
 }
 
-/* How it works: three cards across on desktop, one column on mobile */
-.howitworks-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(32px, 3.5vw, 52px);
+/* How it works: full-width alternating two-column rows, stacked vertically */
+.howitworks-rows {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(56px, 7vw, 96px);
   width: 100%;
 }
 
+.hiw-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(32px, 5vw, 72px);
+  align-items: center;
+}
+
+.hiw-image {
+  display: flex;
+  justify-content: center;
+}
+
+.hiw-text {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Alternate the image side: even (reverse) rows put the image on the right */
+.hiw-row--reverse .hiw-image { order: 2; }
+.hiw-row--reverse .hiw-text  { order: 1; }
+
 @media (max-width: 900px) {
-  .howitworks-grid {
+  .hiw-row {
     grid-template-columns: 1fr;
-    gap: 36px;
+    gap: 24px;
+  }
+  /* Always image-on-top with centered text underneath on mobile */
+  .hiw-row--reverse .hiw-image,
+  .hiw-row--reverse .hiw-text {
+    order: 0;
+  }
+  .hiw-text {
+    justify-content: center;
   }
 }

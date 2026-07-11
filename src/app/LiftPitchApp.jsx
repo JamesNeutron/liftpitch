@@ -185,28 +185,28 @@ function HeroVisual() {
   );
 }
 
-// Uniform screenshot for a "How it works" card. Fixed height + object-fit contain
-// on a light background so the full screenshot shows (no edge cropping) and all
-// three line up cleanly regardless of source dimensions. Falls back to a
-// same-size neutral placeholder if the image file isn't present.
+// Large product screenshot for a "How it works" row. Displays at natural aspect
+// ratio (no cropping) so the in-screenshot text stays legible, capped to a
+// comfortable max width and framed on a light background. Falls back to a
+// neutral placeholder of similar footprint if the image file isn't present.
 function StepImage({ src, alt }) {
   const [imgOk, setImgOk] = useState(true);
   const frame = {
-    width: "100%", height: "clamp(240px, 22vw, 280px)", borderRadius: 16, overflow: "hidden",
+    width: "100%", maxWidth: 620, borderRadius: 16, overflow: "hidden",
     background: "#F5F7FA",
     border: `1px solid ${B.border}`,
-    boxShadow: "0 6px 24px rgba(10,102,194,0.10), 0 2px 8px rgba(0,0,0,0.05)",
+    boxShadow: "0 12px 40px rgba(10,102,194,0.12), 0 3px 12px rgba(0,0,0,0.06)",
   };
   return imgOk ? (
     <img
       src={src}
       alt={alt}
       onError={() => setImgOk(false)}
-      style={{ ...frame, display: "block", objectFit: "contain" }}
+      style={{ ...frame, display: "block", height: "auto" }}
     />
   ) : (
     <div style={{
-      ...frame,
+      ...frame, aspectRatio: "16 / 9",
       background: "linear-gradient(135deg, #EDF2F8 0%, #DCE6F2 100%)",
       display: "flex", alignItems: "center", justifyContent: "center",
     }}>
@@ -300,28 +300,30 @@ function Landing({ onStart }) {
         }}>How it works</p>
         <h2 style={{
           fontFamily: "'Sora', sans-serif", fontSize: "clamp(28px, 4vw, 44px)", fontWeight: 800,
-          color: B.text, textAlign: "center", margin: "0 auto 40px", maxWidth: 620, lineHeight: 1.22,
+          color: B.text, textAlign: "center", margin: "0 auto clamp(48px, 6vw, 80px)", maxWidth: 620, lineHeight: 1.22,
         }}>
           From open role to verified intro — in three steps
         </h2>
-        <div className="howitworks-grid">
-          {steps.map((s) => (
-            <div key={s.n} style={{ display: "flex", flexDirection: "column" }}>
-              <StepImage src={s.img} alt={s.t} />
-              <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 22 }}>
+        <div className="howitworks-rows">
+          {steps.map((s, i) => (
+            <div key={s.n} className={`hiw-row${i % 2 === 1 ? " hiw-row--reverse" : ""}`}>
+              <div className="hiw-image">
+                <StepImage src={s.img} alt={s.t} />
+              </div>
+              <div className="hiw-text">
                 {/* Brand-blue step number badge */}
                 <div style={{
                   flexShrink: 0,
                   display: "inline-flex", alignItems: "center", justifyContent: "center",
-                  width: 40, height: 40, borderRadius: 12, background: B.accent,
+                  width: 48, height: 48, borderRadius: 14, background: B.accent,
                 }}>
                   <span style={{
-                    fontFamily: "'Sora', sans-serif", fontSize: 20, fontWeight: 900, color: "#fff",
+                    fontFamily: "'Sora', sans-serif", fontSize: 24, fontWeight: 900, color: "#fff",
                     lineHeight: 1,
                   }}>{s.n}</span>
                 </div>
-                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: 23, fontWeight: 700,
-                  color: B.text, lineHeight: 1.3 }}>{s.t}</div>
+                <div style={{ fontFamily: "'Sora', sans-serif", fontSize: "clamp(22px, 2.2vw, 30px)",
+                  fontWeight: 700, color: B.text, lineHeight: 1.28 }}>{s.t}</div>
               </div>
             </div>
           ))}
