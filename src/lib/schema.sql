@@ -50,6 +50,24 @@ create table videos (
 -- Migration: add stream_uid column to existing deployments
 -- alter table videos add column if not exists stream_uid text;
 
+-- Migration (consent-signature): legally-required pre-camera consent record.
+-- signature_name  — the full name the candidate typed as their signature at the
+--                   pre-camera consent gate on /r/[roleId]. Mirrors candidate_name.
+-- consented_at    — server-generated timestamp captured at the save path; never
+--                   trusted from the client.
+-- terms_version   — value of TERMS_VERSION (src/lib/consent.js) at save time, so
+--                   each row records exactly which terms revision was agreed to.
+-- Apply in the Supabase SQL editor — DDL is not run by the app.
+-- alter table videos add column if not exists signature_name text;
+-- alter table videos add column if not exists consented_at   timestamptz;
+-- alter table videos add column if not exists terms_version  text;
+--
+-- RLS: no new policy. These columns inherit the existing videos policies. The
+-- recruiter-facing /v read (/api/video/[id], service role) deliberately does not
+-- select them, so no new public read access is introduced. (The pre-existing
+-- "Anyone can view videos" USING (true) select policy remains a separate,
+-- already-tracked follow-up and is intentionally left unchanged here.)
+
 alter table videos enable row level security;
 
 -- Anyone with the UUID link can watch the video (public shareable links)

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { pollStreamReady, streamMp4Url, getIpLocation, shareLinkFor } from "../../../../lib/stream";
+import { TERMS_VERSION } from "../../../../lib/consent";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -79,6 +80,19 @@ export async function POST(request) {
   const verificationHash = `VP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
   const ipLocation = await getIpLocation(request);
 
+  // Consent-signature record. The candidate typed and consented at the
+  // pre-camera gate on /r/[roleId]; the signature is their typed name, the
+  // timestamp is server-generated here (never trusted from the client), and
+  // terms_version pins the exact terms revision they agreed to. A recording
+  // must never be saved without all three — enforce it before the insert.
+  const signatureName = candidateName;
+  const consentedAt = new Date().toISOString();
+  const termsVersion = TERMS_VERSION;
+  if (!signatureName || !consentedAt || !termsVersion) {
+    console.error("[sponsored/register-video] refusing to save without consent record");
+    return Response.json({ error: "Missing consent record" }, { status: 400 });
+  }
+
   let videoRecord;
   try {
     const { data: inserted, error } = await supabase
@@ -92,8 +106,11 @@ export async function POST(request) {
         ip_location: ipLocation,
         candidate_name: candidateName,
         candidate_email: candidateEmail,
-        consent_accepted_at: new Date().toISOString(),
+        consent_accepted_at: consentedAt,
         consent_version: CONSENT_VERSION,
+        signature_name: signatureName,
+        consented_at: consentedAt,
+        terms_version: termsVersion,
         role_id: roleId,
         company_name: role.company_name,
         role_name: role.role_title,
