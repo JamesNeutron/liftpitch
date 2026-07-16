@@ -230,6 +230,23 @@ export default function CandidateRecordPage() {
 
   const stopRec = () => { mrRef.current?.stop(); timer.stop(); };
 
+  // Attach the live stream to the <video> once it mounts. startCamera() can be
+  // called from the "consent" state — before the recorder card (and its
+  // videoRef) exists — so the srcObject assignment inside startCamera may hit a
+  // null ref. This re-attaches whenever we enter a live-preview state and the
+  // element is available. Recorded playback (state === "preview") is left alone;
+  // beginRec's onstop owns swapping in the recorded blob.
+  useEffect(() => {
+    const live = state === "previewing" || state === "countdown" || state === "recording";
+    const v = videoRef.current;
+    if (live && v && streamRef.current && v.srcObject !== streamRef.current) {
+      v.srcObject = streamRef.current;
+      v.muted = true;
+      v.playsInline = true;
+      v.play();
+    }
+  }, [state]);
+
   // Auto-stop when the total time is reached.
   useEffect(() => {
     if (timer.sec >= maxDur && state === "recording") stopRec();
