@@ -30,6 +30,42 @@ create policy "Users can insert own profile"
   on profiles for insert
   with check (auth.uid() = id);
 
+-- Migration (employer-accept): record an employer's acceptance of the Employer
+-- Agreement + Privacy Policy at signup. The Employer Agreement is accepted "by
+-- creating an employer account, clicking to accept", so the acceptance checkbox
+-- on /employers/signup is required and the acceptance is persisted here on the
+-- employer's own profiles row.
+--   employer_terms_version     — value of TERMS_VERSION (src/lib/consent.js) the
+--                                employer agreed to; set client-side at signup.
+--   employer_terms_accepted_at — server-generated timestamp, stamped by the
+--                                trigger below (never client-supplied) so the
+--                                acceptance time is authoritative and can't be
+--                                back-dated by the browser.
+-- The existing owner-only "Users can update own profile" policy already scopes
+-- who can write these; no RLS change is needed and no public read is added.
+alter table profiles add column if not exists employer_terms_accepted_at timestamptz;
+alter table profiles add column if not exists employer_terms_version    text;
+
+-- Stamp the acceptance time server-side whenever a terms version is recorded and
+-- the timestamp is not already set. Runs on insert and update so the value is
+-- always the database clock, regardless of what the client sends.
+create or replace function public.stamp_employer_terms()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.employer_terms_version is not null
+     and new.employer_terms_accepted_at is null then
+    new.employer_terms_accepted_at := now();
+  end if;
+  return new;
+end;
+$$;
+
+create trigger stamp_employer_terms_before_write
+  before insert or update on profiles
+  for each row execute procedure public.stamp_employer_terms();
+
 
 -- videos: pitch videos created by users
 create table videos (
