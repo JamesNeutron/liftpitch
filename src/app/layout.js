@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'LiftPitch — Your Resume, Now in Motion',
-  description: 'Record a verified live video pitch and share it on your resume',
+  title: 'LiftPitch — Meet the real candidate first',
+  description: 'Add live-verified candidate video intros to your job-post workflow — meet the real person before you decide who to screen.',
   icons: {
     icon: [
       { url: '/favicon.ico' },

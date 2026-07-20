@@ -84,3 +84,115 @@ body {
     justify-content: center;
   }
 }
+
+/* ── Dark "principles" band: three columns, stacks on mobile ── */
+.principles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(28px, 4vw, 56px);
+  width: 100%;
+  max-width: 1000px;
+}
+
+@media (max-width: 760px) {
+  .principles-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+/* ── How it works "spine": a vertical center line with numbered nodes,
+   steps alternating left/right around it. Collapses to a clean stack on
+   mobile (line hidden, node → mockup → text). ── */
+.hiw-spine {
+  position: relative;
+  width: 100%;
+  max-width: 1080px;
+}
+
+/* the 1px vertical line running the full section height */
+.hiw-spine::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: #E2E8F0;
+  transform: translateX(-0.5px);
+}
+
+.spine-step {
+  display: grid;
+  grid-template-columns: 1fr 64px 1fr;
+  align-items: center;
+  position: relative;
+  margin-bottom: clamp(48px, 6vw, 88px);
+}
+
+.spine-step:last-child {
+  margin-bottom: 0;
+}
+
+.spine-node {
+  grid-column: 2;
+  display: flex;
+  justify-content: center;
+}
+
+.node-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #0A66C2;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Sora', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  z-index: 2;
+  /* white ring punches the node cleanly through the vertical line */
+  box-shadow: 0 0 0 7px #FFFFFF;
+}
+
+.spine-mock {
+  grid-column: 1;
+  padding: 0 clamp(16px, 3vw, 48px);
+}
+
+.spine-text {
+  grid-column: 3;
+  padding: 0 clamp(16px, 3vw, 48px);
+}
+
+.spine-step--reverse .spine-mock {
+  grid-column: 3;
+}
+
+.spine-step--reverse .spine-text {
+  grid-column: 1;
+}
+
+@media (max-width: 760px) {
+  .hiw-spine::before {
+    display: none;
+  }
+  .spine-step {
+    display: block;
+    margin-bottom: 44px;
+  }
+  .spine-node {
+    justify-content: flex-start;
+    margin-bottom: 16px;
+  }
+  .spine-mock,
+  .spine-text {
+    padding: 0;
+  }
+  .spine-mock {
+    margin-bottom: 20px;
+  }
+}
