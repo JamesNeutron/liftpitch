@@ -96,14 +96,17 @@ export default function CandidateRecordPage() {
   const [loadState, setLoadState] = useState("loading"); // loading | ready | notfound
   const [role, setRole] = useState(null);
 
-  // Candidate details — collected in the "details" step, after a take is kept.
+  // Candidate details. Name + consent are collected up front at the pre-camera
+  // consent gate (legally required before the camera starts); the optional email
+  // is collected later in the post-recording "details" step.
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
 
-  // Recorder state machine — mirrors the dashboard recorder, then continues
-  // through the accountless save: details → uploading → done.
-  const [state, setState] = useState("idle"); // idle | previewing | countdown | recording | preview | details | uploading | done
+  // Recorder state machine — opens on the pre-camera consent gate, then mirrors
+  // the dashboard recorder and continues through the accountless save:
+  // consent → previewing → … → details → uploading → done.
+  const [state, setState] = useState("consent"); // consent | idle | previewing | countdown | recording | preview | details | uploading | done
   const [countdown, setCountdown] = useState(3);
   const [cameraError, setCameraError] = useState(null);
 
@@ -227,6 +230,23 @@ export default function CandidateRecordPage() {
 
   const stopRec = () => { mrRef.current?.stop(); timer.stop(); };
 
+  // Attach the live stream to the <video> once it mounts. startCamera() can be
+  // called from the "consent" state — before the recorder card (and its
+  // videoRef) exists — so the srcObject assignment inside startCamera may hit a
+  // null ref. This re-attaches whenever we enter a live-preview state and the
+  // element is available. Recorded playback (state === "preview") is left alone;
+  // beginRec's onstop owns swapping in the recorded blob.
+  useEffect(() => {
+    const live = state === "previewing" || state === "countdown" || state === "recording";
+    const v = videoRef.current;
+    if (live && v && streamRef.current && v.srcObject !== streamRef.current) {
+      v.srcObject = streamRef.current;
+      v.muted = true;
+      v.playsInline = true;
+      v.play();
+    }
+  }, [state]);
+
   // Auto-stop when the total time is reached.
   useEffect(() => {
     if (timer.sec >= maxDur && state === "recording") stopRec();
@@ -307,7 +327,10 @@ export default function CandidateRecordPage() {
 
   // States after a take is kept — the recorder viewport shows the "Take saved" card.
   const takeKept = state === "details" || state === "uploading" || state === "done";
-  const canSubmit = name.trim().length > 0 && consent;
+  // Name + consent must both be provided at the pre-camera gate before the
+  // camera can open; they are also what the save path persists as the signature
+  // record, so the "Get my link" button reuses the same guard.
+  const consentComplete = name.trim().length > 0 && consent;
 
   if (loadState === "loading") return <Spinner color={DEFAULT_BRAND_COLOR} />;
   if (loadState === "notfound") return <NotFound />;
@@ -374,7 +397,110 @@ export default function CandidateRecordPage() {
           </p>
         </div>
 
+        {/* Pre-camera consent gate — legally required signature + consent before
+            the camera is ever requested. Name and consent collected here persist
+            through the recording flow and are what the save path stores. */}
+        {state === "consent" && (
+          <div style={{
+            background: "#fff", border: `1px solid #E3E9F0`, borderRadius: 16,
+            padding: 24, boxShadow: "0 2px 12px rgba(42,80,128,0.05)",
+          }}>
+            <div style={{
+              fontFamily: SORA, fontSize: 11, fontWeight: 700, color: brandColor,
+              textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 14,
+            }}>
+              Before you record
+            </div>
+
+            {/* (a) Biometric / no-AI disclaimer — highlighted box */}
+            <div style={{
+              background: `rgba(${r},${g},${b},0.12)`,
+              border: `1.5px solid rgba(${r},${g},${b},0.4)`,
+              borderRadius: 12, padding: "16px 18px", marginBottom: 16,
+            }}>
+              <p style={{ margin: 0, fontFamily: DM, fontSize: 14, color: "#1A1A2E", lineHeight: 1.6 }}>
+                <strong>LiftPitch does not collect biometric data.</strong> We never create, extract, or
+                store faceprints, voiceprints, or facial-geometry scans from your video, and we never use
+                facial recognition. Your recording is stored only as an ordinary video file and used only
+                to deliver your pitch. No AI ever scores, ranks, or judges you — real people at{" "}
+                {companyName} review your video and make every decision.
+              </p>
+            </div>
+
+            {/* (b) Retention + sharing line */}
+            <p style={{ margin: "0 0 20px", fontFamily: DM, fontSize: 13, color: "#56687A", lineHeight: 1.6 }}>
+              Your video is retained for up to 12 months unless you request earlier deletion at{" "}
+              <a href="mailto:privacy@lift-pitch.co" style={{ color: brandColor, fontWeight: 600 }}>privacy@lift-pitch.co</a>.
+              {" "}Your name and video will be shared with {companyName} through the link you choose to submit.
+            </p>
+
+            {/* (c) Full name = signature (required) */}
+            <label htmlFor="consent-name" style={{
+              fontFamily: SORA, fontSize: 12, fontWeight: 700, color: brandColor,
+              textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8,
+            }}>Your full name</label>
+            <input
+              id="consent-name"
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="e.g. Jordan Rivera"
+              style={{
+                width: "100%", padding: "14px 16px", boxSizing: "border-box",
+                border: `1.5px solid #D6DEE8`, borderRadius: 12, marginBottom: 6,
+                fontFamily: DM, fontSize: 15, color: "#1A1A2E", background: "#F7FAFD",
+                outline: "none", transition: "border-color 0.2s",
+              }}
+              onFocus={e => { e.target.style.borderColor = brandColor; }}
+              onBlur={e => { e.target.style.borderColor = "#D6DEE8"; }}
+            />
+            <p style={{ fontFamily: DM, fontSize: 12.5, color: "#8A97A6", margin: "0 0 18px" }}>
+              This is your signature.
+            </p>
+
+            {/* (d) Consent checkbox (required) */}
+            <label style={{
+              display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer",
+              padding: "14px 16px", borderRadius: 12, background: "#F7FAFD",
+              border: `1.5px solid ${consent ? brandColor : "#D6DEE8"}`, transition: "border-color 0.2s",
+            }}>
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={e => setConsent(e.target.checked)}
+                style={{ marginTop: 2, width: 18, height: 18, accentColor: brandColor, flexShrink: 0 }}
+              />
+              <span style={{ fontFamily: DM, fontSize: 13.5, color: "#1A1A2E", lineHeight: 1.55 }}>
+                By typing my name and checking this box, I confirm that I have read and understand the{" "}
+                <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: brandColor, fontWeight: 600 }}>Privacy Policy</a>{" "}
+                and{" "}
+                <a href="/legal#tos" target="_blank" rel="noopener noreferrer" style={{ color: brandColor, fontWeight: 600 }}>Terms of Service</a>,
+                and I consent to the live recording, storage, and sharing of my video as described.
+              </span>
+            </label>
+
+            {cameraError && (
+              <p style={{ fontFamily: DM, fontSize: 13, color: "#DC3545", margin: "14px 0 0", textAlign: "center" }}>
+                {cameraError}
+              </p>
+            )}
+
+            {/* (e) Open camera — disabled until name is non-empty and consent is checked */}
+            <button
+              onClick={startCamera}
+              disabled={!consentComplete}
+              style={{
+                marginTop: 18, width: "100%", padding: "15px 32px", borderRadius: 12, border: "none",
+                background: consentComplete ? brandColor : "#C4CDD8", color: "#fff",
+                fontFamily: SORA, fontSize: 15, fontWeight: 700,
+                cursor: consentComplete ? "pointer" : "not-allowed",
+              }}
+            >📷 Open Camera</button>
+          </div>
+        )}
+
         {/* Recorder card */}
+        {state !== "consent" && (
         <div style={{
           background: "#fff", border: `1px solid #E3E9F0`, borderRadius: 16,
           padding: 24, boxShadow: "0 2px 12px rgba(42,80,128,0.05)",
@@ -498,37 +624,16 @@ export default function CandidateRecordPage() {
             )}
           </div>
 
-          {/* Details step — collect name / email / consent, then save. */}
+          {/* Details step — name and consent were captured at the pre-camera
+              gate; here we only collect the optional email, then save. */}
           {(state === "details" || state === "uploading") && (
             <div style={{ marginTop: 4 }}>
               <div style={{
                 fontFamily: SORA, fontSize: 13, fontWeight: 700, color: "#057642",
                 display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
               }}>
-                <span>✓</span> Take saved — add your details to get your link
+                <span>✓</span> Take saved — get your link
               </div>
-
-              {/* Name (required) */}
-              <label htmlFor="candidate-name" style={{
-                fontFamily: SORA, fontSize: 12, fontWeight: 700, color: brandColor,
-                textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 8,
-              }}>Your name</label>
-              <input
-                id="candidate-name"
-                type="text"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="e.g. Jordan Rivera"
-                disabled={state === "uploading"}
-                style={{
-                  width: "100%", padding: "14px 16px", boxSizing: "border-box",
-                  border: `1.5px solid #D6DEE8`, borderRadius: 12, marginBottom: 16,
-                  fontFamily: DM, fontSize: 15, color: "#1A1A2E", background: "#F7FAFD",
-                  outline: "none", transition: "border-color 0.2s",
-                }}
-                onFocus={e => { e.target.style.borderColor = brandColor; }}
-                onBlur={e => { e.target.style.borderColor = "#D6DEE8"; }}
-              />
 
               {/* Email (optional) */}
               <label htmlFor="candidate-email" style={{
@@ -555,33 +660,6 @@ export default function CandidateRecordPage() {
                 We&apos;ll email you your link.
               </p>
 
-              {/* Consent (required) */}
-              <label style={{
-                display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer",
-                padding: "14px 16px", borderRadius: 12, background: "#F7FAFD",
-                border: `1.5px solid ${consent ? brandColor : "#D6DEE8"}`, transition: "border-color 0.2s",
-              }}>
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={e => setConsent(e.target.checked)}
-                  disabled={state === "uploading"}
-                  style={{ marginTop: 2, width: 18, height: 18, accentColor: brandColor, flexShrink: 0 }}
-                />
-                <span style={{ fontFamily: DM, fontSize: 13.5, color: "#1A1A2E", lineHeight: 1.55 }}>
-                  I confirm I&apos;m the person in this recording, that it was recorded live just now,
-                  and I agree to LiftPitch&apos;s{" "}
-                  <a href="/legal#tos" target="_blank" rel="noopener noreferrer" style={{ color: brandColor, fontWeight: 600 }}>Terms of Service</a>{" "}
-                  and{" "}
-                  <a href="/legal#privacy" target="_blank" rel="noopener noreferrer" style={{ color: brandColor, fontWeight: 600 }}>Privacy Policy</a>,
-                  including recording this video and sharing it with the employer.
-                </span>
-              </label>
-
-              <p style={{ fontFamily: DM, fontSize: 12.5, color: "#56687A", margin: "12px 0 0", textAlign: "center" }}>
-                Real people review your pitch — it&apos;s never scored or ranked by AI.
-              </p>
-
               {uploadError && (
                 <p style={{ fontFamily: DM, fontSize: 13, color: "#DC3545", margin: "14px 0 0", textAlign: "center" }}>
                   {uploadError}
@@ -590,16 +668,20 @@ export default function CandidateRecordPage() {
 
               <button
                 onClick={submit}
-                disabled={!canSubmit || state === "uploading"}
+                disabled={!consentComplete || state === "uploading"}
                 style={{
                   marginTop: 18, width: "100%", padding: "15px 32px", borderRadius: 12, border: "none",
-                  background: (!canSubmit || state === "uploading") ? "#C4CDD8" : brandColor, color: "#fff",
+                  background: (!consentComplete || state === "uploading") ? "#C4CDD8" : brandColor, color: "#fff",
                   fontFamily: SORA, fontSize: 15, fontWeight: 700,
-                  cursor: (!canSubmit || state === "uploading") ? "not-allowed" : "pointer",
+                  cursor: (!consentComplete || state === "uploading") ? "not-allowed" : "pointer",
                 }}
               >
                 {state === "uploading" ? "Saving your video…" : "Get my link"}
               </button>
+
+              <p style={{ fontFamily: DM, fontSize: 12.5, color: "#8A97A6", margin: "10px 0 0", textAlign: "center" }}>
+                By getting your link, you confirm you&apos;re the person in this recording.
+              </p>
 
               {state === "details" && (
                 <button onClick={redo} style={{
@@ -655,6 +737,7 @@ export default function CandidateRecordPage() {
             </div>
           )}
         </div>
+        )}
 
         <PoweredBy />
       </main>
