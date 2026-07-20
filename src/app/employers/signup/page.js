@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
+import { TERMS_VERSION } from "../../../lib/consent";
 
 // Brand palette — mirrors /employers so this page feels native.
 const B = {
@@ -29,9 +30,13 @@ export default function EmployerSignup() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [agreed, setAgreed] = useState(false); // required terms acceptance (signup only)
+
+  // Signup is only permitted once the required terms box is checked.
+  const canSubmit = !!email && !!password && !loading && (mode === "login" || agreed);
 
   const handleSubmit = async () => {
-    if (!email || !password || loading) return;
+    if (!canSubmit) return;
     setLoading(true); setError("");
     try {
       if (mode === "signup") {
@@ -49,9 +54,14 @@ export default function EmployerSignup() {
         // handle_new_user trigger). Tag it as an employer.
         const userId = data?.user?.id;
         if (userId) {
+          // Tag as employer AND record acceptance of the Employer Agreement +
+          // Privacy Policy in the same required write. employer_terms_accepted_at
+          // is stamped server-side by a DB trigger; the client only supplies the
+          // version. If this write fails we throw and never reach the console, so
+          // signup cannot complete without the acceptance being recorded.
           const { error: upErr } = await supabase
             .from("profiles")
-            .update({ account_type: "employer" })
+            .update({ account_type: "employer", employer_terms_version: TERMS_VERSION })
             .eq("id", userId);
           if (upErr) throw upErr;
         }
@@ -183,12 +193,37 @@ export default function EmployerSignup() {
                 </div>
               )}
 
-              <button onClick={handleSubmit} disabled={loading || !email || !password} style={{
+              {mode === "signup" && (
+                <label style={{
+                  display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 20,
+                  cursor: "pointer", fontFamily: DM, fontSize: 13.5, color: B.textMuted, lineHeight: 1.5,
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    onChange={e => setAgreed(e.target.checked)}
+                    style={{ width: 17, height: 17, marginTop: 1, flexShrink: 0, accentColor: B.accent, cursor: "pointer" }}
+                  />
+                  <span>
+                    I agree to the{" "}
+                    <a href="/legal#employer" target="_blank" rel="noopener noreferrer"
+                      style={{ color: B.accent, fontWeight: 600, textDecoration: "none" }}>
+                      Employer Agreement
+                    </a>{" "}and{" "}
+                    <a href="/legal#privacy" target="_blank" rel="noopener noreferrer"
+                      style={{ color: B.accent, fontWeight: 600, textDecoration: "none" }}>
+                      Privacy Policy
+                    </a>.
+                  </span>
+                </label>
+              )}
+
+              <button onClick={handleSubmit} disabled={!canSubmit} style={{
                 width: "100%", padding: "15px 0", borderRadius: 12, border: "none",
-                background: (!loading && email && password) ? B.gradient : "#C8D0D9",
+                background: canSubmit ? B.gradient : "#C8D0D9",
                 color: "#fff", fontFamily: SORA, fontSize: 16, fontWeight: 700,
-                cursor: (loading || !email || !password) ? "not-allowed" : "pointer",
-                boxShadow: (!loading && email && password) ? `0 4px 20px ${B.accentGlow}` : "none",
+                cursor: canSubmit ? "pointer" : "not-allowed",
+                boxShadow: canSubmit ? `0 4px 20px ${B.accentGlow}` : "none",
                 transition: "all 0.2s",
               }}>
                 {loading ? "Please wait…" : mode === "signup" ? "Start Free Pilot" : "Sign In"}
