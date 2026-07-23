@@ -7,6 +7,19 @@ const nextConfig = {
     // means Node.js loads the package directly at runtime instead.
     serverComponentsExternalPackages: ["pdfjs-dist", "fluent-ffmpeg", "ffmpeg-static"],
   },
+  async redirects() {
+    return [
+      {
+        // The redesigned homepage replaced the old employer marketing page.
+        // Only the bare /employers route redirects — /employers/pricing,
+        // /employers/signup and /employers/console are matched exactly and
+        // continue to resolve to their own pages.
+        source: "/employers",
+        destination: "/",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
