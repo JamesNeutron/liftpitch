@@ -100,18 +100,17 @@ create table videos (
 --
 -- RLS: no new policy. These columns inherit the existing videos policies. The
 -- recruiter-facing /v read (/api/video/[id], service role) deliberately does not
--- select them, so no new public read access is introduced. (The pre-existing
--- "Anyone can view videos" USING (true) select policy remains a separate,
--- already-tracked follow-up and is intentionally left unchanged here.)
+-- select them, so no new public read access is introduced.
 
 alter table videos enable row level security;
 
--- Anyone with the UUID link can watch the video (public shareable links)
-create policy "Anyone can view videos"
-  on videos for select
-  using (true);
-
--- Keep the owner-only write policies below unchanged
+-- Videos are owner-scoped only: there is NO anonymous/public select policy on
+-- this table. Public playback works because /api/video/[id] reads with the
+-- service-role key (which bypasses RLS) and returns a curated column set for a
+-- single id — that server route is the scoped read boundary, so the table
+-- itself never needs to be anon-readable. (An earlier "Anyone can view videos"
+-- USING (true) policy was removed; the live DB now has only the owner-scoped
+-- policies below.)
 create policy "Users can view own videos"
   on videos for select
   using (auth.uid() = user_id);
