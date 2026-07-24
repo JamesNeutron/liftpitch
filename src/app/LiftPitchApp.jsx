@@ -179,6 +179,11 @@ function VerifiedPitchCard() {
         background: "radial-gradient(120% 120% at 50% 30%, #26314F 0%, #141A2E 72%)",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
+        {/* Candidate photo filling the frame */}
+        <img src="/hero-candidate.jpeg" alt="" style={{
+          position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+        }} />
+
         {/* Live Verified pill, top-right */}
         <div style={{
           position: "absolute", top: 12, right: 12,
@@ -192,12 +197,6 @@ function VerifiedPitchCard() {
             letterSpacing: "0.06em", textTransform: "uppercase", color: "#fff",
           }}>Live Verified</span>
         </div>
-
-        {/* Centered avatar circle */}
-        <img src="/hero-candidate.jpeg" alt="" style={{
-          width: 84, height: 84, borderRadius: "50%", objectFit: "cover",
-          boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
-        }} />
 
         {/* Play icon, bottom-left */}
         <div style={{
@@ -332,18 +331,8 @@ function RecordMockup() {
         background: "radial-gradient(120% 120% at 50% 35%, #26314F 0%, #141A2E 72%)",
         display: "flex", alignItems: "center", justifyContent: "center",
       }}>
-        <div style={{
-          position: "absolute", top: 10, left: 10,
-          display: "inline-flex", alignItems: "center", gap: 6,
-          padding: "4px 10px", borderRadius: 100, background: "rgba(220,53,53,0.94)",
-          fontFamily: "'Sora', sans-serif", fontSize: 10, fontWeight: 700,
-          letterSpacing: "0.06em", color: "#fff",
-        }}>
-          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} /> REC 0:42
-        </div>
         <img src="/howitworks-3-record.png" alt="" style={{
-          width: 76, height: 76, borderRadius: "50%", objectFit: "cover",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+          position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
         }} />
       </div>
       <div style={{
