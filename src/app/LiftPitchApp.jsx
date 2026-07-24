@@ -215,7 +215,7 @@ function VerifiedPitchCard() {
       <div style={{ padding: "16px 8px 6px" }}>
         <div style={{
           fontFamily: "'Sora', sans-serif", fontSize: 16, fontWeight: 700, color: B.text,
-        }}>Jordan T. — Health Coach</div>
+        }}>Michelle K. — Customer Service Manager</div>
         <div style={{
           fontFamily: "'DM Sans', sans-serif", fontSize: 13, color: B.textDim, marginTop: 4,
         }}>Recorded live · {DEMO_DATE}</div>
