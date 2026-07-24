@@ -194,13 +194,10 @@ function VerifiedPitchCard() {
         </div>
 
         {/* Centered avatar circle */}
-        <div style={{
-          width: 84, height: 84, borderRadius: "50%",
-          background: "linear-gradient(135deg, #378FE9, #0A66C2)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 30,
+        <img src="/hero-candidate.jpeg" alt="" style={{
+          width: 84, height: 84, borderRadius: "50%", objectFit: "cover",
           boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
-        }}>JT</div>
+        }} />
 
         {/* Play icon, bottom-left */}
         <div style={{
@@ -344,13 +341,10 @@ function RecordMockup() {
         }}>
           <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#fff" }} /> REC 0:42
         </div>
-        <div style={{
-          width: 76, height: 76, borderRadius: "50%",
-          background: "linear-gradient(135deg, #F0805F, #E06847)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#fff", fontFamily: "'Sora', sans-serif", fontWeight: 800, fontSize: 26,
+        <img src="/howitworks-3-record.png" alt="" style={{
+          width: 76, height: 76, borderRadius: "50%", objectFit: "cover",
           boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
-        }}>JT</div>
+        }} />
       </div>
       <div style={{
         fontFamily: "'DM Sans', sans-serif", fontSize: 13.5, fontWeight: 600, color: B.text, lineHeight: 1.55,
