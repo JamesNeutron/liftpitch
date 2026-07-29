@@ -79,6 +79,7 @@ function VerifiedPitchCard() {
         {/* Candidate photo filling the frame */}
         <img src="/hero-candidate.jpg" alt="" style={{
           position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover",
+          objectPosition: "center top",
         }} />
 
         {/* Live Verified pill, top-right */}
