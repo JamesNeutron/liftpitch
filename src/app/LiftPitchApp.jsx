@@ -59,7 +59,7 @@ function Section({ bg, pad, children, id, style = {} }) {
 }
 
 // Built-in-React "verified pitch card" for the hero — a white rounded card with
-// a dark 16:9 video area (centered avatar, Live Verified pill, play icon) over a
+// a dark 16:9 video area (centered avatar, Live Verified pill) over a
 // candidate name + "recorded live" line. Replaces the old product screenshot.
 function VerifiedPitchCard() {
   return (
@@ -96,17 +96,6 @@ function VerifiedPitchCard() {
           }}>Live Verified</span>
         </div>
 
-        {/* Play icon, bottom-left */}
-        <div style={{
-          position: "absolute", bottom: 12, left: 12,
-          width: 34, height: 34, borderRadius: "50%",
-          background: "rgba(255,255,255,0.16)", backdropFilter: "blur(4px)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-        }}>
-          <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
-            <path d="M1 1.2L11 7L1 12.8V1.2Z" fill="#fff" />
-          </svg>
-        </div>
       </div>
 
       {/* Candidate name + recorded-live line */}
@@ -374,9 +363,6 @@ function Landing({ onStart }) {
         <div className="hiw-spine">
           {hiw.map((s, i) => (
             <div key={s.title} className={`spine-step${i % 2 === 1 ? " spine-step--reverse" : ""}`}>
-              <div className="spine-node">
-                <div className="node-circle">{i + 1}</div>
-              </div>
               <div className="spine-mock">{s.mock}</div>
               <div className="spine-text">
                 <span style={{

@@ -134,31 +134,6 @@ body {
   margin-bottom: 0;
 }
 
-.spine-node {
-  grid-column: 2;
-  grid-row: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.node-circle {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: #0A66C2;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Sora', sans-serif;
-  font-size: 20px;
-  font-weight: 800;
-  line-height: 1;
-  z-index: 2;
-  /* white ring punches the node cleanly through the vertical line */
-  box-shadow: 0 0 0 7px #FFFFFF;
-}
-
 .spine-mock {
   grid-column: 1;
   grid-row: 1;
@@ -186,10 +161,6 @@ body {
   .spine-step {
     display: block;
     margin-bottom: 44px;
-  }
-  .spine-node {
-    justify-content: flex-start;
-    margin-bottom: 16px;
   }
   .spine-mock,
   .spine-text {
