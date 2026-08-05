@@ -158,15 +158,23 @@ body {
   .hiw-spine::before {
     display: none;
   }
-  .spine-step {
-    display: block;
+  .spine-step,
+  .spine-step--reverse {
+    display: flex;
+    flex-direction: column;
     margin-bottom: 44px;
   }
   .spine-mock,
   .spine-text {
     padding: 0;
   }
-  .spine-mock {
+  /* STEP label + title above the mockup on mobile, for every step */
+  .spine-text {
+    order: 1;
     margin-bottom: 20px;
+  }
+  .spine-mock {
+    order: 2;
+    margin-bottom: 0;
   }
 }
