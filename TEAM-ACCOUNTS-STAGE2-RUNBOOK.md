@@ -252,12 +252,17 @@ select count(*) from public.roles where org_id is null;  -- must be 0
 ## Phase 6 — post-backfill constraints + decide employer_id
 
 Now that every role has an `org_id`, lock it down. And resolve `roles.employer_id`
-(Defect 3): it is currently `NOT NULL references profiles(id)` and was the old
-authorization key. Authorization now lives entirely on `org_id` + `is_org_member`, so
-**employer_id becomes nullable and informational** — a record of which member
+(Defect 3): confirmed live as `roles_employer_id_fkey FOREIGN KEY (employer_id)
+REFERENCES auth.users(id) ON DELETE CASCADE`, `NOT NULL` — the old authorization key.
+Two things differ from the earlier assumption: the FK points at **`auth.users(id)`,
+not `profiles(id)`**, and its on-delete is **`CASCADE`, not `SET NULL`** — so the FK
+swap below is **required, not skippable** (today, deleting an auth user hard-deletes
+all their org's roles). Authorization now lives entirely on `org_id` + `is_org_member`,
+so **employer_id becomes nullable and informational** — a record of which member
 originally created the role (Stage 3 may rename it to `created_by`). It is **not
-referenced by any policy**. We also relax its FK to `ON DELETE SET NULL` so a
-departing creator never orphan-deletes their org's roles.
+referenced by any policy**. The FK is re-added pointing at the same `auth.users(id)`
+but with `ON DELETE SET NULL`, so a departing creator never orphan-deletes their org's
+roles.
 
 ```sql
 -- org_id is now mandatory.
@@ -266,13 +271,14 @@ alter table public.roles alter column org_id set not null;
 -- employer_id: demote to informational "created by".
 alter table public.roles alter column employer_id drop not null;
 
--- Relax the FK so deleting the creating user preserves the org's roles.
--- (Constraint name is the Postgres default; confirm with
+-- Swap the FK: keep the auth.users(id) target, change CASCADE -> SET NULL so
+-- deleting the creating user preserves the org's roles.
+-- (Confirmed constraint name below; re-verify with
 --  `select conname from pg_constraint where conrelid = 'public.roles'::regclass;`.)
 alter table public.roles drop constraint roles_employer_id_fkey;
 alter table public.roles
   add constraint roles_employer_id_fkey
-  foreign key (employer_id) references public.profiles(id) on delete set null;
+  foreign key (employer_id) references auth.users(id) on delete set null;
 ```
 
 **Decision, stated explicitly:** `roles.employer_id` is **kept**, made **nullable +
