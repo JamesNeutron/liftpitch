@@ -475,6 +475,17 @@ dissolving an *abandoned solo org* — but only under strict conditions, checked
 this order**. If any fails, it does **not** dissolve: it raises `45001 /
 ALREADY_IN_ORG` and falls through to manual recovery.
 
+**Invite consumption is success-only (defect fix).** The consuming `UPDATE
+public.invites` is the **last** statement and is reachable **only after a
+successful join** (simple join, or dissolve+join). Every refusal path — `42501`
+not-authenticated, `45004` invalid/used token, `45001` already-in-destination,
+`45001` not-dissolvable — `raise`s **before any write to `invites`**, so a
+correctly-rejected invitee never burns the token and can retry once they resolve
+their situation. Two extra guards harden this: the invite lookup filters
+`accepted_at is null` (a used token → `45004`, consumes nothing), and the
+consuming `UPDATE` is itself guarded on `accepted_at is null` so it can never
+re-stamp an invite a concurrent accept already consumed.
+
 ```sql
 create or replace function public.accept_invite(invite_token text)
 returns uuid
@@ -490,11 +501,12 @@ declare
   v_role_count   int;
 begin
   if v_uid is null then
-    raise exception 'not authenticated' using errcode = '42501';
+    raise exception 'not authenticated' using errcode = '42501';   -- invite untouched
   end if;
 
-  -- Resolve the invite → destination org. Lock the invite row so two concurrent
-  -- accepts of the same token serialize and only one consumes it.
+  -- Resolve the invite → destination org. Only an UNCONSUMED invite resolves
+  -- (accepted_at is null); a used/invalid token yields 45004 and consumes nothing.
+  -- Lock the invite row so two concurrent accepts of one token serialize.
   select org_id into v_target_org
   from public.invites
   where token = invite_token and accepted_at is null
@@ -502,7 +514,7 @@ begin
 
   if v_target_org is null then
     raise exception 'invite not found or already used'
-      using errcode = '45004', hint = 'INVITE_INVALID';
+      using errcode = '45004', hint = 'INVITE_INVALID';            -- invite untouched
   end if;
 
   -- Is the caller already in an org? Lock their membership row so a concurrent
@@ -513,10 +525,10 @@ begin
   for update;
 
   if v_current_org is not null then
-    -- Idempotent: already in the destination org.
+    -- Idempotent guard: already in the destination org.
     if v_current_org = v_target_org then
       raise exception 'already a member of this organization'
-        using errcode = '45001', hint = 'ALREADY_IN_ORG';
+        using errcode = '45001', hint = 'ALREADY_IN_ORG';          -- invite untouched
     end if;
 
     -- Strict dissolve conditions, IN ORDER:
@@ -538,20 +550,25 @@ begin
       delete from public.organizations where id = v_current_org;    -- cascades invites
       insert into public.memberships (org_id, user_id) values (v_target_org, v_uid);
     else
-      -- Not dissolvable (co-members present, or org owns roles) → refuse and
-      -- surface to manual recovery. Do NOT touch either org.
+      -- Not dissolvable (co-members present, or org owns roles) → refuse.
+      -- Nothing above this point wrote to invites, so the token stays UNCONSUMED
+      -- and the invitee can retry once they resolve their situation.
       raise exception 'already a member of an organization'
-        using errcode = '45001', hint = 'ALREADY_IN_ORG';
+        using errcode = '45001', hint = 'ALREADY_IN_ORG';          -- invite untouched
     end if;
   else
     -- No current org — the simple join.
     insert into public.memberships (org_id, user_id) values (v_target_org, v_uid);
   end if;
 
-  -- Consume the invite.
+  -- Consume the invite — REACHED ONLY after a successful join (simple or
+  -- dissolve+join). Every refusal path above raised and never reaches here. The
+  -- `accepted_at is null` guard makes the stamp idempotent: it can never
+  -- re-stamp an invite a concurrent accept already consumed.
   update public.invites
     set accepted_at = now(), accepted_by = v_uid
-  where token = invite_token;
+  where token = invite_token
+    and accepted_at is null;
 
   return v_target_org;
 end;
@@ -568,6 +585,11 @@ A PL/pgSQL function runs inside the caller's transaction; there is no implicit
 sub-transaction around its statements. So for `accept_invite`, all four writes —
 `delete membership` → `delete organizations` (+ its cascades) → `insert membership`
 → `update invites` — **commit together or roll back together**.
+
+The `update invites` is also **success-gated by control flow**, not just by
+transaction atomicity: it is the function's last statement, and every refusal
+(`42501` / `45004` / `45001`) `raise`s before it, so a rejected accept never
+consumes the token in the first place (Phase 10 Test 6 asserts exactly this).
 
 - If the `insert into memberships` fails (e.g. a concurrent `accept_invite` already
   placed the caller into a different org between our lock acquisition and insert — in
