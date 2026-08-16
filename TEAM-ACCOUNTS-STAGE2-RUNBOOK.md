@@ -642,6 +642,15 @@ role, so the RLS tests `set local role authenticated` (or `anon`) — **as `post
 you would never observe recursion or isolation failures because owner bypasses RLS.**
 `auth.uid()` is driven by `request.jwt.claims`. Run the whole block as `postgres`.
 
+**Owner-read for ground truth (Tests 6 & 7):** an `assert` fails on **NULL as well
+as false**. A negative test that reads a row the *authenticated* caller can't see
+under RLS gets a NULL scalar back and fails with a misleading message — e.g. a
+non-Acme user asserting on Acme's invite. So invite-state checks in the negative
+tests are split into a second `do $$` block run **after `reset role`** (as
+`postgres`, RLS bypassed) and phrased as a NULL-safe `count(*) … = 1`, which cleanly
+separates "present & unconsumed" from "missing or consumed". Membership checks stay
+in the authenticated block only when the caller can see their own row.
+
 ```sql
 begin;
 
@@ -778,48 +787,75 @@ end $$;
 reset role;
 
 -- ── Test 6 — NEGATIVE: dissolve must NOT fire when the solo org owns a role ────
--- User 4444 makes a solo org, then gets a role in it, then tries to accept.
+-- User 4444 makes a solo org, gives it a role, then tries to accept TESTTOKEN2.
+-- The dissolve must refuse (45001), leaving the user's membership AND the invite
+-- untouched.
+--
+-- RLS NOTE: the invite-state check is deliberately split into a second block run
+-- as postgres. Under `authenticated`, user 4444 is NOT an Acme member, so the
+-- invites SELECT policy (is_org_member(org_id)) hides Acme's TESTTOKEN2 from them
+-- completely. A subquery over an invisible row returns no rows → scalar NULL, and
+-- `assert <NULL>` FAILS the same way `assert false` does — which previously
+-- produced the misleading "invite consumed despite refusal" even though nothing
+-- was consumed. Ground-truth invite state must be read as the table owner.
 select set_config('request.jwt.claims',
   json_build_object('sub','44444444-4444-4444-4444-444444444444')::text, true);
 set local role authenticated;
 do $$
-declare v_solo uuid;
+declare v_solo uuid; v_raised boolean := false;
 begin
   v_solo := public.create_org('Has Role Co');
   insert into public.roles (org_id, employer_id, role_title, question_1)
     values (v_solo, '44444444-4444-4444-4444-444444444444', 'PM', 'Why product?');
   begin
     perform public.accept_invite('TESTTOKEN2');
-    assert false, 'FAIL T6: dissolve fired on an org that owns a role';
   exception when sqlstate '45001' then
-    assert (select org_id from public.memberships
-            where user_id = '44444444-4444-4444-4444-444444444444') = v_solo,
-      'FAIL T6: user left their org despite refusal';
-    assert (select accepted_at is null from public.invites where token = 'TESTTOKEN2'),
-      'FAIL T6: invite consumed despite refusal';
-    raise notice 'Test 6 PASS: role-owning solo org NOT dissolved (45001), user intact';
+    v_raised := true;
   end;
+  assert v_raised, 'FAIL T6: dissolve did NOT refuse a role-owning org (expected 45001)';
+  -- Membership IS visible to 4444 under RLS (their own org) — safe to check here.
+  assert (select org_id from public.memberships
+          where user_id = '44444444-4444-4444-4444-444444444444') = v_solo,
+    'FAIL T6: user left their org despite refusal';
 end $$;
 reset role;
+-- Invite state as owner (RLS bypassed). NULL-safe count distinguishes the two
+-- failure modes: 1 = present & unconsumed (PASS); 0 = missing OR consumed.
+do $$
+begin
+  assert (select count(*) from public.invites
+          where token = 'TESTTOKEN2' and accepted_at is null) = 1,
+    'FAIL T6: TESTTOKEN2 missing or consumed after refusal';
+  raise notice 'Test 6 PASS: role-owning solo org NOT dissolved (45001); user intact; TESTTOKEN2 unconsumed';
+end $$;
 
 -- ── Test 7 — DUPLICATE-ACCEPT IS REJECTED ─────────────────────────────────────
 -- The now-Acme user (1111) tries to accept the second Acme invite → already in
--- the destination org → 45001, and TESTTOKEN2 stays unconsumed.
+-- the destination org → 45001, and TESTTOKEN2 stays unconsumed. (Here user 1111
+-- IS an Acme member so the invite is visible under RLS, but we use the same
+-- owner-read + NULL-safe count pattern as Test 6 for uniformity.)
 select set_config('request.jwt.claims',
   json_build_object('sub','11111111-1111-1111-1111-111111111111')::text, true);
 set local role authenticated;
 do $$
+declare v_raised boolean := false;
 begin
   begin
     perform public.accept_invite('TESTTOKEN2');
-    assert false, 'FAIL T7: re-accept into same org was allowed';
   exception when sqlstate '45001' then
-    assert (select accepted_at is null from public.invites where token = 'TESTTOKEN2'),
-      'FAIL T7: invite consumed on a rejected re-accept';
-    raise notice 'Test 7 PASS: re-accept into current org rejected (45001)';
+    v_raised := true;
   end;
+  assert v_raised, 'FAIL T7: re-accept into current org was NOT rejected (expected 45001)';
 end $$;
 reset role;
+-- Invite state as owner (RLS bypassed): TESTTOKEN2 must remain present & unconsumed.
+do $$
+begin
+  assert (select count(*) from public.invites
+          where token = 'TESTTOKEN2' and accepted_at is null) = 1,
+    'FAIL T7: TESTTOKEN2 missing or consumed on a rejected re-accept';
+  raise notice 'Test 7 PASS: re-accept into current org rejected (45001); TESTTOKEN2 unconsumed';
+end $$;
 
 rollback;   -- non-destructive
 ```
