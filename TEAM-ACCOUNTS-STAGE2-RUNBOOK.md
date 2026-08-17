@@ -862,6 +862,69 @@ rollback;   -- non-destructive
 
 ---
 
+## Phase 11 — update_org_brand (Stage 3 console brand-save)
+
+Added for Stage 3. The console's brand editor needs to persist name/colors onto
+the `organizations` row, but Phase 4 gave `organizations` a **SELECT-only** policy
+(all writes to the org tables go through SECURITY DEFINER functions). Rather than
+open a client-writable UPDATE policy on `organizations` — the one exception that
+would break the established pattern — brand-save goes through a definer function.
+
+The caller's org is resolved **from their own membership** (`auth.uid()`); the
+function takes **no `org_id` parameter**, so a caller can only ever update the org
+they belong to. Colors are validated as 6-digit hex before any write, so the
+console can never persist garbage. Owned by `postgres`, granted to `authenticated`.
+
+```sql
+create or replace function public.update_org_brand(
+  new_name         text,
+  new_brand_color  text,
+  new_accent_color text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_org uuid;
+begin
+  if v_uid is null then
+    raise exception 'not authenticated' using errcode = '42501';
+  end if;
+
+  -- Resolve the caller's org from their membership (never trust a client org_id).
+  select org_id into v_org from public.memberships where user_id = v_uid;
+  if v_org is null then
+    raise exception 'not a member of any organization'
+      using errcode = '45003', hint = 'NO_ORG';
+  end if;
+
+  -- Validate colors are 6-digit hex; reject rather than store garbage.
+  if new_brand_color is null or new_brand_color !~ '^#[0-9A-Fa-f]{6}$' then
+    raise exception 'brand_color must be a 6-digit hex color like #0A66C2'
+      using errcode = '22023', hint = 'BAD_BRAND_COLOR';
+  end if;
+  if new_accent_color is null or new_accent_color !~ '^#[0-9A-Fa-f]{6}$' then
+    raise exception 'accent_color must be a 6-digit hex color like #1A1A2E'
+      using errcode = '22023', hint = 'BAD_ACCENT_COLOR';
+  end if;
+
+  update public.organizations
+    set name         = nullif(btrim(new_name), ''),   -- trim; empty -> null
+        brand_color  = new_brand_color,
+        accent_color = new_accent_color
+  where id = v_org;
+end;
+$$;
+
+revoke execute on function public.update_org_brand(text, text, text) from public;
+grant  execute on function public.update_org_brand(text, text, text) to authenticated;
+```
+
+---
+
 ## Answers to your two questions
 
 **Q1 — `invites` had no email column.** You're right that Stage 3 needs to send to
@@ -889,4 +952,5 @@ already supplies the authoritative timestamp.
 4 RLS policies incl. roles cutover → 5 backfill → 6 constraints + employer_id demote
 → **7 rewrite get_recording_role (byte-identical sig + revoke/grant)** →
 **8 drop brand columns (breaks console; deploy Stage 3 now)** →
-9 membership functions → 10 verify (7 tests).
+9 membership functions → 10 verify (7 tests) →
+**11 update_org_brand (Stage 3 console brand-save)**.

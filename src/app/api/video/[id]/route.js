@@ -67,20 +67,23 @@ export async function GET(request, { params }) {
       return Response.json(base);
     }
 
-    // Sponsored recruiter page needs the employer's colors. Resolve them from
-    // the originating role; if the role was deleted (role_id null / missing),
-    // fall back to the app defaults so the page still renders on-brand.
+    // Sponsored recruiter page needs the employer's colors. Brand now lives on
+    // the organization, so resolve it through the originating role's org. If the
+    // role was deleted (role_id null / missing) — or somehow has no org — fall
+    // back to the app defaults so the page still renders on-brand. Service role
+    // bypasses RLS, so the embedded organizations select resolves directly.
     let brand_color = DEFAULT_BRAND_COLOR;
     let accent_color = DEFAULT_ACCENT_COLOR;
     if (role_id) {
       const { data: role } = await supabase
         .from("roles")
-        .select("brand_color, accent_color")
+        .select("organizations(brand_color, accent_color)")
         .eq("id", role_id)
         .maybeSingle();
-      if (role) {
-        brand_color = role.brand_color || DEFAULT_BRAND_COLOR;
-        accent_color = role.accent_color || DEFAULT_ACCENT_COLOR;
+      const org = role?.organizations;
+      if (org) {
+        brand_color = org.brand_color || DEFAULT_BRAND_COLOR;
+        accent_color = org.accent_color || DEFAULT_ACCENT_COLOR;
       }
     }
 

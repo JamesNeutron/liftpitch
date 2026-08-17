@@ -38,6 +38,7 @@ function Icon({ paths, size = 18, color = B.accent, strokeWidth = 1.75 }) {
 export default function EmployerConsole() {
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [orgId, setOrgId] = useState(null); // the caller's organization (from membership)
   const [loading, setLoading] = useState(true);
 
   // Saved roles + their load state.
@@ -45,7 +46,8 @@ export default function EmployerConsole() {
   const [rolesLoading, setRolesLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  // Brand settings — stamped onto every role; editable, default to last saved role.
+  // Brand settings — org-level (they live on the organizations row now, not on
+  // roles). Editable working fields; default to the loaded org brand.
   const [companyName, setCompanyName] = useState("");
   const [brandColor, setBrandColor] = useState(DEFAULT_BRAND_COLOR);
   const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT_COLOR);
@@ -55,6 +57,7 @@ export default function EmployerConsole() {
   const [savedBrand, setSavedBrand] = useState(null);
   const [brandEditing, setBrandEditing] = useState(false);
   const [savingBrand, setSavingBrand] = useState(false);
+  const [brandError, setBrandError] = useState("");
 
   // Create / edit form.
   const [roleTitle, setRoleTitle] = useState("");
@@ -66,18 +69,21 @@ export default function EmployerConsole() {
   // Which role's recording link was just copied — drives the "Copied" state.
   const [copiedId, setCopiedId] = useState(null);
 
-  // Fetch this employer's roles. RLS already scopes rows to auth.uid() =
-  // employer_id, but we also filter explicitly as defense-in-depth so the list
-  // stays scoped even if a SELECT policy ever regresses (as happened when a
-  // broad public-read policy briefly exposed every employer's roles).
-  // employerId is passed explicitly from init (where the `user` state isn't set
-  // yet); the handler call sites fall back to the `user` state.
-  const loadRoles = async (employerId = user?.id) => {
+  // Fetch the org's roles. RLS scopes rows to the caller's org via
+  // is_org_member(org_id), but we also filter explicitly as defense-in-depth so
+  // the list stays scoped even if a SELECT policy ever regresses (as happened
+  // when a broad public-read policy briefly exposed every employer's roles).
+  // Scope is org_id, NOT employer_id — a teammate's roles carry a different
+  // employer_id (creator record) but the same org_id, so filtering on
+  // employer_id would hide co-members' roles.
+  // targetOrg is passed explicitly from init (where the `orgId` state isn't set
+  // yet); the handler call sites fall back to the `orgId` state.
+  const loadRoles = async (targetOrg = orgId) => {
     setLoadError("");
     const { data, error } = await supabase
       .from("roles")
       .select("*")
-      .eq("employer_id", employerId)
+      .eq("org_id", targetOrg)
       .order("created_at", { ascending: false });
     if (error) {
       setLoadError("We couldn't load your roles. Please refresh to try again.");
@@ -95,68 +101,78 @@ export default function EmployerConsole() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { router.replace("/employers/signup"); return; }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("account_type, company_name, brand_color, accent_color")
-        .eq("id", session.user.id)
-        .single();
+      // Access is gated on HAVING A MEMBERSHIP (not profiles.account_type).
+      // Exactly one membership per user (unique constraint), so this is 0 or 1
+      // rows — maybeSingle(). No membership = not part of an org workspace →
+      // send them home rather than erroring.
+      const { data: membership } = await supabase
+        .from("memberships")
+        .select("org_id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
 
-      // Only employers belong here; candidates go back to their home.
-      if (profile?.account_type !== "employer") { router.replace("/"); return; }
+      if (!membership) { router.replace("/"); return; }
+      const org_id = membership.org_id;
+
+      // Brand now lives ONLY on the organizations row (the single source of
+      // truth for the whole team).
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("name, brand_color, accent_color")
+        .eq("id", org_id)
+        .maybeSingle();
 
       setUser(session.user);
+      setOrgId(org_id);
       setLoading(false);
 
-      // Brand settings live on the employer's profiles row — the single source
-      // of truth, so they follow the account across devices.
-      const cn = profile.company_name || "";
-      const bc = profile.brand_color || DEFAULT_BRAND_COLOR;
-      const ac = profile.accent_color || DEFAULT_ACCENT_COLOR;
+      const cn = org?.name || "";
+      const bc = org?.brand_color || DEFAULT_BRAND_COLOR;
+      const ac = org?.accent_color || DEFAULT_ACCENT_COLOR;
       setCompanyName(cn);
       setBrandColor(bc);
       setAccentColor(ac);
       // Brand counts as "set" once they've named the company or moved off the
-      // default colors → show the read-only state. A brand-new employer (null
-      // company name, default colors) gets the open fields.
+      // default colors → show the read-only state. A brand-new org (null name,
+      // default colors) gets the open fields.
       if (cn.trim() || bc !== DEFAULT_BRAND_COLOR || ac !== DEFAULT_ACCENT_COLOR) {
         setSavedBrand({ companyName: cn, brandColor: bc, accentColor: ac });
       }
 
-      loadRoles(session.user.id);
+      loadRoles(org_id);
     }
     init();
   }, [router]);
 
-  // Persist the brand to the employer's profiles row (single source of truth,
-  // scoped to the user by RLS) and collapse to the read-only display. Existing
-  // roles are re-stamped so their swatches stay in sync with the new brand.
+  // Persist the brand to the organizations row (the single source of truth for
+  // the whole team) and collapse to the read-only display. The write goes
+  // through the update_org_brand RPC (SECURITY DEFINER): organizations is
+  // SELECT-only under RLS, and the function resolves the caller's org from their
+  // membership + validates the colors are hex. No per-role fan-out anymore —
+  // roles no longer carry brand columns; get_recording_role joins the org.
   const handleSaveBrand = async () => {
     if (savingBrand) return;
     setSavingBrand(true);
+    setBrandError("");
     const snapshot = {
       companyName: companyName.trim(),
       brandColor: brandColor || DEFAULT_BRAND_COLOR,
       accentColor: accentColor || DEFAULT_ACCENT_COLOR,
     };
-    const brandCols = {
-      company_name: snapshot.companyName || null,
-      brand_color: snapshot.brandColor,
-      accent_color: snapshot.accentColor,
-    };
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update(brandCols)
-        .eq("id", user.id);
+      const { error } = await supabase.rpc("update_org_brand", {
+        new_name: snapshot.companyName || null,
+        new_brand_color: snapshot.brandColor,
+        new_accent_color: snapshot.accentColor,
+      });
       if (error) throw error;
-      if (roles.length > 0) {
-        await supabase.from("roles").update(brandCols).eq("employer_id", user.id);
-        await loadRoles();
-      }
       setSavedBrand(snapshot);
       setBrandEditing(false);
     } catch (err) {
       console.warn("[brand save] failed:", err);
+      setBrandError(
+        err?.message || "We couldn't save your brand. Please check the colors and try again."
+      );
     } finally {
       setSavingBrand(false);
     }
@@ -201,10 +217,8 @@ export default function EmployerConsole() {
     setRoleTitle(role.role_title || "");
     setQ1(role.question_1 || "");
     setQ2(role.question_2 || "");
-    // Brand settings reflect the role being edited.
-    setCompanyName(role.company_name || "");
-    setBrandColor(role.brand_color || DEFAULT_BRAND_COLOR);
-    setAccentColor(role.accent_color || DEFAULT_ACCENT_COLOR);
+    // Brand is org-level now (not per-role), so editing a role never touches the
+    // brand working fields.
     setFormError("");
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -220,29 +234,29 @@ export default function EmployerConsole() {
     setSaving(true);
     setFormError("");
 
+    // Brand columns no longer live on roles — they were dropped in Stage 2 and
+    // brand is resolved from the org (get_recording_role joins organizations).
     const payload = {
       role_title: title,
       question_1: question1,
       question_2: q2.trim() || null, // optional — null = a 1-question role
-      company_name: companyName.trim() || null,
-      brand_color: brandColor || DEFAULT_BRAND_COLOR,
-      accent_color: accentColor || DEFAULT_ACCENT_COLOR,
     };
 
     try {
       if (editingId) {
-        // RLS guarantees you can only update your own row; match by id.
+        // RLS scopes updates to the caller's org (is_org_member(org_id)); match by id.
         const { error } = await supabase
           .from("roles")
           .update(payload)
           .eq("id", editingId);
         if (error) throw error;
       } else {
-        // employer_id MUST be the logged-in user's id — the RLS WITH CHECK
-        // (auth.uid() = employer_id) rejects the insert otherwise.
+        // org_id is the authorization key — the RLS WITH CHECK is_org_member(org_id)
+        // rejects the insert otherwise. employer_id is set as the informational
+        // creator record (nullable; not used for authz).
         const { error } = await supabase
           .from("roles")
-          .insert({ ...payload, employer_id: user.id });
+          .insert({ ...payload, org_id: orgId, employer_id: user.id });
         if (error) throw error;
       }
       resetForm();
@@ -415,7 +429,7 @@ export default function EmployerConsole() {
           ) : (
             <>
               <p style={{ fontFamily: DM, fontSize: 14, color: B.textMuted, margin: "-6px 0 20px", lineHeight: 1.55 }}>
-                Saved onto each role you create. You can change these any time.
+                Applied across your team's roles. You can change these any time.
               </p>
               <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
                 <div>
@@ -456,6 +470,12 @@ export default function EmployerConsole() {
                   </div>
                 </div>
               </div>
+              {brandError && (
+                <div style={{ padding: "10px 14px", borderRadius: 10, marginTop: 18,
+                  background: "rgba(220,53,69,0.06)", border: "1px solid rgba(220,53,69,0.2)" }}>
+                  <span style={{ fontFamily: DM, fontSize: 13, color: B.danger }}>{brandError}</span>
+                </div>
+              )}
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 22 }}>
                 <button onClick={handleSaveBrand} disabled={savingBrand} style={{
                   padding: "12px 24px", borderRadius: 12, border: "none",
@@ -622,14 +642,14 @@ export default function EmployerConsole() {
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                       <span style={{
                         width: 10, height: 10, borderRadius: 3, flexShrink: 0,
-                        background: role.brand_color || DEFAULT_BRAND_COLOR,
+                        background: savedBrand?.brandColor || DEFAULT_BRAND_COLOR,
                       }} />
                       <h3 style={{ fontFamily: SORA, fontSize: 17, fontWeight: 700, color: B.text, margin: 0 }}>
                         {role.role_title}
                       </h3>
-                      {role.company_name && (
+                      {savedBrand?.companyName?.trim() && (
                         <span style={{ fontFamily: DM, fontSize: 13, color: B.textDim }}>
-                          · {role.company_name}
+                          · {savedBrand.companyName.trim()}
                         </span>
                       )}
                     </div>

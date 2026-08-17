@@ -28,12 +28,15 @@ export default function EmployerSignup() {
   const [mode, setMode] = useState("signup"); // "signup" | "login"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState(""); // org name (signup only)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [agreed, setAgreed] = useState(false); // required terms acceptance (signup only)
 
-  // Signup is only permitted once the required terms box is checked.
-  const canSubmit = !!email && !!password && !loading && (mode === "login" || agreed);
+  // Signup needs a company name (it seeds the organization) and the required
+  // terms box checked. Login needs neither.
+  const canSubmit = !!email && !!password && !loading &&
+    (mode === "login" || (agreed && !!companyName.trim()));
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -64,6 +67,24 @@ export default function EmployerSignup() {
             .update({ account_type: "employer", employer_terms_version: TERMS_VERSION })
             .eq("id", userId);
           if (upErr) throw upErr;
+
+          // Provision the organization. Brand now lives ONLY on organizations;
+          // create_org (SECURITY DEFINER) inserts the org and the caller's
+          // membership. The console gates on HAVING a membership, so this must
+          // succeed for signup to be complete — hence we throw on failure and
+          // never redirect a half-provisioned account into the console. If the
+          // account already has an org (e.g. a retried submit), create_org
+          // raises 45001/ALREADY_IN_ORG; treat that as already-done and proceed.
+          const { error: orgErr } = await supabase.rpc("create_org", {
+            org_name: companyName.trim(),
+          });
+          if (orgErr && orgErr.hint !== "ALREADY_IN_ORG") {
+            throw new Error(
+              "Your account was created, but we couldn't finish setting up your " +
+              "workspace. Please try again in a moment, or contact support if it " +
+              "keeps happening."
+            );
+          }
         }
       } else {
         const { error: e } = await supabase.auth.signInWithPassword({ email, password });
@@ -159,6 +180,20 @@ export default function EmployerSignup() {
               <p style={{ fontFamily: DM, fontSize: 14, color: B.textMuted, margin: "0 0 24px" }}>
                 {mode === "signup" ? "No card required during the pilot." : "Sign in to continue."}
               </p>
+
+              {mode === "signup" && (
+                <div style={{ marginBottom: 14 }}>
+                  <label style={{ fontFamily: SORA, fontSize: 12, fontWeight: 600, color: B.textDim,
+                    textTransform: "uppercase", letterSpacing: "0.1em", display: "block", marginBottom: 6 }}>
+                    Company name
+                  </label>
+                  <input type="text" value={companyName} onChange={e => setCompanyName(e.target.value)}
+                    placeholder="Acme Inc." style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = B.accent}
+                    onBlur={e => e.target.style.borderColor = B.border}
+                  />
+                </div>
+              )}
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontFamily: SORA, fontSize: 12, fontWeight: 600, color: B.textDim,
