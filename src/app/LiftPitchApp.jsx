@@ -447,29 +447,32 @@ export default function App() {
 
   const router = useRouter();
 
-  // Looks up the user's account type. Retries a few times on transient
-  // failure. Critically, an inconclusive lookup returns accountType: null and
-  // ok: false — we must NOT default to 'employer', or a hiccuped lookup would
-  // wrongly route someone into the employer console.
-  const loadAccountType = async (userId) => {
+  // Routing is gated on HAVING A MEMBERSHIP — the real source of truth for
+  // "belongs in the employer console" now that team accounts exist. We used to
+  // route on profiles.account_type, but that's set by an UPDATE that races the
+  // handle_new_user trigger's insert: a fresh signup could be read back with a
+  // still-null account_type (treated as 'candidate') and stranded on the
+  // homepage even though create_org had already provisioned their org +
+  // membership. The membership row is written synchronously by create_org, so
+  // it's the reliable signal and it matches what the console itself gates on.
+  //
+  // Retries a few times on transient failure. Critically, an inconclusive
+  // lookup returns ok: false and hasMembership: false — we must NOT route to
+  // the console on a hiccuped/errored lookup, and (symmetrically) must NOT get
+  // stuck: the caller stays on the homepage rather than bouncing.
+  const loadMembership = async (userId) => {
     for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('account_type')
-          .eq('id', userId)
-          .single();
-        if (!error && data) {
-          // A successfully-read row with a null account_type is a legitimate
-          // non-employer (employers are explicitly tagged 'employer').
-          return { accountType: data.account_type || 'candidate', ok: true };
-        }
-      } catch (e) {
-        // fall through to retry
-      }
+      const { data, error } = await supabase
+        .from('memberships')
+        .select('org_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      // A clean read (no error) is conclusive whether or not a row came back:
+      // a row => employer workspace member; no row => not in a workspace.
+      if (!error) return { hasMembership: !!data, ok: true };
       await new Promise(r => setTimeout(r, 300));
     }
-    return { accountType: null, ok: false };
+    return { hasMembership: false, ok: false };
   };
 
   useEffect(() => {
@@ -500,11 +503,12 @@ export default function App() {
         const shouldRoute = event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
         if (shouldRoute) setRedirecting(true);
         setTimeout(async () => {
-          const { accountType } = await loadAccountType(session.user.id);
+          const { hasMembership } = await loadMembership(session.user.id);
           if (!shouldRoute) return;
-          // Employers route to their own area; everyone else just stays on the
+          // Workspace members route to the console; everyone else (candidates,
+          // and anyone whose lookup was inconclusive) just stays on the
           // homepage. Never redirect an inconclusive lookup — just stay put.
-          if (accountType === 'employer') {
+          if (hasMembership) {
             router.replace('/employers/console');
           } else {
             setRedirecting(false);
