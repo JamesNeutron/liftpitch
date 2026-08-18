@@ -40,6 +40,12 @@ export default function EmployerConsole() {
   const [user, setUser] = useState(null);
   const [orgId, setOrgId] = useState(null); // the caller's organization (from membership)
   const [loading, setLoading] = useState(true);
+  // Terminal (non-redirecting) states so we never bounce back to "/". A signed-in
+  // user with no membership, or whose membership query errored, lands here instead
+  // of being redirected — the redirect is what closed the flash loop with the
+  // homepage (which auto-routes employers to this console).
+  const [noWorkspace, setNoWorkspace] = useState(false);
+  const [membershipError, setMembershipError] = useState("");
 
   // Saved roles + their load state.
   const [roles, setRoles] = useState([]);
@@ -103,15 +109,39 @@ export default function EmployerConsole() {
 
       // Access is gated on HAVING A MEMBERSHIP (not profiles.account_type).
       // Exactly one membership per user (unique constraint), so this is 0 or 1
-      // rows — maybeSingle(). No membership = not part of an org workspace →
-      // send them home rather than erroring.
-      const { data: membership } = await supabase
+      // rows — maybeSingle().
+      //
+      // Critically, distinguish the THREE outcomes — do NOT redirect on any of
+      // them, or we re-enter the flash loop with the homepage (which auto-routes
+      // employers here on account_type):
+      //   - error   → the query failed (RLS/permission/network). Surface it; the
+      //               logged text is the real error to diagnose (e.g. a 400 from
+      //               a permission-denied on is_org_member would show 42501 here).
+      //   - no row  → signed in but not part of any org workspace → terminal
+      //               "no workspace" state with create/sign-out, not a bounce.
+      //   - row     → proceed into the console.
+      const { data: membership, error: membershipErr } = await supabase
         .from("memberships")
         .select("org_id")
         .eq("user_id", session.user.id)
         .maybeSingle();
 
-      if (!membership) { router.replace("/"); return; }
+      if (membershipErr) {
+        console.error("[console] membership lookup failed:", membershipErr);
+        setUser(session.user);
+        setMembershipError(
+          membershipErr.message || "We couldn't verify your workspace access."
+        );
+        setLoading(false);
+        return;
+      }
+
+      if (!membership) {
+        setUser(session.user);
+        setNoWorkspace(true);
+        setLoading(false);
+        return;
+      }
       const org_id = membership.org_id;
 
       // Brand now lives ONLY on the organizations row (the single source of
@@ -320,6 +350,53 @@ export default function EmployerConsole() {
           border: "3px solid transparent", borderTopColor: B.accent,
           animation: "spin 0.8s linear infinite" }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  // Terminal states — no redirect, so the homepage↔console loop can't form.
+  if (membershipError || noWorkspace) {
+    const isError = !!membershipError;
+    return (
+      <div style={{ minHeight: "100vh", background: B.bg, color: B.text, fontFamily: DM,
+        display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div style={{ ...cardStyle, maxWidth: 460, width: "100%", textAlign: "center" }}>
+          <h1 style={{ fontFamily: SORA, fontSize: 24, fontWeight: 800, margin: "0 0 12px",
+            color: B.text, letterSpacing: "-0.02em" }}>
+            {isError ? "We couldn't load your workspace" : "You're not in a workspace yet"}
+          </h1>
+          <p style={{ fontFamily: DM, fontSize: 15.5, color: B.textMuted, lineHeight: 1.6, margin: "0 0 24px" }}>
+            {isError
+              ? "Something went wrong verifying your workspace access. You can retry, or sign out and back in."
+              : `You're signed in as ${user?.email || "this account"}, but you're not part of any team workspace. Create one to start posting roles.`}
+          </p>
+          {isError && (
+            <div style={{ padding: "10px 14px", borderRadius: 10, marginBottom: 20,
+              background: "rgba(220,53,69,0.06)", border: "1px solid rgba(220,53,69,0.2)" }}>
+              <span style={{ fontFamily: DM, fontSize: 13, color: B.danger }}>{membershipError}</span>
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            {isError ? (
+              <button onClick={() => window.location.reload()} style={{
+                padding: "12px 24px", borderRadius: 12, border: "none",
+                background: B.gradient, color: "#fff", fontFamily: SORA, fontSize: 15, fontWeight: 700,
+                cursor: "pointer", boxShadow: `0 4px 20px ${B.accentGlow}`,
+              }}>Retry</button>
+            ) : (
+              <a href="/employers/signup" style={{
+                padding: "12px 24px", borderRadius: 12,
+                background: B.gradient, color: "#fff", fontFamily: SORA, fontSize: 15, fontWeight: 700,
+                textDecoration: "none", boxShadow: `0 4px 20px ${B.accentGlow}`,
+              }}>Create a workspace</a>
+            )}
+            <button onClick={handleSignOut} style={{
+              padding: "12px 20px", borderRadius: 12, border: `1.5px solid ${B.border}`,
+              background: "transparent", color: B.textMuted,
+              fontFamily: SORA, fontSize: 15, fontWeight: 600, cursor: "pointer",
+            }}>Sign out</button>
+          </div>
+        </div>
       </div>
     );
   }
